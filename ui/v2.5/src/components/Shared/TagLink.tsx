@@ -14,6 +14,8 @@ import { faFolderTree } from "@fortawesome/free-solid-svg-icons";
 import { Icon } from "../Shared/Icon";
 import { FormattedMessage } from "react-intl";
 import { PatchComponent } from "src/patch";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 
 type SceneMarkerFragment = Pick<GQL.SceneMarker, "id" | "title" | "seconds"> & {
   scene: Pick<GQL.Scene, "id">;
@@ -113,6 +115,10 @@ export const GroupLink: React.FC<IGroupLinkProps> = ({
   linkType = "scene",
   className,
 }) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideGroups = Boolean(ui?.hideGroups);
+
   const link = useMemo(() => {
     switch (linkType) {
       case "scene":
@@ -123,6 +129,10 @@ export const GroupLink: React.FC<IGroupLinkProps> = ({
         return NavUtils.makeGroupUrl(group.id ?? "");
     }
   }, [group, linkType]);
+
+  if (hideGroups) {
+    return null;
+  }
 
   const title = group.name || "";
 
@@ -147,12 +157,20 @@ export const SceneMarkerLink: React.FC<ISceneMarkerLinkProps> = ({
   linkType = "scene",
   className,
 }) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideMarkers = Boolean(ui?.hideMarkers);
+
   const link = useMemo(() => {
     switch (linkType) {
       case "scene":
         return NavUtils.makeSceneMarkerUrl(marker);
     }
   }, [marker, linkType]);
+
+  if (hideMarkers) {
+    return null;
+  }
 
   const title = `${markerTitle(marker)} - ${TextUtils.secondsToTimestamp(
     marker.seconds || 0
@@ -254,6 +272,10 @@ export const TagLink: React.FC<ITagLinkProps> = PatchComponent(
     showHierarchyIcon = false,
     hierarchyTooltipID,
   }) => {
+    const { configuration } = useConfigurationContext();
+    const ui = configuration?.ui as IUIConfig | undefined;
+    const hideTags = Boolean(ui?.hideTags);
+
     const link = useMemo(() => {
       switch (linkType) {
         case "scene":
@@ -288,6 +310,10 @@ export const TagLink: React.FC<ITagLinkProps> = PatchComponent(
         </Tooltip>
       );
     }, [hierarchyTooltipID]);
+
+    if (hideTags) {
+      return null;
+    }
 
     return (
       <SortNameLinkComponent

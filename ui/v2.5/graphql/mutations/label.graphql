@@ -1,0 +1,25 @@
+mutation LabelCreate($input: LabelCreateInput!) {
+  labelCreate(input: $input) {
+    ...LabelData
+  }
+}
+
+mutation LabelUpdate($input: LabelUpdateInput!) {
+  labelUpdate(input: $input) {
+    ...LabelData
+  }
+}
+
+mutation BulkLabelUpdate($input: BulkLabelUpdateInput!) {
+  bulkLabelUpdate(input: $input) {
+    ...LabelData
+  }
+}
+
+mutation LabelDestroy($id: ID!) {
+  labelDestroy(input: { id: $id })
+}
+
+mutation LabelsDestroy($ids: [ID!]!) {
+  labelsDestroy(ids: $ids)
+}

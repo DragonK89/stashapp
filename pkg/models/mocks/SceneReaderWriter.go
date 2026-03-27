@@ -211,6 +211,27 @@ func (_m *SceneReaderWriter) CountByPerformerID(ctx context.Context, performerID
 	return r0, r1
 }
 
+// CountByLabelID provides a mock function with given fields: ctx, labelID
+func (_m *SceneReaderWriter) CountByLabelID(ctx context.Context, labelID int) (int, error) {
+	ret := _m.Called(ctx, labelID)
+
+	var r0 int
+	if rf, ok := ret.Get(0).(func(context.Context, int) int); ok {
+		r0 = rf(ctx, labelID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, int) error); ok {
+		r1 = rf(ctx, labelID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // CountMissingChecksum provides a mock function with given fields: ctx
 func (_m *SceneReaderWriter) CountMissingChecksum(ctx context.Context) (int, error) {
 	ret := _m.Called(ctx)

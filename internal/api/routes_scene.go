@@ -257,7 +257,13 @@ func (rs sceneRoutes) Preview(w http.ResponseWriter, r *http.Request) {
 	sceneHash := scene.GetHash(config.GetInstance().GetVideoFileNamingAlgorithm())
 	filepath := manager.GetInstance().Paths.Scene.GetVideoPreviewPath(sceneHash)
 
-	utils.ServeStaticFile(w, r, filepath)
+	exists, _ := fsutil.FileExists(filepath)
+	if !exists {
+		w.Header().Set("Content-Type", "image/png")
+		utils.ServeStaticContent(w, r, utils.PendingGenerateResource)
+	} else {
+		utils.ServeStaticFile(w, r, filepath)
+	}
 }
 
 func (rs sceneRoutes) Webp(w http.ResponseWriter, r *http.Request) {
@@ -265,7 +271,13 @@ func (rs sceneRoutes) Webp(w http.ResponseWriter, r *http.Request) {
 	sceneHash := scene.GetHash(config.GetInstance().GetVideoFileNamingAlgorithm())
 	filepath := manager.GetInstance().Paths.Scene.GetWebpPreviewPath(sceneHash)
 
-	utils.ServeStaticFile(w, r, filepath)
+	exists, _ := fsutil.FileExists(filepath)
+	if !exists {
+		w.Header().Set("Content-Type", "image/png")
+		utils.ServeStaticContent(w, r, utils.PendingGenerateResource)
+	} else {
+		utils.ServeStaticFile(w, r, filepath)
+	}
 }
 
 func (rs sceneRoutes) getChapterVttTitle(r *http.Request, marker *models.SceneMarker) (*string, error) {
@@ -352,6 +364,12 @@ func (rs sceneRoutes) VttThumbs(w http.ResponseWriter, r *http.Request) {
 	}
 	filepath := manager.GetInstance().Paths.Scene.GetSpriteVttFilePath(sceneHash)
 
+	exists, _ := fsutil.FileExists(filepath)
+	if !exists {
+		w.Header().Set("Content-Type", "text/vtt")
+		utils.ServeStaticContent(w, r, []byte("WEBVTT\n"))
+		return
+	}
 	w.Header().Set("Content-Type", "text/vtt")
 	utils.ServeStaticFile(w, r, filepath)
 }
@@ -366,6 +384,11 @@ func (rs sceneRoutes) VttSprite(w http.ResponseWriter, r *http.Request) {
 	}
 	filepath := manager.GetInstance().Paths.Scene.GetSpriteImageFilePath(sceneHash)
 
+	exists, _ := fsutil.FileExists(filepath)
+	if !exists {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	utils.ServeStaticFile(w, r, filepath)
 }
 

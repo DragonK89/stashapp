@@ -87,6 +87,7 @@ type sceneRow struct {
 	Rating       null.Int  `db:"rating"`
 	Organized    bool      `db:"organized"`
 	StudioID     null.Int  `db:"studio_id,omitempty"`
+	LabelID      null.Int  `db:"label_id,omitempty"`
 	CreatedAt    Timestamp `db:"created_at"`
 	UpdatedAt    Timestamp `db:"updated_at"`
 	ResumeTime   float64   `db:"resume_time"`
@@ -107,6 +108,7 @@ func (r *sceneRow) fromScene(o models.Scene) {
 	r.Rating = intFromPtr(o.Rating)
 	r.Organized = o.Organized
 	r.StudioID = intFromPtr(o.StudioID)
+	r.LabelID = intFromPtr(o.LabelID)
 	r.CreatedAt = Timestamp{Timestamp: o.CreatedAt}
 	r.UpdatedAt = Timestamp{Timestamp: o.UpdatedAt}
 	r.ResumeTime = o.ResumeTime
@@ -133,6 +135,7 @@ func (r *sceneQueryRow) resolve() *models.Scene {
 		Rating:    nullIntPtr(r.Rating),
 		Organized: r.Organized,
 		StudioID:  nullIntPtr(r.StudioID),
+		LabelID:   nullIntPtr(r.LabelID),
 
 		PrimaryFileID: nullIntFileIDPtr(r.PrimaryFileID),
 		OSHash:        r.PrimaryFileOshash.String,
@@ -165,6 +168,7 @@ func (r *sceneRowRecord) fromPartial(o models.ScenePartial) {
 	r.setNullInt("rating", o.Rating)
 	r.setBool("organized", o.Organized)
 	r.setNullInt("studio_id", o.StudioID)
+	r.setNullInt("label_id", o.LabelID)
 	r.setTimestamp("created_at", o.CreatedAt)
 	r.setTimestamp("updated_at", o.UpdatedAt)
 	r.setFloat64("resume_time", o.ResumeTime)
@@ -771,6 +775,12 @@ func (qb *SceneStore) CountByPerformerID(ctx context.Context, performerID int) (
 	joinTable := scenesPerformersJoinTable
 
 	q := dialect.Select(goqu.COUNT("*")).From(joinTable).Where(joinTable.Col(performerIDColumn).Eq(performerID))
+	return count(ctx, q)
+}
+
+func (qb *SceneStore) CountByLabelID(ctx context.Context, labelID int) (int, error) {
+	table := qb.table()
+	q := dialect.Select(goqu.COUNT("*")).From(table).Where(table.Col(labelIDColumn).Eq(labelID))
 	return count(ctx, q)
 }
 

@@ -26,6 +26,7 @@ import {
 } from "src/utils/yup";
 import { Studio, StudioSelect } from "src/components/Studios/StudioSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useIsMounted } from "src/hooks/state";
 import { Group } from "src/components/Groups/GroupSelect";
 import { RelatedGroupTable, IRelatedGroupEntry } from "./RelatedGroupTable";
 
@@ -54,6 +55,7 @@ export const GroupEditPanel: React.FC<IGroupEditPanel> = ({
   const isNew = group.id === undefined;
 
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
   const [isImageAlertOpen, setIsImageAlertOpen] = useState<boolean>(false);
 
   const [imageClipboard, setImageClipboard] = useState<string>();
@@ -212,11 +214,15 @@ export const GroupEditPanel: React.FC<IGroupEditPanel> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   async function onScrapeGroupURL(url: string) {
@@ -238,7 +244,9 @@ export const GroupEditPanel: React.FC<IGroupEditPanel> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 

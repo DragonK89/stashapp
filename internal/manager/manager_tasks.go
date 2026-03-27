@@ -96,8 +96,10 @@ type ScanMetaDataFilterInput struct {
 }
 
 func (s *Manager) Scan(ctx context.Context, input ScanMetadataInput) (int, error) {
-	if err := s.validateFFmpeg(); err != nil {
-		return 0, err
+	if !input.ScanTorrents {
+		if err := s.validateFFmpeg(); err != nil {
+			return 0, err
+		}
 	}
 
 	scanner := &file.Scanner{
@@ -268,6 +270,8 @@ type AutoTagMetadataInput struct {
 	Performers []string `json:"performers"`
 	// IDs of studios to tag files with, or "*" for all
 	Studios []string `json:"studios"`
+	// IDs of labels to tag files with, or "*" for all
+	Labels []string `json:"labels"`
 	// IDs of tags to tag files with, or "*" for all
 	Tags []string `json:"tags"`
 }

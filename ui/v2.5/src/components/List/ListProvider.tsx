@@ -5,6 +5,10 @@ import { IHasID } from "src/utils/data";
 import { useFilter } from "./FilterProvider";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import { QueryResult } from "@apollo/client";
+import {
+  IHierarchicalLabeledIdCriterion,
+  ILabeledIdCriterion,
+} from "src/models/list-filter/criteria/criterion";
 
 interface IListContextOptions<T extends IHasID> {
   selectable?: boolean;
@@ -88,6 +92,7 @@ interface IQueryResultContextOptions<
   useMetadataInfo?: (filter: ListFilterModel) => M;
   getCount: (data: T) => number;
   getItems: (data: T) => E[];
+  extraCriteria?: Record<string, IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]>;
 }
 
 export interface IQueryResultContextState<
@@ -123,6 +128,7 @@ export const QueryResultContext = <
     useMetadataInfo,
     getItems,
     getCount,
+    extraCriteria,
     children,
   } = props;
 
@@ -144,7 +150,9 @@ export const QueryResultContext = <
   const metadataInfo = useMetadataInfo?.(metadataFilter);
 
   // use cached query result for pagination
-  const cachedResult = useCachedQueryResult(effectiveFilter, result);
+  const cachedResult = useCachedQueryResult(effectiveFilter, result, {
+    extraCriteria,
+  });
 
   const items = useMemo(() => getItems(result), [getItems, result]);
   const totalCount = useMemo(

@@ -15,7 +15,7 @@ import {
 } from "src/core/StashService";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIntl } from "react-intl";
-import { defaultMaxOptionsShown } from "src/core/config";
+import { defaultMaxOptionsShown, IUIConfig } from "src/core/config";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   FilterSelectComponent,
@@ -69,11 +69,17 @@ const _TagSelect: React.FC<TagSelectProps> = (props) => {
 
   const { configuration } = useConfigurationContext();
   const intl = useIntl();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideTags = Boolean(ui?.hideTags);
   const maxOptionsShown =
     configuration?.ui.maxOptionsShown ?? defaultMaxOptionsShown;
   const defaultCreatable = !configuration?.interface.disableDropdownCreate.tag;
 
   const exclude = useMemo(() => props.excludeIds ?? [], [props.excludeIds]);
+
+  if (hideTags) {
+    return null;
+  }
 
   async function loadTags(input: string): Promise<Option[]> {
     const filter = new ListFilterModel(GQL.FilterMode.Tags);

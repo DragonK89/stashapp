@@ -26,7 +26,10 @@ export const RatingSystem = PatchComponent(
     const ratingSystemOptions =
       config?.ui.ratingSystemOptions ?? defaultRatingSystemOptions;
 
-    if (ratingSystemOptions.type === RatingSystemType.Stars) {
+    if (
+      ratingSystemOptions.type === RatingSystemType.Stars ||
+      ratingSystemOptions.type === RatingSystemType.Stars10
+    ) {
       return (
         <RatingStars
           value={props.value ?? null}
@@ -35,6 +38,7 @@ export const RatingSystem = PatchComponent(
           precision={
             ratingSystemOptions.starPrecision ?? defaultRatingStarPrecision
           }
+          ratingSystemType={ratingSystemOptions.type}
           valueRequired={props.valueRequired}
         />
       );

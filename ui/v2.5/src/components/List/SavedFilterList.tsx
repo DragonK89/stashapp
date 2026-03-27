@@ -1,4 +1,5 @@
 import React, { HTMLAttributes, useEffect, useMemo, useState } from "react";
+import { useIsMounted } from "src/hooks/state";
 import {
   Button,
   ButtonGroup,
@@ -265,6 +266,7 @@ export const SavedFilterList: React.FC<ISavedFilterListProps> = ({
   const [overwritingFilter, setOverwritingFilter] = useState<
     SavedFilterDataFragment | undefined
   >();
+  const isMounted = useIsMounted();
 
   const saveFilter = useSaveFilter();
   const [destroyFilter] = useSavedFilterDestroy();
@@ -295,7 +297,9 @@ export const SavedFilterList: React.FC<ISavedFilterListProps> = ({
     } catch (err) {
       Toast.error(err);
     } finally {
-      setSaving(false);
+      if (isMounted.current) {
+        setSaving(false);
+      }
     }
   }
 
@@ -626,6 +630,7 @@ export const SidebarSavedFilterList: React.FC<ISavedFilterListProps> = ({
   >();
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [settingDefault, setSettingDefault] = useState(false);
+  const isMounted = useIsMounted();
 
   const saveFilter = useSaveFilter();
   const [destroyFilter] = useSavedFilterDestroy();
@@ -677,7 +682,9 @@ export const SidebarSavedFilterList: React.FC<ISavedFilterListProps> = ({
     } catch (err) {
       Toast.error(err);
     } finally {
-      setSaving(false);
+      if (isMounted.current) {
+        setSaving(false);
+      }
     }
   }
 
@@ -744,8 +751,10 @@ export const SidebarSavedFilterList: React.FC<ISavedFilterListProps> = ({
     } catch (err) {
       Toast.error(err);
     } finally {
-      setSaving(false);
-      setSettingDefault(false);
+      if (isMounted.current) {
+        setSaving(false);
+        setSettingDefault(false);
+      }
     }
   }
 

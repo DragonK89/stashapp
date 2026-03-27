@@ -72,6 +72,9 @@ func (r *Resolver) SceneMarker() SceneMarkerResolver {
 func (r *Resolver) Studio() StudioResolver {
 	return &studioResolver{r}
 }
+func (r *Resolver) Label() LabelResolver {
+	return &labelResolver{r}
+}
 
 func (r *Resolver) Group() GroupResolver {
 	return &groupResolver{r}
@@ -122,6 +125,7 @@ type sceneResolver struct{ *Resolver }
 type sceneMarkerResolver struct{ *Resolver }
 type imageResolver struct{ *Resolver }
 type studioResolver struct{ *Resolver }
+type labelResolver struct{ *Resolver }
 
 // movie is group under the hood
 type groupResolver struct{ *Resolver }

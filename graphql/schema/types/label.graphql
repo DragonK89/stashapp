@@ -1,0 +1,72 @@
+type Label {
+  id: ID!
+  name: String!
+  studio: Studio
+  url: String
+  urls: [String!]!
+  aliases: [String!]!
+  tags: [Tag!]!
+  ignore_auto_tag: Boolean!
+
+  image_path: String # Resolver
+  scene_count: Int! # Resolver
+  # rating expressed as 1-100
+  rating100: Int
+  favorite: Boolean!
+  details: String
+  created_at: Time!
+  updated_at: Time!
+  o_counter: Int
+}
+
+input LabelCreateInput {
+  name: String!
+  studio_id: ID!
+  urls: [String!]
+  "This should be a URL or a base64 encoded data URL"
+  image: String
+  # rating expressed as 1-100
+  rating100: Int
+  favorite: Boolean
+  details: String
+  aliases: [String!]
+  tag_ids: [ID!]
+  ignore_auto_tag: Boolean
+}
+
+input LabelUpdateInput {
+  id: ID!
+  name: String
+  studio_id: ID
+  urls: [String!]
+  "This should be a URL or a base64 encoded data URL"
+  image: String
+  # rating expressed as 1-100
+  rating100: Int
+  favorite: Boolean
+  details: String
+  aliases: [String!]
+  tag_ids: [ID!]
+  ignore_auto_tag: Boolean
+}
+
+input BulkLabelUpdateInput {
+  ids: [ID!]!
+  studio_id: ID
+  urls: BulkUpdateStrings
+  # rating expressed as 1-100
+  rating100: Int
+  favorite: Boolean
+  details: String
+  tag_ids: BulkUpdateIds
+  ignore_auto_tag: Boolean
+}
+
+input LabelDestroyInput {
+  id: ID!
+}
+
+type FindLabelsResultType {
+  count: Int!
+  labels: [Label!]!
+}

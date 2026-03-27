@@ -30,6 +30,7 @@ import { formikUtils } from "src/utils/form";
 import { Studio, StudioSelect } from "src/components/Studios/StudioSelect";
 import { Scene, SceneSelect } from "src/components/Scenes/SceneSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useIsMounted } from "src/hooks/state";
 import { ScraperMenu } from "src/components/Shared/ScraperMenu";
 
 interface IProps {
@@ -61,6 +62,7 @@ export const GalleryEditPanel: React.FC<IProps> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const titleRequired =
     isNew || (gallery?.files?.length === 0 && !gallery?.folder);
@@ -181,11 +183,15 @@ export const GalleryEditPanel: React.FC<IProps> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   async function onScrapeClicked(s: GQL.ScraperSourceInput) {
@@ -202,7 +208,9 @@ export const GalleryEditPanel: React.FC<IProps> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -213,7 +221,9 @@ export const GalleryEditPanel: React.FC<IProps> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 

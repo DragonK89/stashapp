@@ -181,3 +181,11 @@ func (r *mutationResolver) OptimiseDatabase(ctx context.Context) (string, error)
 	jobID := manager.GetInstance().OptimiseDatabase(ctx)
 	return strconv.Itoa(jobID), nil
 }
+
+func (r *mutationResolver) ImportTorrentScenesFromFile(ctx context.Context, input manager.ImportTorrentScenesInput) (*manager.ImportTorrentScenesResult, error) {
+	ret, err := manager.GetInstance().ImportTorrentScenesFromFile(ctx, input)
+	if err != nil {
+		return nil, err
+	}
+	return &ret, nil
+}

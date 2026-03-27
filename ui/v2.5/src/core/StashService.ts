@@ -415,6 +415,46 @@ export const queryFindStudiosForSelect = (filter: ListFilterModel) =>
     },
   });
 
+export const useFindLabel = (id: string) => {
+  const skip = id === "new" || id === "";
+  return GQL.useFindLabelQuery({ variables: { id }, skip });
+};
+
+export const useFindLabels = (filter?: ListFilterModel) =>
+  GQL.useFindLabelsQuery({
+    skip: filter === undefined,
+    variables: {
+      filter: filter?.makeFindFilter(),
+      label_filter: filter?.makeFilter(),
+    },
+  });
+
+export const queryFindLabels = (filter: ListFilterModel) =>
+  client.query<GQL.FindLabelsQuery>({
+    query: GQL.FindLabelsDocument,
+    variables: {
+      filter: filter.makeFindFilter(),
+      label_filter: filter.makeFilter(),
+    },
+  });
+
+export const queryFindLabelsForSelect = (filter: ListFilterModel) =>
+  client.query<GQL.FindLabelsForSelectQuery>({
+    query: GQL.FindLabelsForSelectDocument,
+    variables: {
+      filter: filter.makeFindFilter(),
+      label_filter: filter.makeFilter(),
+    },
+  });
+
+export const queryFindLabelsByIDForSelect = (labelIDs: string[]) =>
+  client.query<GQL.FindLabelsForSelectQuery>({
+    query: GQL.FindLabelsForSelectDocument,
+    variables: {
+      ids: labelIDs,
+    },
+  });
+
 export const useFindTag = (id: string) => {
   const skip = id === "new" || id === "";
   return GQL.useFindTagQuery({ variables: { id }, skip });
@@ -1991,6 +2031,62 @@ export const useStudiosDestroy = (input: GQL.StudiosDestroyMutationVariables) =>
 
       evictTypeFields(cache, studioMutationImpactedTypeFields);
       evictQueries(cache, studioMutationImpactedQueries);
+    },
+  });
+
+const labelMutationImpactedQueries = [
+  GQL.FindScenesDocument, // filter by label
+  GQL.FindLabelsDocument, // various filters
+];
+
+export const useLabelCreate = () =>
+  GQL.useLabelCreateMutation({
+    update(cache) {
+      evictQueries(cache, [GQL.FindLabelsDocument]);
+    },
+  });
+
+export const useLabelUpdate = () =>
+  GQL.useLabelUpdateMutation({
+    update(cache) {
+      evictQueries(cache, labelMutationImpactedQueries);
+    },
+  });
+
+export const useBulkLabelUpdate = () =>
+  GQL.useBulkLabelUpdateMutation({
+    update(cache) {
+      evictQueries(cache, labelMutationImpactedQueries);
+    },
+  });
+
+export const useLabelDestroy = (input: GQL.LabelDestroyInput) =>
+  GQL.useLabelDestroyMutation({
+    variables: input,
+    update(cache, result) {
+      if (!result.data?.labelDestroy) return;
+
+      const obj = { __typename: "Label", id: input.id };
+      deleteObject(cache, obj, GQL.FindLabelDocument);
+
+      evictQueries(cache, labelMutationImpactedQueries);
+    },
+  });
+
+export const useLabelsDestroy = (input: GQL.LabelsDestroyMutationVariables) =>
+  GQL.useLabelsDestroyMutation({
+    variables: input,
+    update(cache, result) {
+      if (!result.data?.labelsDestroy) return;
+
+      const { ids } = input;
+
+      for (const id of ids) {
+        const obj = { __typename: "Label", id };
+        deleteObject(cache, obj, GQL.FindLabelDocument);
+      }
+
+      evictQueries(cache, labelMutationImpactedQueries);
     },
   });
 

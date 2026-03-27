@@ -15,7 +15,7 @@ import {
 } from "src/core/StashService";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIntl } from "react-intl";
-import { defaultMaxOptionsShown } from "src/core/config";
+import { defaultMaxOptionsShown, IUIConfig } from "src/core/config";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   FilterSelectComponent,
@@ -68,12 +68,18 @@ export const GroupSelect: React.FC<
 
   const { configuration } = useConfigurationContext();
   const intl = useIntl();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideGroups = Boolean(ui?.hideGroups);
   const maxOptionsShown =
     configuration?.ui.maxOptionsShown ?? defaultMaxOptionsShown;
   const defaultCreatable =
     !configuration?.interface.disableDropdownCreate.movie;
 
   const exclude = useMemo(() => props.excludeIds ?? [], [props.excludeIds]);
+
+  if (hideGroups) {
+    return null;
+  }
 
   async function loadGroups(input: string): Promise<Option[]> {
     let filter = new ListFilterModel(GQL.FilterMode.Groups);

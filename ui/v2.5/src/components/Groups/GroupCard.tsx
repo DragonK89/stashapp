@@ -1,4 +1,6 @@
 import React, { useMemo } from "react";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { Button, ButtonGroup } from "react-bootstrap";
 import * as GQL from "src/core/generated-graphql";
 import { GridCard } from "../Shared/GridCard/GridCard";
@@ -58,6 +60,10 @@ export const GroupCard: React.FC<IProps> = ({
   fromGroupId,
   onMove,
 }) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+
   const groupDescription = useMemo(() => {
     if (!fromGroupId) {
       return undefined;
@@ -92,7 +98,7 @@ export const GroupCard: React.FC<IProps> = ({
   }
 
   function maybeRenderTagPopoverButton() {
-    if (group.tags.length <= 0) return;
+    if (group.tags.length <= 0 || hideTags) return;
 
     const popoverContent = group.tags.map((tag) => (
       <TagLink key={tag.id} linkType="group" tag={tag} />
@@ -119,7 +125,7 @@ export const GroupCard: React.FC<IProps> = ({
       sceneNumber ||
       groupDescription ||
       group.scenes.length > 0 ||
-      group.tags.length > 0 ||
+      (group.tags.length > 0 && !hideTags) ||
       group.containing_groups.length > 0 ||
       group.sub_group_count > 0
     ) {

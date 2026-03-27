@@ -19,6 +19,7 @@ type JSONPaths struct {
 	Studios      string
 	Tags         string
 	Groups       string
+	Labels       string
 	Files        string
 	SavedFilters string
 }
@@ -34,6 +35,7 @@ func newJSONPaths(baseDir string) *JSONPaths {
 	jp.Studios = filepath.Join(baseDir, "studios")
 	jp.Groups = filepath.Join(baseDir, "movies")
 	jp.Tags = filepath.Join(baseDir, "tags")
+	jp.Labels = filepath.Join(baseDir, "labels")
 	jp.Files = filepath.Join(baseDir, "files")
 	jp.SavedFilters = filepath.Join(baseDir, "saved_filters")
 	return &jp
@@ -53,6 +55,7 @@ func EmptyJSONDirs(baseDir string) {
 	_ = fsutil.EmptyDir(jsonPaths.Studios)
 	_ = fsutil.EmptyDir(jsonPaths.Groups)
 	_ = fsutil.EmptyDir(jsonPaths.Tags)
+	_ = fsutil.EmptyDir(jsonPaths.Labels)
 	_ = fsutil.EmptyDir(jsonPaths.Files)
 	_ = fsutil.EmptyDir(jsonPaths.SavedFilters)
 }
@@ -82,6 +85,9 @@ func EnsureJSONDirs(baseDir string) {
 	}
 	if err := fsutil.EnsureDir(jsonPaths.Tags); err != nil {
 		logger.Warnf("couldn't create directories for Tags: %v", err)
+	}
+	if err := fsutil.EnsureDir(jsonPaths.Labels); err != nil {
+		logger.Warnf("couldn't create directories for Labels: %v", err)
 	}
 	if err := fsutil.EnsureDir(jsonPaths.Files); err != nil {
 		logger.Warnf("couldn't create directories for Files: %v", err)

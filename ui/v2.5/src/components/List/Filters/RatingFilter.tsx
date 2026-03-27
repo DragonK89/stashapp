@@ -186,6 +186,7 @@ export const SidebarRatingFilter: React.FC<ISidebarFilter> = ({
         precision={
           ratingSystemOptions.starPrecision ?? defaultRatingStarPrecision
         }
+        ratingSystemType={ratingSystemOptions.type}
         orMore
       />
     </div>

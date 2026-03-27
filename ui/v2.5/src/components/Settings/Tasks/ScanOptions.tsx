@@ -12,6 +12,9 @@ export const ScanOptions: React.FC<IScanOptions> = ({
   setOptions: setOptionsState,
 }) => {
   const {
+    scanTorrents,
+    scanTorrentsNormalizeTitle,
+    scanTorrentsRenameFile,
     scanGenerateCovers,
     scanGeneratePreviews,
     scanGenerateImagePreviews,
@@ -28,6 +31,47 @@ export const ScanOptions: React.FC<IScanOptions> = ({
 
   return (
     <>
+      <BooleanSetting
+        id="scan-torrents"
+        headingID="config.tasks.scan_torrents"
+        tooltipID="config.tasks.scan_torrents_tooltip"
+        checked={scanTorrents ?? false}
+        onChange={(v) =>
+          setOptions({
+            scanTorrents: v,
+          })
+        }
+      />
+      <BooleanSetting
+        advanced
+        id="scan-torrents-normalize-title"
+        className="sub-setting"
+        headingID="config.tasks.scan_torrents_normalize_title"
+        tooltipID="config.tasks.scan_torrents_normalize_title_tooltip"
+        checked={scanTorrentsNormalizeTitle ?? false}
+        disabled={!scanTorrents}
+        onChange={(v) =>
+          setOptions({
+            scanTorrentsNormalizeTitle: v,
+            // can't rename unless we're normalizing
+            scanTorrentsRenameFile: v ? scanTorrentsRenameFile : false,
+          })
+        }
+      />
+      <BooleanSetting
+        advanced
+        id="scan-torrents-rename-file"
+        className="sub-setting"
+        headingID="config.tasks.scan_torrents_rename_file"
+        tooltipID="config.tasks.scan_torrents_rename_file_tooltip"
+        checked={scanTorrentsRenameFile ?? false}
+        disabled={!scanTorrents || !scanTorrentsNormalizeTitle}
+        onChange={(v) =>
+          setOptions({
+            scanTorrentsRenameFile: v,
+          })
+        }
+      />
       <BooleanSetting
         id="scan-generate-covers"
         headingID="config.tasks.generate_video_covers_during_scan"

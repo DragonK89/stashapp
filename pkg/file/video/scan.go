@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/stashapp/stash/pkg/ffmpeg"
 	"github.com/stashapp/stash/pkg/file"
@@ -16,11 +18,34 @@ type Decorator struct {
 }
 
 func (d *Decorator) Decorate(ctx context.Context, fs models.FS, f models.File) (models.File, error) {
+	base := f.Base()
+
+	// `.torrent` files are treated as scan-able "video-like placeholders" so they can be
+	// associated with Scenes, but they must not invoke ffprobe.
+	if strings.EqualFold(filepath.Ext(base.Path), ".torrent") {
+		const (
+			unsetString = "unset"
+			unsetNumber = -1
+		)
+
+		return &models.VideoFile{
+			BaseFile:    base,
+			Format:      unsetString,
+			VideoCodec:  unsetString,
+			AudioCodec:  unsetString,
+			Width:       unsetNumber,
+			Height:      unsetNumber,
+			Duration:    float64(unsetNumber),
+			FrameRate:   float64(unsetNumber),
+			BitRate:     int64(unsetNumber),
+			Interactive: false,
+		}, nil
+	}
+
 	if d.FFProbe == nil {
 		return f, errors.New("ffprobe not configured")
 	}
 
-	base := f.Base()
 	// TODO - copy to temp file if not an OsFS
 	if _, isOs := fs.(*file.OsFS); !isOs {
 		return f, fmt.Errorf("video.constructFile: only OsFS is supported")

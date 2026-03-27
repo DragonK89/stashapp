@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useRef,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link, RouteComponentProps } from "react-router-dom";
@@ -33,6 +34,7 @@ import Mousetrap from "mousetrap";
 import { OrganizedButton } from "./OrganizedButton";
 import { useConfigurationContext } from "src/hooks/Config";
 import { getPlayerPosition } from "src/components/ScenePlayer/util";
+import { useIsMounted } from "src/hooks/state";
 import {
   faEllipsisV,
   faChevronRight,
@@ -52,6 +54,7 @@ import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { PatchComponent, PatchContainerComponent } from "src/patch";
 import { goBackOrReplace } from "src/utils/history";
 import { FormattedDate } from "src/components/Shared/Date";
+import { IUIConfig } from "src/core/config";
 
 const SubmitStashBoxDraft = lazyComponent(
   () => import("src/components/Dialogs/SubmitDraft")
@@ -183,8 +186,14 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const Toast = useToast();
   const intl = useIntl();
   const [updateScene] = useSceneUpdate();
+  const isMounted = useIsMounted();
   const [generateScreenshot] = useSceneGenerateScreenshot();
   const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideGroups = Boolean(ui?.hideGroups);
+  const hideMarkers = Boolean(ui?.hideMarkers);
+  const hideQueue = Boolean(ui?.hideQueue);
+  const hideSceneFilters = Boolean(ui?.hideSceneFilters);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const boxes = configuration?.general?.stashBoxes ?? [];
@@ -203,18 +212,36 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
 
   const [organizedLoading, setOrganizedLoading] = useState(false);
 
+  const isTorrentScene = useMemo(() => {
+    const primaryPath = scene.files?.[0]?.path ?? "";
+    return primaryPath.toLowerCase().endsWith(".torrent");
+  }, [scene.files]);
+
   const [activeTabKey, setActiveTabKey] = useState("scene-details-panel");
 
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
-  const onIncrementOClick = async () => {
+  const onIncrementOClick = useCallback(async () => {
     try {
       await incrementO();
     } catch (e) {
       Toast.error(e);
     }
-  };
+  }, [Toast, incrementO]);
+
+  const onGenerateScreenshot = useCallback(
+    async (at?: number) => {
+      await generateScreenshot({
+        variables: {
+          id: scene.id,
+          at,
+        },
+      });
+      Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
+    },
+    [Toast, generateScreenshot, intl, scene.id]
+  );
 
   function setRating(v: number | null) {
     updateScene({
@@ -236,17 +263,23 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   // set up hotkeys
   useEffect(() => {
     Mousetrap.bind("a", () => setActiveTabKey("scene-details-panel"));
-    Mousetrap.bind("q", () => setActiveTabKey("scene-queue-panel"));
+    if (!hideQueue) {
+      Mousetrap.bind("q", () => setActiveTabKey("scene-queue-panel"));
+    }
     Mousetrap.bind("e", () => setActiveTabKey("scene-edit-panel"));
-    Mousetrap.bind("k", () => setActiveTabKey("scene-markers-panel"));
+    if (!hideMarkers) {
+      Mousetrap.bind("k", () => setActiveTabKey("scene-markers-panel"));
+    }
     Mousetrap.bind("i", () => setActiveTabKey("scene-file-info-panel"));
     Mousetrap.bind("h", () => setActiveTabKey("scene-history-panel"));
     Mousetrap.bind("o", () => {
       onIncrementOClick();
     });
-    Mousetrap.bind("p n", () => onQueueNext());
-    Mousetrap.bind("p p", () => onQueuePrevious());
-    Mousetrap.bind("p r", () => onQueueRandom());
+    if (!hideQueue) {
+      Mousetrap.bind("p n", () => onQueueNext());
+      Mousetrap.bind("p p", () => onQueuePrevious());
+      Mousetrap.bind("p r", () => onQueueRandom());
+    }
     Mousetrap.bind(",", () => setCollapsed(!collapsed));
     Mousetrap.bind("c c", () => {
       onGenerateScreenshot(getPlayerPosition());
@@ -270,7 +303,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       Mousetrap.unbind("c c");
       Mousetrap.unbind("c d");
     };
-  });
+  }, [collapsed, hideMarkers, hideQueue, onGenerateScreenshot, onIncrementOClick, onQueueNext, onQueuePrevious, onQueueRandom, setCollapsed]);
 
   async function onSave(input: GQL.SceneCreateInput) {
     await updateScene({
@@ -303,7 +336,9 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     } catch (e) {
       Toast.error(e);
     } finally {
-      setOrganizedLoading(false);
+      if (isMounted.current) {
+        setOrganizedLoading(false);
+      }
     }
   };
 
@@ -328,16 +363,6 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
         }
       )
     );
-  }
-
-  async function onGenerateScreenshot(at?: number) {
-    await generateScreenshot({
-      variables: {
-        id: scene.id,
-        at,
-      },
-    });
-    Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
   }
 
   function onDeleteDialogClosed(deleted: boolean) {
@@ -447,20 +472,26 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
               </Nav.Link>
             </Nav.Item>
             {queueScenes.length > 0 ? (
-              <Nav.Item>
-                <Nav.Link eventKey="scene-queue-panel">
-                  <FormattedMessage id="queue" />
-                </Nav.Link>
-              </Nav.Item>
+              !hideQueue ? (
+                <Nav.Item>
+                  <Nav.Link eventKey="scene-queue-panel">
+                    <FormattedMessage id="queue" />
+                  </Nav.Link>
+                </Nav.Item>
+              ) : (
+                ""
+              )
             ) : (
               ""
             )}
-            <Nav.Item>
-              <Nav.Link eventKey="scene-markers-panel">
-                <FormattedMessage id="markers" />
-              </Nav.Link>
-            </Nav.Item>
-            {scene.groups.length > 0 ? (
+            {!hideMarkers && (
+              <Nav.Item>
+                <Nav.Link eventKey="scene-markers-panel">
+                  <FormattedMessage id="markers" />
+                </Nav.Link>
+              </Nav.Item>
+            )}
+            {!hideGroups && scene.groups.length > 0 ? (
               <Nav.Item>
                 <Nav.Link eventKey="scene-group-panel">
                   <FormattedMessage
@@ -482,11 +513,13 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
                 </Nav.Link>
               </Nav.Item>
             ) : undefined}
-            <Nav.Item>
-              <Nav.Link eventKey="scene-video-filter-panel">
-                <FormattedMessage id="effect_filters.name" />
-              </Nav.Link>
-            </Nav.Item>
+            {!hideSceneFilters && (
+              <Nav.Item>
+                <Nav.Link eventKey="scene-video-filter-panel">
+                  <FormattedMessage id="effect_filters.name" />
+                </Nav.Link>
+              </Nav.Item>
+            )}
             <Nav.Item>
               <Nav.Link eventKey="scene-file-info-panel">
                 <FormattedMessage id="file_info" />
@@ -512,32 +545,41 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
           <Tab.Pane eventKey="scene-details-panel">
             <SceneDetailPanel scene={scene} />
           </Tab.Pane>
-          <Tab.Pane eventKey="scene-queue-panel">
-            <QueueViewer
-              scenes={queueScenes}
-              currentID={scene.id}
-              continue={continuePlaylist}
-              setContinue={setContinuePlaylist}
-              onSceneClicked={onQueueSceneClicked}
-              onNext={onQueueNext}
-              onPrevious={onQueuePrevious}
-              onRandom={onQueueRandom}
-              start={queueStart}
-              hasMoreScenes={queueHasMoreScenes}
-              onLessScenes={onQueueLessScenes}
-              onMoreScenes={onQueueMoreScenes}
-            />
-          </Tab.Pane>
-          <Tab.Pane eventKey="scene-markers-panel">
-            <SceneMarkersPanel
-              sceneId={scene.id}
-              onClickMarker={onClickMarker}
-              isVisible={activeTabKey === "scene-markers-panel"}
-            />
-          </Tab.Pane>
-          <Tab.Pane eventKey="scene-group-panel">
-            <SceneGroupPanel scene={scene} />
-          </Tab.Pane>
+          {!hideQueue && (
+            <Tab.Pane eventKey="scene-queue-panel">
+              <QueueViewer
+                scenes={queueScenes}
+                currentID={scene.id}
+                continue={continuePlaylist}
+                setContinue={setContinuePlaylist}
+                onSceneClicked={onQueueSceneClicked}
+                onNext={onQueueNext}
+                onPrevious={onQueuePrevious}
+                onRandom={onQueueRandom}
+                start={queueStart}
+                hasMoreScenes={queueHasMoreScenes}
+                onLessScenes={onQueueLessScenes}
+                onMoreScenes={onQueueMoreScenes}
+              />
+            </Tab.Pane>
+          )}
+          {!hideMarkers && (
+            <Tab.Pane eventKey="scene-markers-panel">
+              <SceneMarkersPanel
+                sceneId={scene.id}
+                onClickMarker={onClickMarker}
+                isVisible={activeTabKey === "scene-markers-panel"}
+                studioId={scene.studio?.id ?? undefined}
+                studioName={scene.studio?.name ?? undefined}
+                labelId={(scene as any).label?.id ?? undefined}
+              />
+            </Tab.Pane>
+          )}
+          {!hideGroups && (
+            <Tab.Pane eventKey="scene-group-panel">
+              <SceneGroupPanel scene={scene} />
+            </Tab.Pane>
+          )}
           {scene.galleries.length >= 1 && (
             <Tab.Pane eventKey="scene-galleries-panel">
               <SceneGalleriesPanel galleries={scene.galleries} />
@@ -546,9 +588,11 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
               )}
             </Tab.Pane>
           )}
-          <Tab.Pane eventKey="scene-video-filter-panel">
-            <SceneVideoFilterPanel scene={scene} />
-          </Tab.Pane>
+          {!hideSceneFilters && (
+            <Tab.Pane eventKey="scene-video-filter-panel">
+              <SceneVideoFilterPanel scene={scene} />
+            </Tab.Pane>
+          )}
           <Tab.Pane
             className="file-info-panel"
             eventKey="scene-file-info-panel"
@@ -634,7 +678,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
             </span>
             <span className="scene-toolbar-group">
               <span>
-                <ExternalPlayerButton scene={scene} />
+                {!isTorrentScene && <ExternalPlayerButton scene={scene} />}
               </span>
               <span>
                 <ViewCountButton
@@ -959,18 +1003,27 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
         setContinuePlaylist={setContinuePlaylist}
       />
       <div className={`scene-player-container ${collapsed ? "expanded" : ""}`}>
-        <ScenePlayer
-          key="ScenePlayer"
-          scene={scene}
-          hideScrubberOverride={hideScrubber}
-          autoplay={autoplay}
-          permitLoop={!continuePlaylist}
-          initialTimestamp={initialTimestamp}
-          sendSetTimestamp={getSetTimestamp}
-          onComplete={onComplete}
-          onNext={() => queueNext(true)}
-          onPrevious={() => queuePrevious(true)}
-        />
+        {scene.files?.[0]?.path?.toLowerCase().endsWith(".torrent") ? (
+          <div className="p-4 text-center">
+            <FormattedMessage
+              id="errors.cannot_play_torrent"
+              defaultMessage=".torrent files are not playable"
+            />
+          </div>
+        ) : (
+          <ScenePlayer
+            key="ScenePlayer"
+            scene={scene}
+            hideScrubberOverride={hideScrubber}
+            autoplay={autoplay}
+            permitLoop={!continuePlaylist}
+            initialTimestamp={initialTimestamp}
+            sendSetTimestamp={getSetTimestamp}
+            onComplete={onComplete}
+            onNext={() => queueNext(true)}
+            onPrevious={() => queuePrevious(true)}
+          />
+        )}
       </div>
     </div>
   );

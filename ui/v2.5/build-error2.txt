@@ -1,0 +1,256 @@
+﻿
+> build
+> vite build
+
+node.exe : [baseline-browser-mapping] The data in 
+this module is over two months old.  To ensure 
+accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+At C:\Program Files\nodejs\npm.ps1:29 char:3
++   & $NODE_EXE $NPM_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([bas 
+   eline-brows...ping@latest -D`:String) [], Rem  
+  oteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[36mvite v5.4.21 [32mbuilding for production...[36m[39m
+transforming...
+DEPRECATION WARNING [color-functions]: lighten() 
+is deprecated. Suggestions:
+
+color.scale($color, $lightness: 9.7081218274%)
+color.adjust($color, $lightness: 7.5%)
+
+More info: https://sass-lang.com/d/color-functions
+
+    Γò╖
+374 Γöé $table-dark-border-color:     
+lighten($table-dark-bg, 7.5%) !default;
+    Γöé                               
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_va
+riables.scss 374:31  @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 9:9      @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                     @import
+    src\index.scss 10:9                           
+                                                  
+                     root stylesheet
+
+DEPRECATION WARNING [color-functions]: lighten() 
+is deprecated. Suggestions:
+
+color.scale($color, $lightness: 42.2185430464%)
+color.adjust($color, $lightness: 25%)
+
+More info: https://sass-lang.com/d/color-functions
+
+    Γò╖
+487 Γöé $input-focus-border-color:              
+lighten($component-active-bg, 25%) !default;
+    Γöé                                         
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_va
+riables.scss 487:41  @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 9:9      @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                     @import
+    src\index.scss 10:9                           
+                                                  
+                     root stylesheet
+
+DEPRECATION WARNING [color-functions]: lighten() 
+is deprecated. Suggestions:
+
+color.scale($color, $lightness: 59.1059602649%)
+color.adjust($color, $lightness: 35%)
+
+More info: https://sass-lang.com/d/color-functions
+
+    Γò╖
+552 Γöé $custom-control-indicator-active-bg:      
+      lighten($component-active-bg, 35%) !default;
+    Γöé                                           
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_va
+riables.scss 552:49  @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 9:9      @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                     @import
+    src\index.scss 10:9                           
+                                                  
+                     root stylesheet
+
+DEPRECATION WARNING [color-functions]: lighten() 
+is deprecated. Suggestions:
+
+color.scale($color, $lightness: 59.1059602649%)
+color.adjust($color, $lightness: 35%)
+
+More info: https://sass-lang.com/d/color-functions
+
+    Γò╖
+627 Γöé $custom-range-thumb-active-bg:            
+   lighten($component-active-bg, 35%) !default;
+    Γöé                                           
+   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_va
+riables.scss 627:46  @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 9:9      @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                     @import
+    src\index.scss 10:9                           
+                                                  
+                     root stylesheet
+
+DEPRECATION WARNING [color-functions]: darken() 
+is deprecated. Suggestions:
+
+color.scale($color, $lightness: -34.4594594595%)
+color.adjust($color, $lightness: -5%)
+
+More info: https://sass-lang.com/d/color-functions
+
+    Γò╖
+777 Γöé $dropdown-link-hover-color:         
+darken($gray-900, 5%) !default;
+    Γöé                                     
+^^^^^^^^^^^^^^^^^^^^^
+    Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_va
+riables.scss 777:37  @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 9:9      @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                     @import
+    src\index.scss 10:9                           
+                                                  
+                     root stylesheet
+
+DEPRECATION WARNING [abs-percent]: Passing 
+percentage units to the global abs() function is 
+deprecated.
+In the future, this will emit a CSS abs() 
+function to be resolved by the browser.
+To preserve current behavior: math.abs(100%)
+To emit a CSS abs() now: abs(#{100%})
+More info: https://sass-lang.com/d/abs-percent
+
+   Γò╖
+54 Γöé   $dividend: abs($dividend);
+   Γöé              ^^^^^^^^^^^^^^
+   Γò╡
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\ven
+dor\_rfs.scss 54:14             divide()
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\mix
+ins\_grid.scss 66:15            row-cols()
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\mix
+ins\_grid-framework.scss 43:13  @content
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\mix
+ins\_breakpoints.scss 65:5      
+media-breakpoint-up()
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\mix
+ins\_grid-framework.scss 32:5   
+make-grid-columns()
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\_gr
+id.scss 72:3                    @import
+    node_modules\.pnpm\bootstrap@4.6.2_jquery@3.7.
+1_popper.js@1.16.1\node_modules\bootstrap\scss\boo
+tstrap.scss 16:9                @import
+    src\styles\_theme.scss 31:9                   
+                                                  
+                                @import
+    src\index.scss 10:9                           
+                                                  
+                                root stylesheet
+
+[32mΓ£ô[39m 3311 modules transformed.
+
+Γ£¿ [vite-plugin-compression]:algorithm=gzip - compressed file successfully: 
+
+
+[31mx[39m Build failed in 9.23s
+[31merror during build:
+[31m[vite:css] [sass] Can't find stylesheet to 
+import.
+   Γò╖
+14 Γöé @import 
+"src/components/Changelog/styles.scss";
+   Γöé         
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   Γò╡
+  src\index.scss 14:9  root stylesheet[31m
+file: [36mD:/Data/stash-0.30.1/stashapp/ui/v2.5/s
+rc/index.scss[31m
+Error: Can't find stylesheet to import.
+   Γò╖
+14 Γöé @import 
+"src/components/Changelog/styles.scss";
+   Γöé         
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   Γò╡
+  src\index.scss 14:9  root stylesheet
+    at Object.wrapException (D:\Data\stash-0.30.1\
+stashapp\ui\v2.5\node_modules\.pnpm\sass@1.93.2\no
+de_modules\sass\sass.dart.js:2292:47)
+    at D:\Data\stash-0.30.1\stashapp\ui\v2.5\node_
+modules\.pnpm\sass@1.93.2\node_modules\sass\sass.d
+art.js:87606:25
+    at _wrapJsFunctionForAsync_closure.$protected 
+(D:\Data\stash-0.30.1\stashapp\ui\v2.5\node_module
+s\.pnpm\sass@1.93.2\node_modules\sass\sass.dart.js
+:4960:15)
+    at _wrapJsFunctionForAsync_closure.call$2 (D:\
+Data\stash-0.30.1\stashapp\ui\v2.5\node_modules\.p
+npm\sass@1.93.2\node_modules\sass\sass.dart.js:379
+68:12)
+    at _awaitOnObject_closure.call$1 (D:\Data\stas
+h-0.30.1\stashapp\ui\v2.5\node_modules\.pnpm\sass@
+1.93.2\node_modules\sass\sass.dart.js:37956:32)
+    at Object._rootRunUnary (D:\Data\stash-0.30.1\
+stashapp\ui\v2.5\node_modules\.pnpm\sass@1.93.2\no
+de_modules\sass\sass.dart.js:5378:18)
+    at StaticClosure.<anonymous> (D:\Data\stash-0.
+30.1\stashapp\ui\v2.5\node_modules\.pnpm\sass@1.93
+.2\node_modules\sass\sass.dart.js:124712:16)
+    at _CustomZone.runUnary$2$2 (D:\Data\stash-0.3
+0.1\stashapp\ui\v2.5\node_modules\.pnpm\sass@1.93.
+2\node_modules\sass\sass.dart.js:39399:39)
+    at _Future__propagateToListeners_handleValueCa
+llback.call$0 (D:\Data\stash-0.30.1\stashapp\ui\v2
+.5\node_modules\.pnpm\sass@1.93.2\node_modules\sas
+s\sass.dart.js:38457:51)
+    at Object._Future__propagateToListeners (D:\Da
+ta\stash-0.30.1\stashapp\ui\v2.5\node_modules\.pnp
+m\sass@1.93.2\node_modules\sass\sass.dart.js:5170:
+93)[39m

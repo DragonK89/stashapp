@@ -25,7 +25,7 @@ import {
   faTimes,
   faThumbtack,
 } from "@fortawesome/free-solid-svg-icons";
-import { useCompare, usePrevious } from "src/hooks/state";
+import { useCompare, useIsMounted, usePrevious } from "src/hooks/state";
 import { CriterionType } from "src/models/list-filter/types";
 import { useToast } from "src/hooks/Toast";
 import { useConfigureUI, useSaveFilter } from "src/core/StashService";
@@ -214,6 +214,7 @@ const FilterModeToConfigKey = {
   [FilterMode.SceneMarkers]: "sceneMarkers",
   [FilterMode.Scenes]: "scenes",
   [FilterMode.Studios]: "studios",
+  [FilterMode.Labels]: "labels",
   [FilterMode.Tags]: "tags",
 };
 
@@ -250,6 +251,7 @@ export const EditFilterDialog: React.FC<IEditFilterProps> = ({
 
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [savingFilter, setSavingFilter] = useState(false);
+  const isMounted = useIsMounted();
 
   const [showLoadDialog, setShowLoadDialog] = useState(false);
 
@@ -497,7 +499,9 @@ export const EditFilterDialog: React.FC<IEditFilterProps> = ({
     } catch (err) {
       Toast.error(err);
     } finally {
-      setSavingFilter(false);
+      if (isMounted.current) {
+        setSavingFilter(false);
+      }
     }
   }
 

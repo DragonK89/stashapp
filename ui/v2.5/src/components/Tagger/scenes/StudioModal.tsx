@@ -15,6 +15,8 @@ import {
 import { Button, Form } from "react-bootstrap";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { excludeFields } from "src/utils/data";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 
 interface IStudioDetailsProps {
@@ -32,6 +34,9 @@ const StudioDetails: React.FC<IStudioDetailsProps> = ({
   toggleField,
   isNew = false,
 }) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
   function maybeRenderImage() {
     if (!studio.image) return;
 
@@ -144,7 +149,8 @@ const StudioDetails: React.FC<IStudioDetailsProps> = ({
           {maybeRenderURLListField("urls", studio.urls)}
           {maybeRenderField("details", studio.details)}
           {maybeRenderField("aliases", studio.aliases)}
-          {maybeRenderField("tags", studio.tags?.map((t) => t.name).join(", "))}
+          {!hideTags &&
+            maybeRenderField("tags", studio.tags?.map((t) => t.name).join(", "))}
           {maybeRenderField("parent_studio", studio.parent?.name, false)}
           {maybeRenderStashBoxLink()}
         </div>

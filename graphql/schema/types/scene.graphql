@@ -73,6 +73,7 @@ type Scene {
   scene_markers: [SceneMarker!]!
   galleries: [Gallery!]!
   studio: Studio
+  label: Label
   groups: [SceneGroup!]!
   movies: [SceneMovie!]! @deprecated(reason: "Use groups")
   tags: [Tag!]!
@@ -105,6 +106,7 @@ input SceneCreateInput {
   rating100: Int
   organized: Boolean
   studio_id: ID
+  label_id: ID
   gallery_ids: [ID!]
   performer_ids: [ID!]
   groups: [SceneGroupInput!]
@@ -138,6 +140,7 @@ input SceneUpdateInput {
     @deprecated(reason: "Unsupported - Use sceneIncrementO/sceneDecrementO")
   organized: Boolean
   studio_id: ID
+  label_id: ID
   gallery_ids: [ID!]
   performer_ids: [ID!]
   groups: [SceneGroupInput!]
@@ -185,6 +188,7 @@ input BulkSceneUpdateInput {
   rating100: Int
   organized: Boolean
   studio_id: ID
+  label_id: ID
   gallery_ids: BulkUpdateIds
   performer_ids: BulkUpdateIds
   tag_ids: BulkUpdateIds

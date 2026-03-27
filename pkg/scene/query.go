@@ -156,3 +156,14 @@ func CountByGroupID(ctx context.Context, r models.SceneQueryer, id int, depth *i
 
 	return r.QueryCount(ctx, filter, nil)
 }
+func CountByLabelID(ctx context.Context, r models.SceneQueryer, id int, depth *int) (int, error) {
+	filter := &models.SceneFilterType{
+		Labels: &models.HierarchicalMultiCriterionInput{
+			Value:    []string{strconv.Itoa(id)},
+			Modifier: models.CriterionModifierIncludes,
+			Depth:    depth,
+		},
+	}
+
+	return r.QueryCount(ctx, filter, nil)
+}

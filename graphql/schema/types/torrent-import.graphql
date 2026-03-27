@@ -1,0 +1,35 @@
+"""
+Import torrent scenes from a server-side text file.
+
+Each line is either:
+- `name`
+- `name;rating` where rating is 1-10
+"""
+input ImportTorrentScenesInput {
+  "Server-side path to the import text file"
+  path: String!
+
+  "Normalize torrent scene title (strict)"
+  normalizeTitle: Boolean!
+
+  "Use scrapers to populate metadata"
+  useScrapers: Boolean!
+
+  "Scene scraper ID to use (required if useScrapers is true)"
+  scraperID: ID
+
+  "Field options to control how scraped fields are applied"
+  fieldOptions: [IdentifyFieldOptionsInput!]
+}
+
+type ImportTorrentScenesResult {
+  "Number of scenes created"
+  created: Int!
+
+  "Number of input lines skipped/failed"
+  failed: Int!
+
+  "Path to the generated fail import file"
+  failFilePath: String!
+}
+

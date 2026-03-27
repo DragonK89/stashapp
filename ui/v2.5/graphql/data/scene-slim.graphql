@@ -58,6 +58,11 @@ fragment SlimSceneData on Scene {
     image_path
   }
 
+  label {
+    id
+    name
+  }
+
   groups {
     group {
       id

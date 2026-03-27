@@ -1,0 +1,27 @@
+query FindLabels($filter: FindFilterType, $label_filter: LabelFilterType) {
+  findLabels(filter: $filter, label_filter: $label_filter) {
+    count
+    labels {
+      ...LabelData
+    }
+  }
+}
+
+query FindLabel($id: ID!) {
+  findLabel(id: $id) {
+    ...LabelData
+  }
+}
+
+query FindLabelsForSelect(
+  $filter: FindFilterType
+  $label_filter: LabelFilterType
+  $ids: [ID!]
+) {
+  findLabels(filter: $filter, label_filter: $label_filter, ids: $ids) {
+    count
+    labels {
+      ...SelectLabelData
+    }
+  }
+}

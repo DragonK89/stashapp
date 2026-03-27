@@ -15,6 +15,7 @@ import (
 	"github.com/stashapp/stash/pkg/gallery"
 	"github.com/stashapp/stash/pkg/group"
 	"github.com/stashapp/stash/pkg/image"
+	"github.com/stashapp/stash/pkg/label"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/models/jsonschema"
@@ -130,6 +131,7 @@ func (t *ImportTask) Start(ctx context.Context) {
 	t.ImportPerformers(ctx)
 	t.ImportStudios(ctx)
 	t.ImportGroups(ctx)
+	t.ImportLabels(ctx)
 	t.ImportFiles(ctx)
 	t.ImportGalleries(ctx)
 
@@ -835,4 +837,94 @@ func (t *ImportTask) importSavedFilter(ctx context.Context, savedFilterJSON *jso
 	}
 
 	return nil
+}
+
+func (t *ImportTask) ImportLabels(ctx context.Context) {
+	logger.Info("[labels] importing")
+
+	path := t.json.json.Labels
+	files, err := os.ReadDir(path)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			logger.Errorf("[labels] failed to read labels directory: %v", err)
+		}
+
+		return
+	}
+
+	r := t.repository
+
+	for i, fi := range files {
+		index := i + 1
+		labelJSON, err := jsonschema.LoadLabelFile(filepath.Join(path, fi.Name()))
+		if err != nil {
+			logger.Errorf("[labels] failed to read json: %v", err)
+			continue
+		}
+
+		logger.Progressf("[labels] %d of %d", index, len(files))
+
+		if err := r.WithTxn(ctx, func(ctx context.Context) error {
+			return t.importLabel(ctx, labelJSON)
+		}); err != nil {
+			logger.Errorf("[labels] <%s> failed to import: %v", fi.Name(), err)
+			continue
+		}
+	}
+
+	logger.Info("[labels] import complete")
+}
+
+func (t *ImportTask) importLabel(ctx context.Context, labelJSON *jsonschema.Label) error {
+	importer := &label.Importer{
+		ReaderWriter:        labelImporterReaderWriter{t.repository},
+		Input:               *labelJSON,
+		MissingRefBehaviour: t.MissingRefBehaviour,
+	}
+
+	if err := performImport(ctx, importer, t.DuplicateBehaviour); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type labelImporterReaderWriter struct {
+	repository models.Repository
+}
+
+func (r labelImporterReaderWriter) Create(ctx context.Context, newLabel *models.Label) error {
+	return r.repository.Label.Create(ctx, newLabel)
+}
+
+func (r labelImporterReaderWriter) Update(ctx context.Context, updatedLabel *models.Label) error {
+	return r.repository.Label.Update(ctx, updatedLabel)
+}
+
+func (r labelImporterReaderWriter) UpdatePartial(ctx context.Context, updatedLabel models.LabelPartial) (*models.Label, error) {
+	return r.repository.Label.UpdatePartial(ctx, updatedLabel)
+}
+
+func (r labelImporterReaderWriter) UpdateImage(ctx context.Context, labelID int, image []byte) error {
+	return r.repository.Label.UpdateImage(ctx, labelID, image)
+}
+
+func (r labelImporterReaderWriter) FindByName(ctx context.Context, name string, nocase bool) (*models.Label, error) {
+	return r.repository.Label.FindByName(ctx, name, nocase)
+}
+
+func (r labelImporterReaderWriter) FindStudioByName(ctx context.Context, name string) (*models.Studio, error) {
+	return r.repository.Studio.FindByName(ctx, name, false)
+}
+
+func (r labelImporterReaderWriter) FindTagByName(ctx context.Context, name string, nocase bool) (*models.Tag, error) {
+	return r.repository.Tag.FindByName(ctx, name, nocase)
+}
+
+func (r labelImporterReaderWriter) CreateStudio(ctx context.Context, studio *models.Studio) error {
+	return r.repository.Studio.Create(ctx, studio)
+}
+
+func (r labelImporterReaderWriter) CreateTag(ctx context.Context, tag *models.Tag) error {
+	return r.repository.Tag.Create(ctx, tag)
 }

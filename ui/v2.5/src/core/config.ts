@@ -103,6 +103,18 @@ export interface IUIConfig {
   defaultFilters?: DefaultFilters;
 
   taggerConfig?: ITaggerConfig;
+
+  hideTags?: boolean;
+  hideGroups?: boolean;
+  hideMarkers?: boolean;
+  hideLabels?: boolean;
+
+  hideQueue?: boolean;
+  hideSceneFilters?: boolean;
+
+  // Optional global override for the label used for Groups (e.g. "Series").
+  // Empty/undefined means use the default locale string.
+  groupsLabel?: string;
 }
 
 export function getFrontPageContent(

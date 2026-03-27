@@ -9,16 +9,38 @@ export function useRatingKeybinds(
 ) {
   const firstChar = useRef<string | undefined>(undefined);
 
-  const starRatingShortcuts: { [char: string]: number } = {
-    "0": NaN,
-    "1": 20,
-    "2": 40,
-    "3": 60,
-    "4": 80,
-    "5": 100,
-  };
+  function getStarRatingShortcuts(
+    system: RatingSystemType | undefined
+  ): { [char: string]: number } {
+    if (system === RatingSystemType.Stars10) {
+      return {
+        "`": NaN,
+        "1": 10,
+        "2": 20,
+        "3": 30,
+        "4": 40,
+        "5": 50,
+        "6": 60,
+        "7": 70,
+        "8": 80,
+        "9": 90,
+        "0": 100,
+      };
+    }
+
+    return {
+      "`": NaN,
+      "1": 20,
+      "2": 40,
+      "3": 60,
+      "4": 80,
+      "5": 100,
+      "0": NaN,
+    };
+  }
 
   function handleStarRatingKeybinds() {
+    const starRatingShortcuts = getStarRatingShortcuts(ratingSystem);
     for (const key in starRatingShortcuts) {
       Mousetrap.bind(key, () => setRating(starRatingShortcuts[key]));
     }
@@ -71,7 +93,11 @@ export function useRatingKeybinds(
         document.activeElement.blur();
       }
 
-      if (!ratingSystem || ratingSystem === RatingSystemType.Stars) {
+      if (
+        !ratingSystem ||
+        ratingSystem === RatingSystemType.Stars ||
+        ratingSystem === RatingSystemType.Stars10
+      ) {
         return handleStarRatingKeybinds();
       } else {
         return handleDecimalKeybinds();

@@ -27,6 +27,8 @@ fragment StudioData on Studio {
   performer_count_all: performer_count(depth: -1)
   group_count
   group_count_all: group_count(depth: -1)
+  label_count
+  label_count_all: label_count(depth: -1)
   stash_ids {
     stash_id
     endpoint

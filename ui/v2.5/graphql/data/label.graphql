@@ -1,0 +1,35 @@
+fragment LabelData on Label {
+  id
+  name
+  url
+  urls
+  studio {
+    id
+    name
+    image_path
+  }
+  ignore_auto_tag
+  image_path
+  scene_count
+  details
+  rating100
+  favorite
+  aliases
+  tags {
+    ...SlimTagData
+  }
+  o_counter
+}
+
+fragment SelectLabelData on Label {
+  id
+  name
+  aliases
+  details
+  image_path
+
+  studio {
+    id
+    name
+  }
+}

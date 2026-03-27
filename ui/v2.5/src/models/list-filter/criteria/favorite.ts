@@ -35,6 +35,18 @@ export class FavoriteStudioCriterion extends BooleanCriterion {
   }
 }
 
+export const FavoriteLabelCriterionOption = new BooleanCriterionOption(
+  "favourite",
+  "favorite",
+  () => new FavoriteLabelCriterion()
+);
+
+export class FavoriteLabelCriterion extends BooleanCriterion {
+  constructor() {
+    super(FavoriteLabelCriterionOption);
+  }
+}
+
 export const PerformerFavoriteCriterionOption = new BooleanCriterionOption(
   "performer_favorite",
   "performer_favorite",

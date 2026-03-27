@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Col, Form, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
+import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import { useBulkStudioUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
 import { ModalComponent } from "../Shared/Modal";
@@ -31,6 +34,10 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
   const intl = useIntl();
   const Toast = useToast();
 
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+
   const [updateInput, setUpdateInput] = useState<GQL.BulkStudioUpdateInput>({
     ids: props.selected.map((studio) => {
       return studio.id;
@@ -40,6 +47,7 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
   const [tagIds, setTagIds] = useState<GQL.BulkUpdateIds>({
     mode: GQL.BulkUpdateIdMode.Add,
   });
+  const isMounted = useIsMounted();
 
   const [updateStudios] = useBulkStudioUpdate();
 
@@ -84,8 +92,11 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
   function getStudioInput(): GQL.BulkStudioUpdateInput {
     const studioInput: GQL.BulkStudioUpdateInput = {
       ...updateInput,
-      tag_ids: tagIds,
     };
+
+    if (!hideTags) {
+      studioInput.tag_ids = tagIds;
+    }
 
     // we don't have unset functionality for the rating star control
     // so need to determine if we are setting a rating or not
@@ -117,7 +128,9 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   function renderTextField(
@@ -202,23 +215,25 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
             />
           </Form.Group>
 
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            <MultiSet
-              type="tags"
-              disabled={isUpdating}
-              onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
-              onSetMode={(newMode) =>
-                setTagIds((v) => ({ ...v, mode: newMode }))
-              }
-              existingIds={aggregateState.tagIds ?? []}
-              ids={tagIds.ids ?? []}
-              mode={tagIds.mode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+          {!hideTags && (
+            <Form.Group controlId="tags">
+              <Form.Label>
+                <FormattedMessage id="tags" />
+              </Form.Label>
+              <MultiSet
+                type="tags"
+                disabled={isUpdating}
+                onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
+                onSetMode={(newMode) =>
+                  setTagIds((v) => ({ ...v, mode: newMode }))
+                }
+                existingIds={aggregateState.tagIds ?? []}
+                ids={tagIds.ids ?? []}
+                mode={tagIds.mode}
+                menuPortalTarget={document.body}
+              />
+            </Form.Group>
+          )}
 
           {renderTextField(
             "details",

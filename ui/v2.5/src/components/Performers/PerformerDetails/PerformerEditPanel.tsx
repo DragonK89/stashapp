@@ -48,6 +48,7 @@ import {
   yupUniqueStringList,
 } from "src/utils/yup";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useIsMounted } from "src/hooks/state";
 import { CustomFieldsInput } from "src/components/Shared/CustomFields";
 import { cloneDeep } from "@apollo/client/utilities";
 
@@ -94,6 +95,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const Scrapers = useListPerformerScrapers();
   const [queryableScrapers, setQueryableScrapers] = useState<GQL.Scraper[]>([]);
@@ -349,11 +351,15 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   // set up hotkeys

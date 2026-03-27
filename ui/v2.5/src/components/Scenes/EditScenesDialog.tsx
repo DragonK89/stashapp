@@ -10,6 +10,10 @@ import { MultiSet } from "../Shared/MultiSet";
 import { useToast } from "src/hooks/Toast";
 import * as FormUtils from "src/utils/form";
 import { RatingSystem } from "../Shared/Rating/RatingSystem";
+import { LabelIDSelect } from "src/components/Labels/LabelSelect";
+import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import {
   getAggregateInputIDs,
   getAggregateInputValue,
@@ -33,6 +37,13 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
   const Toast = useToast();
   const [rating100, setRating] = useState<number>();
   const [studioId, setStudioId] = useState<string>();
+  const [labelId, setLabelId] = useState<string>();
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+  const hideGroups = ui?.hideGroups ?? false;
+  const hideLabels = ui?.hideLabels ?? false;
+
   const [performerMode, setPerformerMode] =
     React.useState<GQL.BulkUpdateIdMode>(GQL.BulkUpdateIdMode.Add);
   const [performerIds, setPerformerIds] = useState<string[]>();
@@ -48,6 +59,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
   const [groupIds, setGroupIds] = useState<string[]>();
   const [existingGroupIds, setExistingGroupIds] = useState<string[]>();
   const [organized, setOrganized] = useState<boolean | undefined>();
+  const isMounted = useIsMounted();
 
   const [updateScenes] = useBulkSceneUpdate(getSceneInput());
 
@@ -60,6 +72,20 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
     // need to determine what we are actually setting on each scene
     const aggregateRating = getAggregateRating(props.selected);
     const aggregateStudioId = getAggregateStudioId(props.selected);
+    const aggregateLabelId = (() => {
+      let ret: string | undefined = undefined;
+      let first = true;
+      props.selected.forEach((scene) => {
+        const id = scene?.label?.id;
+        if (first) {
+          ret = id;
+          first = false;
+        } else if (ret !== id) {
+          ret = undefined;
+        }
+      });
+      return ret;
+    })();
     const aggregatePerformerIds = getAggregatePerformerIds(props.selected);
     const aggregateTagIds = getAggregateTagIds(props.selected);
     const aggregateGroupIds = getAggregateGroupIds(props.selected);
@@ -72,18 +98,31 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
 
     sceneInput.rating100 = getAggregateInputValue(rating100, aggregateRating);
     sceneInput.studio_id = getAggregateInputValue(studioId, aggregateStudioId);
+    if (!hideLabels) {
+      sceneInput.label_id = getAggregateInputValue(labelId, aggregateLabelId);
+    }
 
     sceneInput.performer_ids = getAggregateInputIDs(
       performerMode,
       performerIds,
       aggregatePerformerIds
     );
-    sceneInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
-    sceneInput.group_ids = getAggregateInputIDs(
-      groupMode,
-      groupIds,
-      aggregateGroupIds
-    );
+
+    if (!hideTags) {
+      sceneInput.tag_ids = getAggregateInputIDs(
+        tagMode,
+        tagIds,
+        aggregateTagIds
+      );
+    }
+
+    if (!hideGroups) {
+      sceneInput.group_ids = getAggregateInputIDs(
+        groupMode,
+        groupIds,
+        aggregateGroupIds
+      );
+    }
 
     if (organized !== undefined) {
       sceneInput.organized = organized;
@@ -106,13 +145,16 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   useEffect(() => {
     const state = props.selected;
     let updateRating: number | undefined;
     let updateStudioID: string | undefined;
+    let updateLabelID: string | undefined;
     let updatePerformerIds: string[] = [];
     let updateTagIds: string[] = [];
     let updateGroupIds: string[] = [];
@@ -122,6 +164,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
     state.forEach((scene: GQL.SlimSceneDataFragment) => {
       const sceneRating = scene.rating100;
       const sceneStudioID = scene?.studio?.id;
+      const sceneLabelID = scene?.label?.id;
       const scenePerformerIDs = (scene.performers ?? [])
         .map((p) => p.id)
         .sort();
@@ -131,6 +174,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
       if (first) {
         updateRating = sceneRating ?? undefined;
         updateStudioID = sceneStudioID;
+        updateLabelID = sceneLabelID;
         updatePerformerIds = scenePerformerIDs;
         updateTagIds = sceneTagIDs;
         updateGroupIds = sceneGroupIDs;
@@ -142,6 +186,9 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
         }
         if (sceneStudioID !== updateStudioID) {
           updateStudioID = undefined;
+        }
+        if (sceneLabelID !== updateLabelID) {
+          updateLabelID = undefined;
         }
         if (!isEqual(scenePerformerIDs, updatePerformerIds)) {
           updatePerformerIds = [];
@@ -160,6 +207,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
 
     setRating(updateRating);
     setStudioId(updateStudioID);
+    setLabelId(updateLabelID);
     setExistingPerformerIds(updatePerformerIds);
     setExistingTagIds(updateTagIds);
     setExistingGroupIds(updateGroupIds);
@@ -284,15 +332,34 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
             })}
             <Col xs={9}>
               <StudioSelect
-                onSelect={(items) =>
-                  setStudioId(items.length > 0 ? items[0]?.id : undefined)
-                }
+                onSelect={(items) => {
+                  setStudioId(items.length > 0 ? items[0]?.id : undefined);
+                  setLabelId(undefined);
+                }}
                 ids={studioId ? [studioId] : []}
                 isDisabled={isUpdating}
                 menuPortalTarget={document.body}
               />
             </Col>
           </Form.Group>
+          {!hideLabels && (
+            <Form.Group controlId="label" as={Row}>
+              {FormUtils.renderLabel({
+                title: intl.formatMessage({ id: "label" }),
+              })}
+              <Col xs={9}>
+                <LabelIDSelect
+                  studioId={studioId}
+                  ids={labelId ? [labelId] : []}
+                  onSelect={(items) =>
+                    setLabelId(items.length > 0 ? items[0]?.id : undefined)
+                  }
+                  isDisabled={isUpdating || !studioId}
+                  menuPortalTarget={document.body}
+                />
+              </Col>
+            </Form.Group>
+          )}
 
           <Form.Group controlId="performers">
             <Form.Label>
@@ -301,25 +368,29 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
             {renderMultiSelect("performers", performerIds)}
           </Form.Group>
 
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            {renderMultiSelect("tags", tagIds)}
-          </Form.Group>
+          {!hideTags && (
+            <Form.Group controlId="tags">
+              <Form.Label>
+                <FormattedMessage id="tags" />
+              </Form.Label>
+              {renderMultiSelect("tags", tagIds)}
+            </Form.Group>
+          )}
 
-          <Form.Group controlId="groups">
-            <Form.Label>
-              <FormattedMessage id="groups" />
-            </Form.Label>
-            {renderMultiSelect("groups", groupIds)}
-          </Form.Group>
+          {!hideGroups && (
+            <Form.Group controlId="groups">
+              <Form.Label>
+                <FormattedMessage id="groups" />
+              </Form.Label>
+              {renderMultiSelect("groups", groupIds)}
+            </Form.Group>
+          )}
 
           <Form.Group controlId="organized">
             <Form.Check
               type="checkbox"
               label={intl.formatMessage({ id: "organized" })}
-              checked={organized}
+              checked={organized ?? false}
               ref={checkboxRef}
               onChange={() => cycleOrganized()}
             />

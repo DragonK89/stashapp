@@ -6,6 +6,7 @@ import { GroupListFilterOptions } from "./groups";
 import { PerformerListFilterOptions } from "./performers";
 import { SceneMarkerListFilterOptions } from "./scene-markers";
 import { SceneListFilterOptions } from "./scenes";
+import { LabelListFilterOptions } from "./labels";
 import { StudioListFilterOptions } from "./studios";
 import { TagListFilterOptions } from "./tags";
 
@@ -26,6 +27,8 @@ export function getFilterOptions(mode: FilterMode): ListFilterOptions {
       return GroupListFilterOptions;
     case FilterMode.Tags:
       return TagListFilterOptions;
+    case FilterMode.Labels:
+      return LabelListFilterOptions;
     case FilterMode.Images:
       return ImageListFilterOptions;
   }

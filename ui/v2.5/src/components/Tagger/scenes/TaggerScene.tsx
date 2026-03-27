@@ -29,6 +29,8 @@ interface ITaggerSceneDetails {
 const TaggerSceneDetails: React.FC<ITaggerSceneDetails> = ({ scene }) => {
   const [open, setOpen] = useState(false);
   const sorted = sortPerformers(scene.performers);
+  const { configuration } = useConfigurationContext();
+  const hideTags = configuration.ui.hideTags ?? false;
 
   return (
     <div className="original-scene-details">
@@ -66,11 +68,13 @@ const TaggerSceneDetails: React.FC<ITaggerSceneDetails> = ({ scene }) => {
                 </div>
               ))}
             </div>
-            <div>
-              {scene.tags.map((tag) => (
-                <TagLink key={tag.id} tag={tag} />
-              ))}
-            </div>
+            {!hideTags && (
+              <div>
+                {scene.tags.map((tag) => (
+                  <TagLink key={tag.id} tag={tag} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </Collapse>

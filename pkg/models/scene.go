@@ -103,6 +103,10 @@ type SceneFilterType struct {
 	PerformersFilter *PerformerFilterType `json:"performers_filter"`
 	// Filter by related studios that meet this criteria
 	StudiosFilter *StudioFilterType `json:"studios_filter"`
+	// Filter to only include scenes with this label
+	Labels *HierarchicalMultiCriterionInput `json:"labels"`
+	// Filter by related labels that meet this criteria
+	LabelsFilter *LabelFilterType `json:"labels_filter"`
 	// Filter by related tags that meet this criteria
 	TagsFilter *TagFilterType `json:"tags_filter"`
 	// Filter by related groups that meet this criteria
@@ -159,6 +163,7 @@ type SceneCreateInput struct {
 	Rating100    *int              `json:"rating100"`
 	Organized    *bool             `json:"organized"`
 	StudioID     *string           `json:"studio_id"`
+	LabelID      *string           `json:"label_id"`
 	GalleryIds   []string          `json:"gallery_ids"`
 	PerformerIds []string          `json:"performer_ids"`
 	Movies       []SceneMovieInput `json:"movies"`
@@ -187,6 +192,7 @@ type SceneUpdateInput struct {
 	OCounter         *int              `json:"o_counter"`
 	Organized        *bool             `json:"organized"`
 	StudioID         *string           `json:"studio_id"`
+	LabelID          *string           `json:"label_id"`
 	GalleryIds       []string          `json:"gallery_ids"`
 	PerformerIds     []string          `json:"performer_ids"`
 	Movies           []SceneMovieInput `json:"movies"`

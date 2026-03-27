@@ -243,6 +243,7 @@ export type InputType =
   | "text"
   | "performers"
   | "studios"
+  | "labels"
   | "tags"
   | "performer_tags"
   | "scenes"

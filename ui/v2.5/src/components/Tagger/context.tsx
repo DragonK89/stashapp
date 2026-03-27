@@ -23,6 +23,7 @@ import { ITaggerSource, SCRAPER_PREFIX, STASH_BOX_PREFIX } from "./constants";
 import { errorToString } from "src/utils";
 import { mergeStudioStashIDs } from "./utils";
 import { useTaggerConfig } from "./config";
+import { useIsMounted } from "src/hooks/state";
 
 export interface ITaggerContextState {
   config: ITaggerConfig;
@@ -124,6 +125,7 @@ export const TaggerContext: React.FC = ({ children }) => {
   const stopping = useRef(false);
 
   const { configuration: stashConfig } = useConfigurationContext();
+  const isMounted = useIsMounted();
   const { config, setConfig } = useTaggerConfig();
 
   const Scrapers = useListSceneScrapers();
@@ -434,8 +436,10 @@ export const TaggerContext: React.FC = ({ children }) => {
     } catch (err) {
       Toast.error(err);
     } finally {
-      setLoading(false);
-      setLoadingMulti(false);
+      if (isMounted.current) {
+        setLoading(false);
+        setLoadingMulti(false);
+      }
     }
   }
 
@@ -472,20 +476,24 @@ export const TaggerContext: React.FC = ({ children }) => {
         // set the scene in the results and mark as resolved
         const newResult = [...searchResults[sceneID].results!];
         newResult[index] = { ...resolvedScene, resolved: true };
-        setSearchResults({
-          ...searchResults,
-          [sceneID]: { ...searchResults[sceneID], results: newResult },
-        });
+        if (isMounted.current) {
+          setSearchResults({
+            ...searchResults,
+            [sceneID]: { ...searchResults[sceneID], results: newResult },
+          });
+        }
       }
     } catch (err) {
       Toast.error(err);
 
       const newResult = [...searchResults[sceneID].results!];
       newResult[index] = { ...newResult[index], resolved: true };
-      setSearchResults({
-        ...searchResults,
-        [sceneID]: { ...searchResults[sceneID], results: newResult },
-      });
+      if (isMounted.current) {
+        setSearchResults({
+          ...searchResults,
+          [sceneID]: { ...searchResults[sceneID], results: newResult },
+        });
+      }
     }
   }
 
@@ -511,7 +519,9 @@ export const TaggerContext: React.FC = ({ children }) => {
     } catch (err) {
       Toast.error(err);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   }
 

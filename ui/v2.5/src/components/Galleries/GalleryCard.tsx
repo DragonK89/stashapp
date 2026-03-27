@@ -12,6 +12,8 @@ import NavUtils from "src/utils/navigation";
 import { RatingBanner } from "../Shared/RatingBanner";
 import { faBox, faPlayCircle, faTag } from "@fortawesome/free-solid-svg-icons";
 import { galleryTitle } from "src/core/galleries";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { StudioOverlay } from "../Shared/GridCard/StudioOverlay";
 import { GalleryPreviewScrubber } from "./GalleryPreviewScrubber";
 import cx from "classnames";
@@ -66,6 +68,9 @@ interface IGalleryCardProps {
 const GalleryCardPopovers = PatchComponent(
   "GalleryCard.Popovers",
   (props: IGalleryCardProps) => {
+    const { configuration } = useConfigurationContext();
+    const ui = configuration?.ui as IUIConfig | undefined;
+    const hideTags = ui?.hideTags ?? false;
     function maybeRenderScenePopoverButton() {
       if (props.gallery.scenes.length === 0) return;
 
@@ -88,7 +93,7 @@ const GalleryCardPopovers = PatchComponent(
     }
 
     function maybeRenderTagPopoverButton() {
-      if (props.gallery.tags.length <= 0) return;
+      if (props.gallery.tags.length <= 0 || hideTags) return;
 
       const popoverContent = props.gallery.tags.map((tag) => (
         <TagLink key={tag.id} tag={tag} linkType="gallery" />
@@ -153,7 +158,7 @@ const GalleryCardPopovers = PatchComponent(
       if (
         props.gallery.scenes.length > 0 ||
         props.gallery.performers.length > 0 ||
-        props.gallery.tags.length > 0 ||
+        (props.gallery.tags.length > 0 && !hideTags) ||
         props.gallery.organized ||
         props.gallery.image_count > 0
       ) {

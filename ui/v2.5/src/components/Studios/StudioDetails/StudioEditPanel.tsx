@@ -19,6 +19,7 @@ import { formikUtils } from "src/utils/form";
 import { yupFormikValidate, yupUniqueAliases } from "src/utils/yup";
 import { Studio, StudioSelect } from "../StudioSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useIsMounted } from "src/hooks/state";
 import { Icon } from "src/components/Shared/Icon";
 import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
 
@@ -50,6 +51,7 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const [parentStudio, setParentStudio] = useState<Studio | null>(null);
 
@@ -136,11 +138,15 @@ export const StudioEditPanel: React.FC<IStudioEditPanel> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   function onImageLoad(imageData: string | null) {

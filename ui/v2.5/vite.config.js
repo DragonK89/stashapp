@@ -1,3 +1,4 @@
+import path from "path";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import legacy from "@vitejs/plugin-legacy";
@@ -30,6 +31,11 @@ export default defineConfig(() => {
 
   return {
     base: "",
+    resolve: {
+      alias: {
+        src: path.resolve(__dirname, "src"),
+      },
+    },
     build: {
       outDir: "build",
       sourcemap: sourcemap,
@@ -44,6 +50,20 @@ export default defineConfig(() => {
     },
     publicDir: "public",
     assetsInclude: ["**/*.md"],
+    css: {
+      preprocessorOptions: {
+        scss: {
+          silenceDeprecations: [
+            "legacy-js-api",
+            "import",
+            "global-builtin",
+            "color-functions",
+            "abs-percent",
+          ],
+          loadPaths: ["node_modules", "."],
+        },
+      },
+    },
     plugins,
   };
 });

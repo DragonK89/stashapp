@@ -1,5 +1,6 @@
 export enum RatingSystemType {
   Stars = "stars",
+  Stars10 = "stars10",
   Decimal = "decimal",
 }
 
@@ -18,6 +19,10 @@ export const ratingSystemIntlMap = new Map<RatingSystemType, string>([
   [
     RatingSystemType.Stars,
     "config.ui.editing.rating_system.type.options.stars",
+  ],
+  [
+    RatingSystemType.Stars10,
+    "config.ui.editing.rating_system.type.options.stars10",
   ],
   [
     RatingSystemType.Decimal,
@@ -53,6 +58,18 @@ export const defaultRatingSystemOptions = {
   type: defaultRatingSystemType,
   starPrecision: defaultRatingStarPrecision,
 };
+
+export function getRatingMaxValue(type: RatingSystemType) {
+  switch (type) {
+    case RatingSystemType.Decimal:
+      return 10;
+    case RatingSystemType.Stars10:
+      return 10;
+    case RatingSystemType.Stars:
+    default:
+      return 5;
+  }
+}
 
 function round(value: number, step: number) {
   let denom = step;
@@ -92,7 +109,7 @@ export function convertToRatingFormat(
     type === RatingSystemType.Decimal
       ? 0.1
       : getRatingPrecision(starPrecision ?? RatingStarPrecision.Full);
-  const maxValue = type === RatingSystemType.Decimal ? 10 : 5;
+  const maxValue = getRatingMaxValue(type);
   const denom = 100 / maxValue;
 
   return round(rating / denom, precision);
@@ -102,10 +119,7 @@ export function convertFromRatingFormat(
   rating: number,
   ratingSystem: RatingSystemType | undefined
 ) {
-  const maxValue =
-    (ratingSystem ?? RatingSystemType.Stars) === RatingSystemType.Decimal
-      ? 10
-      : 5;
+  const maxValue = getRatingMaxValue(ratingSystem ?? RatingSystemType.Stars);
   const factor = 100 / maxValue;
 
   return Math.round(rating * factor);

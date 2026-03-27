@@ -97,6 +97,15 @@ type Query {
     ids: [ID!]
   ): FindStudiosResultType!
 
+  "Find a label by ID"
+  findLabel(id: ID!): Label
+  "A function which queries Label objects"
+  findLabels(
+    label_filter: LabelFilterType
+    filter: FindFilterType
+    ids: [ID!]
+  ): FindLabelsResultType!
+
   "Find a movie by ID"
   findMovie(id: ID!): Movie @deprecated(reason: "Use findGroup instead")
   "A function which queries Movie objects"
@@ -380,6 +389,12 @@ type Mutation {
   studiosDestroy(ids: [ID!]!): Boolean!
   bulkStudioUpdate(input: BulkStudioUpdateInput!): [Studio!]
 
+  labelCreate(input: LabelCreateInput!): Label
+  labelUpdate(input: LabelUpdateInput!): Label
+  labelDestroy(input: LabelDestroyInput!): Boolean!
+  labelsDestroy(ids: [ID!]!): Boolean!
+  bulkLabelUpdate(input: BulkLabelUpdateInput!): [Label!]
+
   movieCreate(input: MovieCreateInput!): Movie
     @deprecated(reason: "Use groupCreate instead")
   movieUpdate(input: MovieUpdateInput!): Movie
@@ -495,6 +510,9 @@ type Mutation {
 
   "Reload scrapers"
   reloadScrapers: Boolean!
+
+  "Import torrent scenes from a server-side file"
+  importTorrentScenesFromFile(input: ImportTorrentScenesInput!): ImportTorrentScenesResult!
 
   """
   Enable/disable plugins - enabledMap is a map of plugin IDs to enabled booleans.

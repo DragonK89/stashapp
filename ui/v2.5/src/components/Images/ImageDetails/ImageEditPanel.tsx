@@ -34,6 +34,8 @@ import {
   excludeFileBasedGalleries,
 } from "src/components/Galleries/GallerySelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
+import { useIsMounted } from "src/hooks/state";
+import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
 import { ScraperMenu } from "src/components/Shared/ScraperMenu";
 
 interface IProps {
@@ -54,6 +56,7 @@ export const ImageEditPanel: React.FC<IProps> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const [galleries, setGalleries] = useState<Gallery[]>([]);
   const [performers, setPerformers] = useState<Performer[]>([]);
@@ -175,11 +178,15 @@ export const ImageEditPanel: React.FC<IProps> = ({
         id: image.id,
         ...input,
       });
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   async function onScrapeClicked(s: GQL.ScraperSourceInput) {

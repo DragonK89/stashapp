@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Form, Col, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
+import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import { useBulkGroupUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
 import { ModalComponent } from "../Shared/Modal";
@@ -72,6 +75,12 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
 ) => {
   const intl = useIntl();
   const Toast = useToast();
+
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+  const hideGroups = ui?.hideGroups ?? false;
+
   const [rating100, setRating] = useState<number | undefined>();
   const [studioId, setStudioId] = useState<string | undefined>();
   const [director, setDirector] = useState<string | undefined>();
@@ -87,6 +96,7 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
   const [containingGroups, setGroups] = useState<IRelatedGroupEntry[]>();
   const [existingContainingGroups, setExistingContainingGroups] =
     useState<IRelatedGroupEntry[]>();
+  const isMounted = useIsMounted();
 
   const [updateGroups] = useBulkGroupUpdate(getGroupInput());
 
@@ -105,13 +115,17 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
 
     groupInput.rating100 = getAggregateInputValue(rating100, aggregateRating);
     groupInput.studio_id = getAggregateInputValue(studioId, aggregateStudioId);
-    groupInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+    if (!hideTags) {
+      groupInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+    }
 
-    groupInput.containing_groups = getAggregateContainingGroupInput(
-      containingGroupsMode,
-      containingGroups,
-      aggregateGroups
-    );
+    if (!hideGroups) {
+      groupInput.containing_groups = getAggregateContainingGroupInput(
+        containingGroupsMode,
+        containingGroups,
+        aggregateGroups
+      );
+    }
 
     return groupInput;
   }
@@ -132,7 +146,9 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   useEffect(() => {
@@ -231,20 +247,22 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
               />
             </Col>
           </Form.Group>
-          <Form.Group controlId="containing-groups">
-            <Form.Label>
-              <FormattedMessage id="containing_groups" />
-            </Form.Label>
-            <ContainingGroupsMultiSet
-              disabled={isUpdating}
-              onUpdate={(v) => setGroups(v)}
-              onSetMode={(newMode) => setGroupMode(newMode)}
-              existingValue={existingContainingGroups ?? []}
-              value={containingGroups ?? []}
-              mode={containingGroupsMode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+          {!hideGroups && (
+            <Form.Group controlId="containing-groups">
+              <Form.Label>
+                <FormattedMessage id="containing_groups" />
+              </Form.Label>
+              <ContainingGroupsMultiSet
+                disabled={isUpdating}
+                onUpdate={(v) => setGroups(v)}
+                onSetMode={(newMode) => setGroupMode(newMode)}
+                existingValue={existingContainingGroups ?? []}
+                value={containingGroups ?? []}
+                mode={containingGroupsMode}
+                menuPortalTarget={document.body}
+              />
+            </Form.Group>
+          )}
           <Form.Group controlId="director">
             <Form.Label>
               <FormattedMessage id="director" />
@@ -257,21 +275,23 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
               placeholder={intl.formatMessage({ id: "director" })}
             />
           </Form.Group>
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            <MultiSet
-              type="tags"
-              disabled={isUpdating}
-              onUpdate={(itemIDs) => setTagIds(itemIDs)}
-              onSetMode={(newMode) => setTagMode(newMode)}
-              existingIds={existingTagIds ?? []}
-              ids={tagIds ?? []}
-              mode={tagMode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+          {!hideTags && (
+            <Form.Group controlId="tags">
+              <Form.Label>
+                <FormattedMessage id="tags" />
+              </Form.Label>
+              <MultiSet
+                type="tags"
+                disabled={isUpdating}
+                onUpdate={(itemIDs) => setTagIds(itemIDs)}
+                onSetMode={(newMode) => setTagMode(newMode)}
+                existingIds={existingTagIds ?? []}
+                ids={tagIds ?? []}
+                mode={tagMode}
+                menuPortalTarget={document.body}
+              />
+            </Form.Group>
+          )}
         </Form>
       </ModalComponent>
     );

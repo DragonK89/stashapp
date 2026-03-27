@@ -27,5 +27,8 @@
         "config": {
             "mark_organized_label": "Mark as Organized on save"
         }
+    },
+    "errors": {
+        "cannot_play_torrent": ".torrent files are not playable"
     }
 }

@@ -46,6 +46,16 @@ export const SettingsToolsPanel: React.FC = () => {
               </Link>
             }
           />
+
+          <Setting
+            heading={
+              <Link to="/importTorrentScenesFromFile">
+                <Button>
+                  <FormattedMessage id="config.tools.import_torrent_scenes_from_file.title" />
+                </Button>
+              </Link>
+            }
+          />
         </SettingsToolsSection>
       </SettingSection>
     </>

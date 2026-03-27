@@ -17,6 +17,7 @@ import (
 	"github.com/stashapp/stash/pkg/gallery"
 	"github.com/stashapp/stash/pkg/group"
 	"github.com/stashapp/stash/pkg/image"
+	"github.com/stashapp/stash/pkg/label"
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/models/json"
@@ -46,6 +47,7 @@ type ExportTask struct {
 	groups     *exportSpec
 	tags       *exportSpec
 	studios    *exportSpec
+	labels     *exportSpec
 	galleries  *exportSpec
 
 	includeDependencies bool
@@ -64,6 +66,7 @@ type ExportObjectsInput struct {
 	Studios             *ExportObjectTypeInput `json:"studios"`
 	Performers          *ExportObjectTypeInput `json:"performers"`
 	Tags                *ExportObjectTypeInput `json:"tags"`
+	Labels              *ExportObjectTypeInput `json:"labels"`
 	Groups              *ExportObjectTypeInput `json:"groups"`
 	Movies              *ExportObjectTypeInput `json:"movies"` // deprecated
 	Galleries           *ExportObjectTypeInput `json:"galleries"`
@@ -114,6 +117,7 @@ func CreateExportTask(a models.HashAlgorithm, input ExportObjectsInput) *ExportT
 		groups:              newExportSpec(groupSpec),
 		tags:                newExportSpec(input.Tags),
 		studios:             newExportSpec(input.Studios),
+		labels:              newExportSpec(input.Labels),
 		galleries:           newExportSpec(input.Galleries),
 		includeDependencies: includeDeps,
 	}
@@ -176,6 +180,7 @@ func (t *ExportTask) Start(ctx context.Context, wg *sync.WaitGroup) {
 		t.ExportGroups(ctx, workerCount)
 		t.ExportPerformers(ctx, workerCount)
 		t.ExportStudios(ctx, workerCount)
+		t.ExportLabels(ctx, workerCount)
 		t.ExportTags(ctx, workerCount)
 		t.ExportSavedFilters(ctx, workerCount)
 
@@ -234,6 +239,7 @@ func (t *ExportTask) zipFiles(w io.Writer) error {
 	walkWarn(t.json.json.Groups, t.zipWalkFunc(u.json.Groups, z))
 	walkWarn(t.json.json.Scenes, t.zipWalkFunc(u.json.Scenes, z))
 	walkWarn(t.json.json.Images, t.zipWalkFunc(u.json.Images, z))
+	walkWarn(t.json.json.Labels, t.zipWalkFunc(u.json.Labels, z))
 
 	return nil
 }
@@ -1018,6 +1024,65 @@ func (t *ExportTask) exportStudio(ctx context.Context, wg *sync.WaitGroup, jobCh
 
 		if err := t.json.saveStudio(fn, newStudioJSON); err != nil {
 			logger.Errorf("[studios] <%s> failed to save json: %v", s.Name, err)
+		}
+	}
+}
+
+func (t *ExportTask) ExportLabels(ctx context.Context, workers int) {
+	var labelsWg sync.WaitGroup
+
+	reader := t.repository.Label
+	var labels []*models.Label
+	var err error
+	all := t.full || (t.labels != nil && t.labels.all)
+	if all {
+		labels, err = reader.All(ctx)
+	} else if t.labels != nil && len(t.labels.IDs) > 0 {
+		labels, err = reader.FindMany(ctx, t.labels.IDs)
+	}
+
+	if err != nil {
+		logger.Errorf("[labels] failed to fetch labels: %v", err)
+	}
+
+	logger.Info("[labels] exporting")
+	startTime := time.Now()
+
+	jobCh := make(chan *models.Label, workers*2)
+
+	for w := 0; w < workers; w++ {
+		labelsWg.Add(1)
+		go t.exportLabel(ctx, &labelsWg, jobCh)
+	}
+
+	for i, l := range labels {
+		index := i + 1
+		logger.Progressf("[labels] %d of %d", index, len(labels))
+		jobCh <- l
+	}
+
+	close(jobCh)
+	labelsWg.Wait()
+
+	logger.Infof("[labels] export complete in %s. %d workers used.", time.Since(startTime), workers)
+}
+
+func (t *ExportTask) exportLabel(ctx context.Context, wg *sync.WaitGroup, jobChan <-chan *models.Label) {
+	defer wg.Done()
+
+	studioReader := t.repository.Studio
+
+	for l := range jobChan {
+		newLabelJSON, err := label.ToJSON(ctx, t.repository.Label, studioReader, l)
+		if err != nil {
+			logger.Errorf("[labels] <%s> error getting label JSON: %v", l.Name, err)
+			continue
+		}
+
+		fn := newLabelJSON.Filename()
+
+		if err := t.json.saveLabel(fn, newLabelJSON); err != nil {
+			logger.Errorf("[labels] <%s> failed to save json: %v", l.Name, err)
 		}
 	}
 }

@@ -104,6 +104,10 @@ models:
     model: github.com/stashapp/stash/internal/manager.ImportObjectsInput
   ScanMetaDataFilterInput:
     model: github.com/stashapp/stash/internal/manager.ScanMetaDataFilterInput
+  ImportTorrentScenesInput:
+    model: github.com/stashapp/stash/internal/manager.ImportTorrentScenesInput
+  ImportTorrentScenesResult:
+    model: github.com/stashapp/stash/internal/manager.ImportTorrentScenesResult
   # renamed types
   BulkUpdateIdMode:
     model: github.com/stashapp/stash/pkg/models.RelationshipUpdateMode

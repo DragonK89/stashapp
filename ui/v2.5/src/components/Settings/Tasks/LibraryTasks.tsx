@@ -20,6 +20,7 @@ import { ManualLink } from "src/components/Help/context";
 import { Icon } from "src/components/Shared/Icon";
 import { faQuestionCircle } from "@fortawesome/free-solid-svg-icons";
 import { useSettings } from "../context";
+import { useMonitorJob } from "src/utils/job";
 
 interface IAutoTagOptions {
   options: GQL.AutoTagMetadataInput;
@@ -83,6 +84,9 @@ export const LibraryTasks: React.FC = () => {
 
   function getDefaultScanOptions(): GQL.ScanMetadataInput {
     return {
+      scanTorrents: false,
+      scanTorrentsNormalizeTitle: false,
+      scanTorrentsRenameFile: false,
       scanGenerateCovers: true,
       scanGeneratePreviews: false,
       scanGenerateImagePreviews: false,
@@ -96,6 +100,22 @@ export const LibraryTasks: React.FC = () => {
   const [scanOptions, setScanOptions] = useState<GQL.ScanMetadataInput>(
     getDefaultScanOptions()
   );
+  const [scanJobID, setScanJobID] = useState<string | null>(null);
+
+  useMonitorJob(scanJobID, (job) => {
+    if (!job) return;
+    setScanJobID(null);
+
+    // Only show skipped torrent toast for strict torrent normalization scans.
+    if (!scanOptions.scanTorrents || !scanOptions.scanTorrentsNormalizeTitle) {
+      return;
+    }
+
+    const first = job.subTasks?.[0] ?? "";
+    if (first.startsWith("Skipped torrents:")) {
+      Toast.toast({ variant: "warning", content: first });
+    }
+  });
   const [autoTagOptions, setAutoTagOptions] =
     useState<GQL.AutoTagMetadataInput>({
       performers: ["*"],
@@ -207,10 +227,13 @@ export const LibraryTasks: React.FC = () => {
 
   async function runScan(paths?: string[]) {
     try {
-      await mutateMetadataScan({
+      const res = await mutateMetadataScan({
         ...scanOptions,
         paths,
       });
+
+      const id = res.data?.metadataScan;
+      if (id) setScanJobID(id);
 
       Toast.success(
         intl.formatMessage(

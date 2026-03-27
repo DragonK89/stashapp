@@ -6,6 +6,7 @@ import { faStar as farStar } from "@fortawesome/free-regular-svg-icons";
 import {
   convertFromRatingFormat,
   convertToRatingFormat,
+  getRatingMaxValue,
   getRatingPrecision,
   RatingStarPrecision,
   RatingSystemType,
@@ -18,6 +19,7 @@ export interface IRatingStarsProps {
   onSetRating?: (value: number | null) => void;
   disabled?: boolean;
   precision: RatingStarPrecision;
+  ratingSystemType?: RatingSystemType;
   valueRequired?: boolean;
   orMore?: boolean;
 }
@@ -29,15 +31,16 @@ export const RatingStars = PatchComponent(
     const [hoverRating, setHoverRating] = useState<number | undefined>();
     const disabled = props.disabled || !props.onSetRating;
 
+    const ratingSystemType = props.ratingSystemType ?? RatingSystemType.Stars;
     const rating = convertToRatingFormat(props.value, {
-      type: RatingSystemType.Stars,
+      type: ratingSystemType,
       starPrecision: props.precision,
     });
     const stars = rating ? Math.floor(rating) : 0;
     // the upscaling was necesary to fix rounding issue present with tenth place precision
     const fraction = rating ? ((rating * 10) % 10) / 10 : 0;
 
-    const max = 5;
+    const max = getRatingMaxValue(ratingSystemType);
     const precision = getRatingPrecision(props.precision);
 
     function newToggleFraction() {
@@ -94,7 +97,7 @@ export const RatingStars = PatchComponent(
       }
 
       props.onSetRating(
-        convertFromRatingFormat(newRating, RatingSystemType.Stars)
+        convertFromRatingFormat(newRating, ratingSystemType)
       );
     }
 

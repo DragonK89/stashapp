@@ -145,11 +145,13 @@ textarea.scene-description {
   }
 }
 
-.justify-content-center .studio-card .studio-card-image {
+.justify-content-center .studio-card .studio-card-image,
+.justify-content-center .label-card .label-card-image {
   width: 100%;
 }
 
-.studio-card {
+.studio-card,
+.label-card {
   padding: 0.5rem;
 
   @media (max-width: 576px) {

@@ -1,0 +1,13 @@
+fragment SlimLabelData on Label {
+  id
+  name
+  image_path
+  details
+  rating100
+  aliases
+  tags {
+    id
+    name
+  }
+  o_counter
+}

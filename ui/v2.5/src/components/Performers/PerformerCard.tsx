@@ -14,6 +14,7 @@ import {
   ModifierCriterion,
   CriterionValue,
 } from "src/models/list-filter/criteria/criterion";
+import { IUIConfig } from "src/core/config";
 import { PopoverCountButton } from "../Shared/PopoverCountButton";
 import GenderIcon from "./GenderIcon";
 import { faLink, faTag } from "@fortawesome/free-solid-svg-icons";
@@ -49,6 +50,10 @@ interface IPerformerCardProps {
 const PerformerCardPopovers: React.FC<IPerformerCardProps> = PatchComponent(
   "PerformerCard.Popovers",
   ({ performer, extraCriteria }) => {
+    const { configuration } = useConfigurationContext();
+    const ui = configuration?.ui as IUIConfig | undefined;
+    const hideTags = ui?.hideTags ?? false;
+    const hideGroups = ui?.hideGroups ?? false;
     function maybeRenderScenesPopoverButton() {
       if (!performer.scene_count) return;
 
@@ -107,7 +112,7 @@ const PerformerCardPopovers: React.FC<IPerformerCardProps> = PatchComponent(
     }
 
     function maybeRenderTagPopoverButton() {
-      if (performer.tags.length <= 0) return;
+      if (performer.tags.length <= 0 || hideTags) return;
 
       const popoverContent = performer.tags.map((tag) => (
         <TagLink key={tag.id} linkType="performer" tag={tag} />
@@ -124,7 +129,7 @@ const PerformerCardPopovers: React.FC<IPerformerCardProps> = PatchComponent(
     }
 
     function maybeRenderGroupsPopoverButton() {
-      if (!performer.group_count) return;
+      if (!performer.group_count || hideGroups) return;
 
       return (
         <PopoverCountButton
@@ -144,9 +149,9 @@ const PerformerCardPopovers: React.FC<IPerformerCardProps> = PatchComponent(
       performer.scene_count ||
       performer.image_count ||
       performer.gallery_count ||
-      performer.tags.length > 0 ||
+      (performer.tags.length > 0 && !hideTags) ||
       performer.o_counter ||
-      performer.group_count
+      (performer.group_count && !hideGroups)
     ) {
       return (
         <>

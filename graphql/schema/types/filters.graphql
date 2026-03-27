@@ -321,6 +321,10 @@ input SceneFilterType {
   performers_filter: PerformerFilterType
   "Filter by related studios that meet this criteria"
   studios_filter: StudioFilterType
+  "Filter to only include scenes with this label"
+  labels: HierarchicalMultiCriterionInput
+  "Filter by related labels that meet this criteria"
+  labels_filter: LabelFilterType
   "Filter by related tags that meet this criteria"
   tags_filter: TagFilterType
   "Filter by related movies that meet this criteria"
@@ -462,6 +466,41 @@ input StudioFilterType {
   images_filter: ImageFilterType
   "Filter by related galleries that meet this criteria"
   galleries_filter: GalleryFilterType
+  "Filter by creation time"
+  created_at: TimestampCriterionInput
+  "Filter by last update time"
+  updated_at: TimestampCriterionInput
+}
+
+input LabelFilterType {
+  AND: LabelFilterType
+  OR: LabelFilterType
+  NOT: LabelFilterType
+
+  name: StringCriterionInput
+  details: StringCriterionInput
+  "Filter to only include labels with this parent studio"
+  studios: HierarchicalMultiCriterionInput
+  "Filter to only include labels with these tags"
+  tags: HierarchicalMultiCriterionInput
+  "Filter to only include labels missing this property"
+  is_missing: String
+  # rating expressed as 1-100
+  rating100: IntCriterionInput
+  "Filter by favorite"
+  favorite: Boolean
+  "Filter by scene count"
+  scene_count: IntCriterionInput
+  "Filter by tag count"
+  tag_count: IntCriterionInput
+  "Filter by url"
+  url: StringCriterionInput
+  "Filter by label aliases"
+  aliases: StringCriterionInput
+  "Filter by autotag ignore value"
+  ignore_auto_tag: Boolean
+  "Filter by related scenes that meet this criteria"
+  scenes_filter: SceneFilterType
   "Filter by creation time"
   created_at: TimestampCriterionInput
   "Filter by last update time"
@@ -882,6 +921,7 @@ enum FilterMode {
   SCENES
   PERFORMERS
   STUDIOS
+  LABELS
   GALLERIES
   SCENE_MARKERS
   MOVIES

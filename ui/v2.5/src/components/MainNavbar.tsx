@@ -20,6 +20,7 @@ import Mousetrap from "mousetrap";
 import SessionUtils from "src/utils/session";
 import { Icon } from "src/components/Shared/Icon";
 import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { ManualStateContext } from "./Help/context";
 import { SettingsButton } from "./SettingsButton";
 import {
@@ -73,6 +74,10 @@ const messages = defineMessages({
   studios: {
     id: "studios",
     defaultMessage: "Studios",
+  },
+  labels: {
+    id: "labels",
+    defaultMessage: "Labels",
   },
   tags: {
     id: "tags",
@@ -151,6 +156,14 @@ const allMenuItems: IMenuItem[] = [
     userCreatable: true,
   },
   {
+    name: "labels",
+    message: messages.labels,
+    href: "/labels",
+    icon: faTag,
+    hotkey: "g b",
+    userCreatable: true,
+  },
+  {
     name: "tags",
     message: messages.tags,
     href: "/tags",
@@ -190,7 +203,7 @@ export const MainNavbar: React.FC = () => {
   const menuItems = useMemo(() => {
     let cfgMenuItems = configuration?.interface.menuItems;
     if (!cfgMenuItems) {
-      return allMenuItems;
+      cfgMenuItems = allMenuItems.map((m) => m.name);
     }
 
     // translate old movies menu item to groups
@@ -201,14 +214,30 @@ export const MainNavbar: React.FC = () => {
       return item;
     });
 
-    return allMenuItems.filter((menuItem) =>
-      cfgMenuItems!.includes(menuItem.name)
-    );
+    const ui = configuration?.ui as IUIConfig | undefined;
+    const hideTags = Boolean(ui?.hideTags);
+    const hideGroups = Boolean(ui?.hideGroups);
+    const hideMarkers = Boolean(ui?.hideMarkers);
+    const hideLabels = Boolean(ui?.hideLabels);
+
+    return allMenuItems.filter((menuItem) => {
+      if (!cfgMenuItems!.includes(menuItem.name)) {
+        return false;
+      }
+      if (hideTags && menuItem.name === "tags") return false;
+      if (hideGroups && menuItem.name === "groups") return false;
+      if (hideMarkers && menuItem.name === "markers") return false;
+      if (hideLabels && menuItem.name === "labels") return false;
+      return true;
+    });
   }, [configuration]);
 
   // react-bootstrap typing bug
   const navbarRef = useRef<HTMLElement | null>(null);
   const intl = useIntl();
+  const groupsLabelOverride = (
+    (configuration?.ui as IUIConfig | undefined)?.groupsLabel ?? ""
+  ).trim();
 
   const maybeCollapse = useCallback(
     (event: Event) => {
@@ -360,7 +389,7 @@ export const MainNavbar: React.FC = () => {
       >
         <Navbar.Collapse className="bg-dark order-sm-1">
           <MainNavbarMenuItems>
-            {menuItems.map(({ href, icon, message }) => (
+            {menuItems.map(({ href, icon, message, name }) => (
               <Nav.Link
                 eventKey={href}
                 as="div"
@@ -373,7 +402,11 @@ export const MainNavbar: React.FC = () => {
                       {...{ icon }}
                       className="nav-menu-icon d-block d-xl-inline mb-2 mb-xl-0"
                     />
-                    <span>{intl.formatMessage(message)}</span>
+                    <span>
+                      {name === "groups" && groupsLabelOverride.length > 0
+                        ? groupsLabelOverride
+                        : intl.formatMessage(message)}
+                    </span>
                   </Button>
                 </LinkContainer>
               </Nav.Link>

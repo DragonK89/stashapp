@@ -7,7 +7,11 @@ import React, {
 } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { QueryResult } from "@apollo/client";
-import { Criterion } from "src/models/list-filter/criteria/criterion";
+import {
+  Criterion,
+  IHierarchicalLabeledIdCriterion,
+  ILabeledIdCriterion,
+} from "src/models/list-filter/criteria/criterion";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   EditFilterDialog,
@@ -382,6 +386,7 @@ interface IItemListContextProps<
   getCount: (data: T) => number;
   getItems: (data: T) => E[];
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
+  extraCriteria?: Record<string, IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]>;
   view?: View;
   alterQuery?: boolean;
   selectable?: boolean;
@@ -406,6 +411,7 @@ export const ItemListContext = <
     getItems,
     view,
     filterHook,
+    extraCriteria,
     alterQuery = true,
     selectable,
     children,
@@ -434,6 +440,7 @@ export const ItemListContext = <
       <SetFilterURL defaultFilter={defaultFilter} setURL={alterQuery}>
         <QueryResultContext
           filterHook={filterHook}
+          extraCriteria={extraCriteria}
           useResult={useResult}
           useMetadataInfo={useMetadataInfo}
           getCount={getCount}

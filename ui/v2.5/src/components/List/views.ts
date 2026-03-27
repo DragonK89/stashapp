@@ -7,6 +7,7 @@ export enum View {
   Tags = "tags",
   SceneMarkers = "scene_markers",
   Studios = "studios",
+  Labels = "labels",
 
   TagMarkers = "tag_markers",
   TagGalleries = "tag_galleries",
@@ -28,7 +29,10 @@ export enum View {
   StudioScenes = "studio_scenes",
   StudioGroups = "studio_groups",
   StudioPerformers = "studio_performers",
+  StudioLabels = "studio_labels",
   StudioChildren = "studio_children",
+
+  LabelScenes = "label_scenes",
 
   GroupScenes = "group_scenes",
   GroupSubGroups = "group_sub_groups",

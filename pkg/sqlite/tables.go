@@ -41,6 +41,10 @@ var (
 	studiosTagsJoinTable     = goqu.T(studiosTagsTable)
 	studiosStashIDsJoinTable = goqu.T("studio_stash_ids")
 
+	labelsAliasesJoinTable = goqu.T(labelAliasesTable)
+	labelsURLsJoinTable    = goqu.T(labelURLsTable)
+	labelsTagsJoinTable    = goqu.T(labelsTagsTable)
+
 	groupsURLsJoinTable     = goqu.T(groupURLsTable)
 	groupsTagsJoinTable     = goqu.T(groupsTagsTable)
 	groupRelationsJoinTable = goqu.T(groupRelationsTable)
@@ -344,6 +348,39 @@ var (
 			table:    studiosStashIDsJoinTable,
 			idColumn: studiosStashIDsJoinTable.Col(studioIDColumn),
 		},
+	}
+)
+
+var (
+	labelTableMgr = &table{
+		table:    goqu.T(labelTable),
+		idColumn: goqu.T(labelTable).Col(idColumn),
+	}
+
+	labelsAliasesTableMgr = &stringTable{
+		table: table{
+			table:    labelsAliasesJoinTable,
+			idColumn: labelsAliasesJoinTable.Col(labelIDColumn),
+		},
+		stringColumn: labelsAliasesJoinTable.Col(labelAliasColumn),
+	}
+
+	labelsURLsTableMgr = &orderedValueTable[string]{
+		table: table{
+			table:    labelsURLsJoinTable,
+			idColumn: labelsURLsJoinTable.Col(labelIDColumn),
+		},
+		valueColumn: labelsURLsJoinTable.Col(labelURLColumn),
+	}
+
+	labelsTagsTableMgr = &joinTable{
+		table: table{
+			table:    labelsTagsJoinTable,
+			idColumn: labelsTagsJoinTable.Col(labelIDColumn),
+		},
+		fkColumn:     labelsTagsJoinTable.Col(tagIDColumn),
+		foreignTable: tagTableMgr,
+		orderBy:      tagTableSort,
 	}
 )
 

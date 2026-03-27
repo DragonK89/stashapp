@@ -183,6 +183,21 @@ func (r *sceneResolver) Studio(ctx context.Context, obj *models.Scene) (ret *mod
 	return loaders.From(ctx).StudioByID.Load(*obj.StudioID)
 }
 
+func (r *sceneResolver) Label(ctx context.Context, obj *models.Scene) (ret *models.Label, err error) {
+	if obj.LabelID == nil {
+		return nil, nil
+	}
+
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = r.repository.Label.Find(ctx, *obj.LabelID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
+}
+
 func (r *sceneResolver) Movies(ctx context.Context, obj *models.Scene) (ret []*SceneMovie, err error) {
 	if !obj.Groups.Loaded() {
 		if err := r.withReadTxn(ctx, func(ctx context.Context) error {

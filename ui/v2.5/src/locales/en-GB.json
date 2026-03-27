@@ -523,6 +523,12 @@
       "generate_sprites_during_scan": "Generate scrubber sprites",
       "generate_sprites_during_scan_tooltip": "The set of images displayed below the video player for easy navigation.",
       "generate_thumbnails_during_scan": "Generate thumbnails for images",
+      "scan_torrents": "Scan torrents (torrent-only)",
+      "scan_torrents_tooltip": "Only scan .torrent files. This scan can run without ffmpeg/ffprobe, but torrent scenes are non-playable.",
+      "scan_torrents_normalize_title": "Normalize torrent scene title (strict)",
+      "scan_torrents_normalize_title_tooltip": "If enabled, torrent scenes are named PREFIX-### by extracting exactly one letters+digits match from the torrent filename (0 or multiple matches are skipped).",
+      "scan_torrents_rename_file": "Rename torrent file to match title",
+      "scan_torrents_rename_file_tooltip": "If enabled, attempts to rename the .torrent file on disk to match the normalized title. If the target filename already exists, the rename is skipped and the Scene title stays as the original filename.",
       "generate_video_covers_during_scan": "Generate scene covers",
       "generate_video_previews_during_scan": "Generate previews",
       "generate_video_previews_during_scan_tooltip": "Generate video previews which play when hovering over a scene",
@@ -586,6 +592,17 @@
     "tools": {
       "graphql_playground": "GraphQL playground",
       "heading": "Tools",
+      "import_torrent_scenes_from_file": {
+        "field_options": "Field Options",
+        "normalize": "Normalize torrent scene title (strict)",
+        "path": "Import file path",
+        "path_placeholder": "Example: D:\\\\imports\\\\torrents.txt",
+        "scraper": "Installed Scraper",
+        "title": "Import torrent scenes from file",
+        "toast_done": "Import complete. Created {created}, failed {failed}.",
+        "toast_fail_path": "Failed lines were written to: {path}",
+        "use_scrapers": "Use Scrapers"
+      },
       "scene_duplicate_checker": "Scene Duplicate Checker",
       "scene_filename_parser": {
         "add_field": "Add Field",
@@ -678,7 +695,8 @@
             "label": "Rating System Type",
             "options": {
               "decimal": "Decimal",
-              "stars": "Stars"
+              "stars": "Stars",
+              "stars10": "Stars (10)"
             }
           }
         }
@@ -723,6 +741,15 @@
         }
       },
       "interactive_options": "Interactive Options",
+      "label_panel": {
+        "heading": "Labels",
+        "options": {
+          "hide_labels": {
+            "description": "Hide Labels from the user interface",
+            "heading": "Hide Labels"
+          }
+        }
+      },
       "language": {
         "heading": "Language"
       },
@@ -829,9 +856,43 @@
       "tag_panel": {
         "heading": "Tag view",
         "options": {
+          "hide_tags": {
+            "description": "Hide Tags across the UI (navbar, pages, chips/links, filters, selectors).",
+            "heading": "Hide all Tag UI"
+          },
           "show_child_tagged_content": {
             "description": "In the tag view, display content from the subtags as well",
             "heading": "Display subtag content"
+          }
+        }
+      },
+      "group_panel": {
+        "heading": "Group view",
+        "options": {
+          "hide_groups": {
+            "description": "Hide Groups across the UI (navbar, pages, chips/links, filters, selectors).",
+            "heading": "Hide all Group UI"
+          },
+          "groups_label": {
+            "description": "Override the label used for Groups across the UI (e.g. \"Series\"). Leave blank to use the default.",
+            "heading": "Rename Groups to"
+          }
+        }
+      },
+      "marker_panel": {
+        "heading": "Marker view",
+        "options": {
+          "hide_queue": {
+            "description": "Hide queue features across the UI.",
+            "heading": "Hide queue"
+          },
+          "hide_markers": {
+            "description": "Hide Markers across the UI (navbar, pages, chips/links, filters, selectors).",
+            "heading": "Hide all Marker UI"
+          },
+          "hide_scene_filters": {
+            "description": "Hide the Scene page Filters tab.",
+            "heading": "Hide filter"
           }
         }
       },
@@ -859,6 +920,7 @@
     "performers": "{count, plural, one {Performer} other {Performers}}",
     "scenes": "{count, plural, one {Scene} other {Scenes}}",
     "studios": "{count, plural, one {Studio} other {Studios}}",
+    "labels": "{count, plural, one {Label} other {Labels}}",
     "tags": "{count, plural, one {Tag} other {Tags}}"
   },
   "country": "Country",
@@ -1092,6 +1154,7 @@
   },
   "empty_server": "Add some scenes to your server to view recommendations on this page.",
   "errors": {
+    "cannot_play_torrent": ".torrent files are not playable",
     "custom_fields": {
       "duplicate_field": "Field name must be unique",
       "field_name_length": "Field name must fewer than 65 characters",
@@ -1533,6 +1596,8 @@
   },
   "studio_tags": "Studio Tags",
   "studios": "Studios",
+  "label": "Label",
+  "labels": "Labels",
   "sub_group": "Sub-Group",
   "sub_group_count": "Sub-Group Count",
   "sub_group_of": "Sub-group of {parent}",

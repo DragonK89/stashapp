@@ -19,6 +19,10 @@ func (jp *jsonUtils) saveStudio(fn string, studio *jsonschema.Studio) error {
 	return jsonschema.SaveStudioFile(filepath.Join(jp.json.Studios, fn), studio)
 }
 
+func (jp *jsonUtils) saveLabel(fn string, labelJSON *jsonschema.Label) error {
+	return jsonschema.SaveLabelFile(filepath.Join(jp.json.Labels, fn), labelJSON)
+}
+
 func (jp *jsonUtils) saveTag(fn string, tag *jsonschema.Tag) error {
 	return jsonschema.SaveTagFile(filepath.Join(jp.json.Tags, fn), tag)
 }

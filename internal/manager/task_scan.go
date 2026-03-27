@@ -6,6 +6,8 @@ import (
 	"io/fs"
 	"path/filepath"
 	"regexp"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/99designs/gqlgen/graphql/handler/lru"
@@ -32,6 +34,9 @@ type ScanJob struct {
 	scanner       scanner
 	input         ScanMetadataInput
 	subscriptions *subscriptionManager
+
+	skippedTorrentsMu sync.Mutex
+	skippedTorrents   []string
 }
 
 func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
@@ -63,9 +68,15 @@ func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
 		minModTime = *j.input.Filter.MinModTime
 	}
 
-	j.scanner.Scan(ctx, getScanHandlers(j.input, taskQueue, progress), file.ScanOptions{
+	recordSkipped := func(p string) {
+		j.skippedTorrentsMu.Lock()
+		j.skippedTorrents = append(j.skippedTorrents, p)
+		j.skippedTorrentsMu.Unlock()
+	}
+
+	j.scanner.Scan(ctx, getScanHandlers(j.input, taskQueue, progress, recordSkipped), file.ScanOptions{
 		Paths:                  paths,
-		ScanFilters:            []file.PathFilter{newScanFilter(c, repo, minModTime)},
+		ScanFilters:            []file.PathFilter{newScanFilter(c, repo, minModTime, input.ScanTorrents)},
 		ZipFileExtensions:      cfg.GetGalleryExtensions(),
 		ParallelTasks:          cfg.GetParallelTasksWithAutoDetection(),
 		HandlerRequiredFilters: []file.Filter{newHandlerRequiredFilter(cfg, repo)},
@@ -81,6 +92,17 @@ func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
 
 	elapsed := time.Since(start)
 	logger.Info(fmt.Sprintf("Scan finished (%s)", elapsed))
+
+	j.skippedTorrentsMu.Lock()
+	skipped := append([]string(nil), j.skippedTorrents...)
+	j.skippedTorrentsMu.Unlock()
+	if len(skipped) > 0 {
+		logger.Warnf("Torrent scan skipped %d files due to unrecognized or ambiguous names:", len(skipped))
+		for _, p := range skipped {
+			logger.Warnf("Skipped torrent: %s", p)
+		}
+		progress.SetDetails(append([]string{fmt.Sprintf("Skipped torrents: %d (see logs)", len(skipped))}, skipped...))
+	}
 
 	j.subscriptions.notify()
 	return nil
@@ -249,6 +271,7 @@ type scanFilter struct {
 	FileFinder     models.FileFinder
 	CaptionUpdater video.CaptionUpdater
 
+	scanTorrentsOnly bool
 	stashPaths        config.StashConfigs
 	generatedPath     string
 	videoExcludeRegex []*regexp.Regexp
@@ -256,12 +279,13 @@ type scanFilter struct {
 	minModTime        time.Time
 }
 
-func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time) *scanFilter {
+func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time, scanTorrentsOnly bool) *scanFilter {
 	return &scanFilter{
 		extensionConfig:   newExtensionConfig(c),
 		txnManager:        repo.TxnManager,
 		FileFinder:        repo.File,
 		CaptionUpdater:    repo.File,
+		scanTorrentsOnly:  scanTorrentsOnly,
 		stashPaths:        c.GetStashPaths(),
 		generatedPath:     c.GetGeneratedPath(),
 		videoExcludeRegex: generateRegexps(c.GetExcludes()),
@@ -285,6 +309,14 @@ func (f *scanFilter) Accept(ctx context.Context, path string, info fs.FileInfo) 
 	if s == nil {
 		logger.Debugf("Skipping %s as it is not in the stash library", path)
 		return false
+	}
+
+	if f.scanTorrentsOnly {
+		// Always allow directories so we can traverse the library tree,
+		// but only accept .torrent files for scanning.
+		if !info.IsDir() && !strings.EqualFold(filepath.Ext(path), ".torrent") {
+			return false
+		}
 	}
 
 	isVideoFile := useAsVideo(path)
@@ -353,11 +385,31 @@ func galleryFileFilter(ctx context.Context, f models.File) bool {
 	return isZip(f.Base().Basename)
 }
 
-func getScanHandlers(options ScanMetadataInput, taskQueue *job.TaskQueue, progress *job.Progress) []file.Handler {
+func getScanHandlers(options ScanMetadataInput, taskQueue *job.TaskQueue, progress *job.Progress, recordSkippedTorrent func(path string)) []file.Handler {
 	mgr := GetInstance()
 	c := mgr.Config
 	r := mgr.Repository
 	pluginCache := mgr.PluginCache
+
+	if options.ScanTorrents {
+		// Torrent-only scan: handle only torrents as scenes; skip all other handlers.
+		// Skipped torrent reporting is handled by ScanJob.Execute.
+		handler := &torrentSceneScanHandler{
+			SceneRepo:       r.Scene,
+			FileRepo:        r.File,
+			FolderRepo:      r.Folder,
+			PluginCache:     pluginCache,
+			NormalizeTitle:  options.ScanTorrentsNormalizeTitle,
+			RenameFile:      options.ScanTorrentsRenameFile,
+			recordSkipped:   recordSkippedTorrent,
+		}
+		return []file.Handler{
+			&file.FilteredHandler{
+				Filter:  file.FilterFunc(torrentVideoFileFilter),
+				Handler: handler,
+			},
+		}
+	}
 
 	return []file.Handler{
 		&file.FilteredHandler{
@@ -482,6 +534,10 @@ func (g *sceneGenerators) Generate(ctx context.Context, s *models.Scene, f *mode
 	progress := g.progress
 	t := g.input
 	path := f.Path
+
+	if strings.EqualFold(filepath.Ext(path), ".torrent") {
+		return nil
+	}
 
 	mgr := GetInstance()
 

@@ -232,9 +232,6 @@ func (m *Manager) removeJob(job *Job) {
 		return
 	}
 
-	// clear any subtasks
-	job.Details = nil
-
 	m.queue = append(m.queue[:index], m.queue[index+1:]...)
 
 	m.graveyard = append(m.graveyard, job)
@@ -250,6 +247,9 @@ func (m *Manager) removeJob(job *Job) {
 		default:
 		}
 	}
+
+	// clear any subtasks after notifying subscribers
+	job.Details = nil
 }
 
 func (m *Manager) getJob(list []*Job, id int) (index int, job *Job) {

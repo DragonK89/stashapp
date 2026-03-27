@@ -32,6 +32,20 @@ func (p *Progress) updated() {
 	p.updater.updateProgress(p.percent, details)
 }
 
+// SetDetails sets the current job details/subtasks directly. This is useful for
+// persisting informational messages (eg warnings) at the end of a job.
+func (p *Progress) SetDetails(details []string) {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+
+	p.currentTasks = nil
+	for _, d := range details {
+		p.currentTasks = append(p.currentTasks, &task{description: d})
+	}
+
+	p.updated()
+}
+
 // Indefinite sets the progress to an indefinite amount.
 func (p *Progress) Indefinite() {
 	p.mutex.Lock()

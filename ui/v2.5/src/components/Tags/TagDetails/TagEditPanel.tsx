@@ -18,6 +18,7 @@ import { formikUtils } from "src/utils/form";
 import { yupFormikValidate, yupUniqueAliases } from "src/utils/yup";
 import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { Tag, TagSelect } from "../TagSelect";
+import { useIsMounted } from "src/hooks/state";
 import { Icon } from "src/components/Shared/Icon";
 import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
 
@@ -49,6 +50,7 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const [childTags, setChildTags] = useState<Tag[]>([]);
   const [parentTags, setParentTags] = useState<Tag[]>([]);
@@ -126,11 +128,15 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   const encodingImage = ImageUtils.usePasteImage(onImageLoad);

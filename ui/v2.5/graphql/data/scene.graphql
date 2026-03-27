@@ -53,6 +53,11 @@ fragment SceneData on Scene {
     ...SlimStudioData
   }
 
+  label {
+    id
+    name
+  }
+
   groups {
     group {
       ...GroupData

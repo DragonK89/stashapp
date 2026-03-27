@@ -23,6 +23,8 @@ import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { OperationButton } from "src/components/Shared/OperationButton";
 import * as FormUtils from "src/utils/form";
 import { genderList, stringToGender } from "src/utils/gender";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { IScrapedScene, TaggerStateContext } from "../context";
 import { OptionalField } from "../IncludeButton";
 import { SceneTaggerModalsState } from "./sceneTaggerModals";
@@ -224,6 +226,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   isActive,
 }) => {
   const intl = useIntl();
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
 
   const {
     config,
@@ -386,7 +391,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       ),
       studio_id: studioID,
       cover_image: resolveField("cover_image", undefined, imgData),
-      tag_ids: tagIDs,
+      tag_ids: !hideTags ? tagIDs : stashScene.tags.map((t) => t.id),
       stash_ids: stashScene.stash_ids ?? [],
       code: resolveField("code", stashScene.code, scene.code),
       director: resolveField("director", stashScene.director, scene.director),
@@ -753,7 +758,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   );
 
   function maybeRenderTagsField() {
-    if (!config.setTags) return;
+    if (!config.setTags || hideTags) return;
 
     const createTags = scene.tags?.filter((t) => !t.stored_id);
 

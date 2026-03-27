@@ -53,6 +53,7 @@ const allMenuItems = [
   { id: "galleries", headingID: "galleries" },
   { id: "performers", headingID: "performers" },
   { id: "studios", headingID: "studios" },
+  { id: "labels", headingID: "labels" },
   { id: "tags", headingID: "tags" },
 ];
 
@@ -477,6 +478,64 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
             checked={ui.showChildTagContent ?? undefined}
             onChange={(v) => saveUI({ showChildTagContent: v })}
           />
+          <BooleanSetting
+            id="hide-tags"
+            headingID="config.ui.tag_panel.options.hide_tags.heading"
+            subHeadingID="config.ui.tag_panel.options.hide_tags.description"
+            checked={ui.hideTags ?? false}
+            onChange={(v) => saveUI({ hideTags: v })}
+          />
+        </SettingSection>
+
+        <SettingSection headingID="config.ui.label_panel.heading">
+          <BooleanSetting
+            id="hide-labels"
+            headingID="config.ui.label_panel.options.hide_labels.heading"
+            subHeadingID="config.ui.label_panel.options.hide_labels.description"
+            checked={ui.hideLabels ?? false}
+            onChange={(v) => saveUI({ hideLabels: v })}
+          />
+        </SettingSection>
+
+        <SettingSection headingID="config.ui.group_panel.heading">
+          <BooleanSetting
+            id="hide-groups"
+            headingID="config.ui.group_panel.options.hide_groups.heading"
+            subHeadingID="config.ui.group_panel.options.hide_groups.description"
+            checked={ui.hideGroups ?? false}
+            onChange={(v) => saveUI({ hideGroups: v })}
+          />
+          <StringSetting
+            id="groups-label"
+            headingID="config.ui.group_panel.options.groups_label.heading"
+            subHeadingID="config.ui.group_panel.options.groups_label.description"
+            value={ui.groupsLabel ?? ""}
+            onChange={(v) => saveUI({ groupsLabel: v })}
+          />
+        </SettingSection>
+
+        <SettingSection headingID="config.ui.marker_panel.heading">
+          <BooleanSetting
+            id="hide-markers"
+            headingID="config.ui.marker_panel.options.hide_markers.heading"
+            subHeadingID="config.ui.marker_panel.options.hide_markers.description"
+            checked={ui.hideMarkers ?? false}
+            onChange={(v) => saveUI({ hideMarkers: v })}
+          />
+          <BooleanSetting
+            id="hide-queue"
+            headingID="config.ui.marker_panel.options.hide_queue.heading"
+            subHeadingID="config.ui.marker_panel.options.hide_queue.description"
+            checked={ui.hideQueue ?? false}
+            onChange={(v) => saveUI({ hideQueue: v })}
+          />
+          <BooleanSetting
+            id="hide-scene-filters"
+            headingID="config.ui.marker_panel.options.hide_scene_filters.heading"
+            subHeadingID="config.ui.marker_panel.options.hide_scene_filters.description"
+            checked={ui.hideSceneFilters ?? false}
+            onChange={(v) => saveUI({ hideSceneFilters: v })}
+          />
         </SettingSection>
 
         <SettingSection headingID="config.ui.studio_panel.heading">
@@ -769,28 +828,30 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
               </option>
             ))}
           </SelectSetting>
-          {(ui.ratingSystemOptions?.type ?? defaultRatingSystemType) ===
-            RatingSystemType.Stars && (
-            <SelectSetting
-              id="rating_system_star_precision"
-              headingID="config.ui.editing.rating_system.star_precision.label"
-              value={
-                ui.ratingSystemOptions?.starPrecision ??
-                defaultRatingStarPrecision
-              }
-              onChange={(v) =>
-                saveRatingSystemStarPrecision(v as RatingStarPrecision)
-              }
-            >
-              {Array.from(ratingStarPrecisionIntlMap.entries()).map((v) => (
-                <option key={v[0]} value={v[0]}>
-                  {intl.formatMessage({
-                    id: v[1],
-                  })}
-                </option>
-              ))}
-            </SelectSetting>
-          )}
+          {((ui.ratingSystemOptions?.type ?? defaultRatingSystemType) ===
+            RatingSystemType.Stars ||
+            (ui.ratingSystemOptions?.type ?? defaultRatingSystemType) ===
+            RatingSystemType.Stars10) && (
+              <SelectSetting
+                id="rating_system_star_precision"
+                headingID="config.ui.editing.rating_system.star_precision.label"
+                value={
+                  ui.ratingSystemOptions?.starPrecision ??
+                  defaultRatingStarPrecision
+                }
+                onChange={(v) =>
+                  saveRatingSystemStarPrecision(v as RatingStarPrecision)
+                }
+              >
+                {Array.from(ratingStarPrecisionIntlMap.entries()).map((v) => (
+                  <option key={v[0]} value={v[0]}>
+                    {intl.formatMessage({
+                      id: v[1],
+                    })}
+                  </option>
+                ))}
+              </SelectSetting>
+            )}
         </SettingSection>
 
         <SettingSection headingID="config.ui.custom_css.heading">

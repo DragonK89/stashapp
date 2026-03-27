@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/stashapp/stash/pkg/file/video"
 	"github.com/stashapp/stash/pkg/logger"
@@ -105,6 +107,11 @@ func (h *ScanHandler) Handle(ctx context.Context, f models.File, oldFile models.
 	} else {
 		// create a new scene
 		newScene := models.NewScene()
+
+		if strings.EqualFold(filepath.Ext(videoFile.Base().Path), ".torrent") {
+			base := filepath.Base(videoFile.Base().Path)
+			newScene.Title = strings.TrimSuffix(base, filepath.Ext(base))
+		}
 
 		logger.Infof("%s doesn't exist. Creating new scene...", f.Base().Path)
 

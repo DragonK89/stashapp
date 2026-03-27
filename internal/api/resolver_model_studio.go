@@ -8,6 +8,7 @@ import (
 	"github.com/stashapp/stash/pkg/gallery"
 	"github.com/stashapp/stash/pkg/group"
 	"github.com/stashapp/stash/pkg/image"
+	"github.com/stashapp/stash/pkg/label"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/performer"
 	"github.com/stashapp/stash/pkg/scene"
@@ -138,6 +139,17 @@ func (r *studioResolver) GroupCount(ctx context.Context, obj *models.Studio, dep
 	return ret, nil
 }
 
+func (r *studioResolver) LabelCount(ctx context.Context, obj *models.Studio, depth *int) (ret int, err error) {
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = label.CountByStudioID(ctx, r.repository.Label, obj.ID, depth)
+		return err
+	}); err != nil {
+		return 0, err
+	}
+
+	return ret, nil
+}
+
 // deprecated
 func (r *studioResolver) MovieCount(ctx context.Context, obj *models.Studio, depth *int) (ret int, err error) {
 	return r.GroupCount(ctx, obj, depth)
@@ -210,4 +222,15 @@ func (r *studioResolver) Groups(ctx context.Context, obj *models.Studio) (ret []
 // deprecated
 func (r *studioResolver) Movies(ctx context.Context, obj *models.Studio) (ret []*models.Group, err error) {
 	return r.Groups(ctx, obj)
+}
+
+func (r *studioResolver) Labels(ctx context.Context, obj *models.Studio) (ret []*models.Label, err error) {
+	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		ret, err = r.repository.Label.FindByStudioID(ctx, obj.ID)
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	return ret, nil
 }

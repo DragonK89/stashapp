@@ -25,6 +25,7 @@ import { StudioImagesPanel } from "./StudioImagesPanel";
 import { StudioChildrenPanel } from "./StudioChildrenPanel";
 import { StudioPerformersPanel } from "./StudioPerformersPanel";
 import { StudioEditPanel } from "./StudioEditPanel";
+import { StudioLabelsPanel } from "./StudioLabelsPanel";
 import {
   CompressedStudioDetailsPanel,
   StudioDetailsPanel,
@@ -63,10 +64,11 @@ interface IStudioParams {
 const validTabs = [
   "default",
   "scenes",
+  "labels",
+  "groups",
   "galleries",
   "images",
   "performers",
-  "groups",
   "childstudios",
 ] as const;
 type TabKey = (typeof validTabs)[number];
@@ -95,18 +97,22 @@ const StudioTabs: React.FC<{
     (showAllDetails ? studio.performer_count_all : studio.performer_count) ?? 0;
   const groupCount =
     (showAllDetails ? studio.group_count_all : studio.group_count) ?? 0;
+  const labelCount =
+    (showAllDetails ? studio.label_count_all : studio.label_count) ?? 0;
 
   const populatedDefaultTab = useMemo(() => {
     let ret: TabKey = "scenes";
     if (sceneCount == 0) {
-      if (galleryCount != 0) {
+      if (labelCount != 0) {
+        ret = "labels";
+      } else if (groupCount != 0) {
+        ret = "groups";
+      } else if (galleryCount != 0) {
         ret = "galleries";
       } else if (imageCount != 0) {
         ret = "images";
       } else if (performerCount != 0) {
         ret = "performers";
-      } else if (groupCount != 0) {
-        ret = "groups";
       } else if (studio.child_studios.length != 0) {
         ret = "childstudios";
       }
@@ -115,10 +121,11 @@ const StudioTabs: React.FC<{
     return ret;
   }, [
     sceneCount,
+    labelCount,
+    groupCount,
     galleryCount,
     imageCount,
     performerCount,
-    groupCount,
     studio,
   ]);
 
@@ -173,6 +180,40 @@ const StudioTabs: React.FC<{
         />
       </Tab>
       <Tab
+        eventKey="labels"
+        title={
+          <TabTitleCounter
+            messageID="labels"
+            count={labelCount}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        {contentSwitch}
+        <StudioLabelsPanel
+          active={tabKey === "labels"}
+          studio={studio}
+          showChildStudioContent={showAllDetails}
+        />
+      </Tab>
+      <Tab
+        eventKey="groups"
+        title={
+          <TabTitleCounter
+            messageID="groups"
+            count={groupCount}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        {contentSwitch}
+        <StudioGroupsPanel
+          active={tabKey === "groups"}
+          studio={studio}
+          showChildStudioContent={showAllDetails}
+        />
+      </Tab>
+      <Tab
         eventKey="galleries"
         title={
           <TabTitleCounter
@@ -219,23 +260,6 @@ const StudioTabs: React.FC<{
         {contentSwitch}
         <StudioPerformersPanel
           active={tabKey === "performers"}
-          studio={studio}
-          showChildStudioContent={showAllDetails}
-        />
-      </Tab>
-      <Tab
-        eventKey="groups"
-        title={
-          <TabTitleCounter
-            messageID="groups"
-            count={groupCount}
-            abbreviateCounter={abbreviateCounter}
-          />
-        }
-      >
-        {contentSwitch}
-        <StudioGroupsPanel
-          active={tabKey === "groups"}
           studio={studio}
           showChildStudioContent={showAllDetails}
         />

@@ -1,5 +1,7 @@
 import React, { MouseEvent, useMemo } from "react";
 import { Button, ButtonGroup } from "react-bootstrap";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import cx from "classnames";
 import * as GQL from "src/core/generated-graphql";
 import { Icon } from "src/components/Shared/Icon";
@@ -32,6 +34,10 @@ interface IImageCardProps {
 export const ImageCard: React.FC<IImageCardProps> = (
   props: IImageCardProps
 ) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+
   const file = useMemo(
     () =>
       props.image.visual_files.length > 0
@@ -41,7 +47,7 @@ export const ImageCard: React.FC<IImageCardProps> = (
   );
 
   function maybeRenderTagPopoverButton() {
-    if (props.image.tags.length <= 0) return;
+    if (props.image.tags.length <= 0 || hideTags) return;
 
     const popoverContent = props.image.tags.map((tag) => (
       <TagLink key={tag.id} tag={tag} linkType="image" />
@@ -113,7 +119,7 @@ export const ImageCard: React.FC<IImageCardProps> = (
 
   function maybeRenderPopoverButtonGroup() {
     if (
-      props.image.tags.length > 0 ||
+      (props.image.tags.length > 0 && !hideTags) ||
       props.image.performers.length > 0 ||
       props.image.o_counter ||
       props.image.galleries.length > 0 ||

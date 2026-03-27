@@ -77,6 +77,12 @@ input ScanMetadataInput {
 
   "Forces a rescan on files even if modification time is unchanged"
   rescan: Boolean
+  "Torrent-only scan: only scan .torrent files"
+  scanTorrents: Boolean
+  "When scanTorrents is enabled, normalize torrent scene title using strict PREFIX-NUMBER parsing"
+  scanTorrentsNormalizeTitle: Boolean
+  "When scanTorrentsNormalizeTitle is enabled, optionally rename torrent files to match the normalized title"
+  scanTorrentsRenameFile: Boolean
   "Generate covers during scan"
   scanGenerateCovers: Boolean
   "Generate previews during scan"
@@ -99,6 +105,12 @@ input ScanMetadataInput {
 type ScanMetadataOptions {
   "Forces a rescan on files even if modification time is unchanged"
   rescan: Boolean!
+  "Torrent-only scan: only scan .torrent files"
+  scanTorrents: Boolean!
+  "When scanTorrents is enabled, normalize torrent scene title using strict PREFIX-NUMBER parsing"
+  scanTorrentsNormalizeTitle: Boolean!
+  "When scanTorrentsNormalizeTitle is enabled, optionally rename torrent files to match the normalized title"
+  scanTorrentsRenameFile: Boolean!
   "Generate covers during scan"
   scanGenerateCovers: Boolean!
   "Generate previews during scan"
@@ -154,6 +166,10 @@ input AutoTagMetadataInput {
   """
   studios: [String!]
   """
+  IDs of labels to tag files with, or "*" for all
+  """
+  labels: [String!]
+  """
   IDs of tags to tag files with, or "*" for all
   """
   tags: [String!]
@@ -168,6 +184,10 @@ type AutoTagMetadataOptions {
   IDs of studios to tag files with, or "*" for all
   """
   studios: [String!]
+  """
+  IDs of labels to tag files with, or "*" for all
+  """
+  labels: [String!]
   """
   IDs of tags to tag files with, or "*" for all
   """
@@ -284,6 +304,7 @@ input ExportObjectsInput {
   studios: ExportObjectTypeInput
   performers: ExportObjectTypeInput
   tags: ExportObjectTypeInput
+  labels: ExportObjectTypeInput
   groups: ExportObjectTypeInput
   movies: ExportObjectTypeInput @deprecated(reason: "Use groups instead")
   galleries: ExportObjectTypeInput

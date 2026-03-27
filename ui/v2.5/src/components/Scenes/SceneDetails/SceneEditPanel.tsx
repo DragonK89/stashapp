@@ -20,6 +20,7 @@ import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { useFormik } from "formik";
 import { Prompt } from "react-router-dom";
 import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { IGroupEntry, SceneGroupTable } from "./SceneGroupTable";
 import { faSearch, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { objectTitle } from "src/core/files";
@@ -41,7 +42,9 @@ import { Gallery, GallerySelect } from "src/components/Galleries/GallerySelect";
 import { Group } from "src/components/Groups/GroupSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
 import { ScraperMenu } from "src/components/Shared/ScraperMenu";
+import { useIsMounted } from "src/hooks/state";
 import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
+import { LabelIDSelect } from "src/components/Labels/LabelSelect";
 
 const SceneScrapeDialog = lazyComponent(() => import("./SceneScrapeDialog"));
 const SceneQueryModal = lazyComponent(() => import("./SceneQueryModal"));
@@ -110,6 +113,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
+  const isMounted = useIsMounted();
 
   const schema = yup.object({
     title: yup.string().ensure(),
@@ -119,6 +123,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
     director: yup.string().ensure(),
     gallery_ids: yup.array(yup.string().required()).defined(),
     studio_id: yup.string().required().nullable(),
+    label_id: yup.string().nullable().defined(),
     performer_ids: yup.array(yup.string().required()).defined(),
     groups: yup
       .array(
@@ -143,6 +148,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
       director: scene.director ?? "",
       gallery_ids: (scene.galleries ?? []).map((g) => g.id),
       studio_id: scene.studio?.id ?? null,
+      label_id: (scene.label as { id?: string } | undefined)?.id ?? null,
       performer_ids: (scene.performers ?? []).map((p) => p.id),
       groups: (scene.groups ?? []).map((m) => {
         return { group_id: m.group.id, scene_index: m.scene_index ?? null };
@@ -212,6 +218,8 @@ export const SceneEditPanel: React.FC<IProps> = ({
   function onSetStudio(item: Studio | null) {
     setStudio(item);
     formik.setFieldValue("studio_id", item ? item.id : null);
+    // Labels are scoped to studios, so clear the current label selection when studio changes.
+    formik.setFieldValue("label_id", null);
   }
 
   useEffect(() => {
@@ -272,11 +280,15 @@ export const SceneEditPanel: React.FC<IProps> = ({
     setIsLoading(true);
     try {
       await onSubmit(input);
-      formik.resetForm();
+      if (isMounted.current) {
+        formik.resetForm();
+      }
     } catch (e) {
       Toast.error(e);
     }
-    setIsLoading(false);
+    if (isMounted.current) {
+      setIsLoading(false);
+    }
   }
 
   const encodingImage = ImageUtils.usePasteImage(onImageLoad);
@@ -303,7 +315,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -333,7 +347,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -350,7 +366,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
     } catch (e) {
       Toast.error(e);
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -648,6 +666,24 @@ export const SceneEditPanel: React.FC<IProps> = ({
     return renderField("studio_id", title, control);
   }
 
+  function renderLabelField() {
+    const title = intl.formatMessage({ id: "label" });
+    const control = (
+      <LabelIDSelect
+        studioId={studio?.id ?? undefined}
+        studioName={studio?.name ?? undefined}
+        ids={formik.values.label_id ? [formik.values.label_id] : []}
+        onSelect={(items) =>
+          formik.setFieldValue("label_id", items.length > 0 ? items[0].id : null)
+        }
+        isDisabled={!studio}
+        menuPortalTarget={document.body}
+      />
+    );
+
+    return renderField("label_id", title, control);
+  }
+
   function renderPerformersField() {
     const date = (() => {
       try {
@@ -691,6 +727,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
   }
 
   function renderTagsField() {
+    const ui = stashConfig?.ui as IUIConfig | undefined;
+    if (Boolean(ui?.hideTags)) {
+      return;
+    }
     const title = intl.formatMessage({ id: "tags" });
     return renderField("tag_ids", title, tagsControl(), fullWidthProps);
   }
@@ -796,6 +836,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
 
             {renderGalleriesField()}
             {renderStudioField()}
+            {renderLabelField()}
             {renderPerformersField()}
             {renderGroupsField()}
             {renderTagsField()}

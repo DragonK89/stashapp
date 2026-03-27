@@ -10,7 +10,11 @@ import { View } from "./views";
 import { usePrevious } from "src/hooks/state";
 import * as GQL from "src/core/generated-graphql";
 import { DisplayMode } from "src/models/list-filter/types";
-import { Criterion } from "src/models/list-filter/criteria/criterion";
+import {
+  Criterion,
+  IHierarchicalLabeledIdCriterion,
+  ILabeledIdCriterion,
+} from "src/models/list-filter/criteria/criterion";
 
 function locationEquals(
   loc1: ReturnType<typeof useLocation> | undefined,
@@ -444,8 +448,14 @@ export type IListSelect<T extends IHasID = IHasID> = ReturnType<
 // returns true if the filter has changed in a way that impacts the total count
 function totalCountImpacted(
   oldFilter: ListFilterModel,
-  newFilter: ListFilterModel
+  newFilter: ListFilterModel,
+  oldExtraCriteria?: Record<string, any>,
+  newExtraCriteria?: Record<string, any>
 ) {
+  if (!isEqual(oldExtraCriteria, newExtraCriteria)) {
+    return true;
+  }
+
   return (
     oldFilter.criteria.length !== newFilter.criteria.length ||
     oldFilter.criteria.some((c) => {
@@ -462,23 +472,32 @@ function totalCountImpacted(
 // it is used to prevent the result count/pagination from flickering when changing pages or sorting
 export function useCachedQueryResult<T extends QueryResult>(
   filter: ListFilterModel,
-  result: T
+  result: T,
+  options?: {
+    extraCriteria?: Record<
+      string,
+      IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]
+    >;
+  }
 ) {
+  const { extraCriteria } = options ?? {};
   const [cachedResult, setCachedResult] = useState(result);
   const [lastFilter, setLastFilter] = useState(filter);
+  const [lastExtraCriteria, setLastExtraCriteria] = useState(extraCriteria);
 
   // if we are only changing the page or sort, don't update the result count
   useEffect(() => {
     if (!result.loading) {
       setCachedResult(result);
     } else {
-      if (totalCountImpacted(lastFilter, filter)) {
+      if (totalCountImpacted(lastFilter, filter, lastExtraCriteria, extraCriteria)) {
         setCachedResult(result);
       }
     }
 
     setLastFilter(filter);
-  }, [filter, result, lastFilter]);
+    setLastExtraCriteria(extraCriteria);
+  }, [filter, result, lastFilter, extraCriteria, lastExtraCriteria]);
 
   return cachedResult;
 }

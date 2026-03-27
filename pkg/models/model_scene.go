@@ -20,6 +20,7 @@ type Scene struct {
 	Rating    *int `json:"rating"`
 	Organized bool `json:"organized"`
 	StudioID  *int `json:"studio_id"`
+	LabelID   *int `json:"label_id"`
 
 	// transient - not persisted
 	Files         RelatedVideoFiles
@@ -65,6 +66,7 @@ type ScenePartial struct {
 	Rating       OptionalInt
 	Organized    OptionalBool
 	StudioID     OptionalInt
+	LabelID      OptionalInt
 	CreatedAt    OptionalTime
 	UpdatedAt    OptionalTime
 	ResumeTime   OptionalFloat64
@@ -208,6 +210,7 @@ func (s ScenePartial) UpdateInput(id int) SceneUpdateInput {
 		Rating100:    s.Rating.Ptr(),
 		Organized:    s.Organized.Ptr(),
 		StudioID:     s.StudioID.StringPtr(),
+		LabelID:      s.LabelID.StringPtr(),
 		GalleryIds:   s.GalleryIDs.IDStrings(),
 		PerformerIds: s.PerformerIDs.IDStrings(),
 		Movies:       s.GroupIDs.SceneMovieInputs(),

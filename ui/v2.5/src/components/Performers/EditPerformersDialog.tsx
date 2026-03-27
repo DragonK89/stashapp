@@ -28,6 +28,8 @@ import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import * as FormUtils from "src/utils/form";
 import { CountrySelect } from "../Shared/CountrySelect";
 import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import cx from "classnames";
 
 interface IListOperationProps {
@@ -66,6 +68,8 @@ export const EditPerformersDialog: React.FC<IListOperationProps> = (
 
   const { configuration } = useConfigurationContext();
   const { sfwContentMode } = configuration.interface;
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
 
   const [tagIds, setTagIds] = useState<GQL.BulkUpdateIds>({
     mode: GQL.BulkUpdateIdMode.Add,
@@ -98,8 +102,11 @@ export const EditPerformersDialog: React.FC<IListOperationProps> = (
         return performer.id;
       }),
       ...updateInput,
-      tag_ids: tagIds,
     };
+
+    if (!hideTags) {
+      performerInput.tag_ids = tagIds;
+    }
 
     // we don't have unset functionality for the rating star control
     // so need to determine if we are setting a rating or not
@@ -151,7 +158,9 @@ export const EditPerformersDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   useEffect(() => {
@@ -367,21 +376,23 @@ export const EditPerformersDialog: React.FC<IListOperationProps> = (
             setUpdateField({ career_length: v })
           )}
 
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            <MultiSet
-              type="tags"
-              disabled={isUpdating}
-              onUpdate={(itemIDs) => setTagIds({ ...tagIds, ids: itemIDs })}
-              onSetMode={(newMode) => setTagIds({ ...tagIds, mode: newMode })}
-              existingIds={existingTagIds ?? []}
-              ids={tagIds.ids ?? []}
-              mode={tagIds.mode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+          {!hideTags && (
+            <Form.Group controlId="tags">
+              <Form.Label>
+                <FormattedMessage id="tags" />
+              </Form.Label>
+              <MultiSet
+                type="tags"
+                disabled={isUpdating}
+                onUpdate={(itemIDs) => setTagIds({ ...tagIds, ids: itemIDs })}
+                onSetMode={(newMode) => setTagIds({ ...tagIds, mode: newMode })}
+                existingIds={existingTagIds ?? []}
+                ids={tagIds.ids ?? []}
+                mode={tagIds.mode}
+                menuPortalTarget={document.body}
+              />
+            </Form.Group>
+          )}
 
           <Form.Group controlId="ignore-auto-tags">
             <IndeterminateCheckbox

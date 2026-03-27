@@ -1,5 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import * as GQL from "src/core/generated-graphql";
 import NavUtils from "src/utils/navigation";
 import { GridCard } from "src/components/Shared/GridCard/GridCard";
@@ -79,6 +81,11 @@ export const StudioCard: React.FC<IProps> = ({
   zoomIndex,
   onSelectedChanged,
 }) => {
+  const { configuration } = useConfigurationContext();
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+  const hideGroups = ui?.hideGroups ?? false;
+
   const [updateStudio] = useStudioUpdate();
 
   function onToggleFavorite(v: boolean) {
@@ -134,7 +141,7 @@ export const StudioCard: React.FC<IProps> = ({
   }
 
   function maybeRenderGroupsPopoverButton() {
-    if (!studio.group_count) return;
+    if (!studio.group_count || hideGroups) return;
 
     return (
       <PopoverCountButton
@@ -160,7 +167,7 @@ export const StudioCard: React.FC<IProps> = ({
   }
 
   function maybeRenderTagPopoverButton() {
-    if (studio.tags.length <= 0) return;
+    if (studio.tags.length <= 0 || hideTags) return;
 
     const popoverContent = studio.tags.map((tag) => (
       <TagLink key={tag.id} linkType="studio" tag={tag} />
@@ -187,10 +194,10 @@ export const StudioCard: React.FC<IProps> = ({
       studio.scene_count ||
       studio.image_count ||
       studio.gallery_count ||
-      studio.group_count ||
+      (studio.group_count && !hideGroups) ||
       studio.performer_count ||
       studio.o_counter ||
-      studio.tags.length > 0
+      (studio.tags.length > 0 && !hideTags)
     ) {
       return (
         <>

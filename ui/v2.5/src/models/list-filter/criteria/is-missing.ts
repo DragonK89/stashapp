@@ -87,6 +87,12 @@ export const StudioIsMissingCriterionOption = new IsMissingCriterionOption(
   ["image", "stash_id", "details"]
 );
 
+export const LabelIsMissingCriterionOption = new IsMissingCriterionOption(
+  "isMissing",
+  "is_missing",
+  ["image", "details"]
+);
+
 export const GroupIsMissingCriterionOption = new IsMissingCriterionOption(
   "isMissing",
   "is_missing",

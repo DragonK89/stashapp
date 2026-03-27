@@ -43,6 +43,7 @@ import { getPlatformURL } from "./core/createClient";
 import { lazyComponent } from "./utils/lazyComponent";
 import { isPlatformUniquelyRenderedByApple } from "./utils/apple";
 import Event from "./hooks/event";
+import { IUIConfig } from "src/core/config";
 
 import { PluginRoutes, PluginsLoader } from "./plugins";
 
@@ -65,6 +66,7 @@ const Scenes = lazyComponent(() => import("./components/Scenes/Scenes"));
 const Settings = lazyComponent(() => import("./components/Settings/Settings"));
 const Stats = lazyComponent(() => import("./components/Stats"));
 const Studios = lazyComponent(() => import("./components/Studios/Studios"));
+const Labels = lazyComponent(() => import("./components/Labels/Labels"));
 const Galleries = lazyComponent(
   () => import("./components/Galleries/Galleries")
 );
@@ -80,6 +82,12 @@ const SceneFilenameParser = lazyComponent(
 );
 const SceneDuplicateChecker = lazyComponent(
   () => import("./components/SceneDuplicateChecker/SceneDuplicateChecker")
+);
+const ImportTorrentScenesFromFile = lazyComponent(
+  () =>
+    import(
+      "./components/SceneTools/ImportTorrentScenesFromFile/ImportTorrentScenesFromFile"
+    )
 );
 
 const appleRendering = isPlatformUniquelyRenderedByApple();
@@ -146,8 +154,11 @@ export const App: React.FC = () => {
   const intlLanguage = translateLanguageLocale(language);
 
   // use en-GB as default messages if any messages aren't found in the chosen language
-  const [messages, setMessages] = useState<{}>();
-  const [customMessages, setCustomMessages] = useState<{}>();
+  const [messages, setMessages] = useState<Record<string, string>>();
+  const [customMessages, setCustomMessages] = useState<Record<string, unknown>>();
+  const groupsLabelOverride = (
+    (config.data?.configuration.ui as IUIConfig | undefined)?.groupsLabel ?? ""
+  ).trim();
 
   useEffect(() => {
     (async () => {
@@ -185,7 +196,12 @@ export const App: React.FC = () => {
         }
       );
 
-      const newMessages = flattenMessages(mergedMessages);
+      const newMessages = flattenMessages(
+        mergedMessages
+      ) as Record<string, string>;
+      if (groupsLabelOverride.length > 0) {
+        newMessages.groups = groupsLabelOverride;
+      }
 
       yup.setLocale({
         mixed: {
@@ -198,7 +214,7 @@ export const App: React.FC = () => {
     };
 
     setLocale();
-  }, [customMessages, language]);
+  }, [customMessages, language, groupsLabelOverride]);
 
   const location = useLocation();
   const history = useHistory();
@@ -251,13 +267,42 @@ export const App: React.FC = () => {
         <Suspense fallback={<LoadingIndicator />}>
           <Switch>
             <Route exact path="/" component={FrontPage} />
+            <Route
+              path="/scenes/markers"
+              render={() => {
+                const ui = config.data?.configuration.ui as
+                  | IUIConfig
+                  | undefined;
+                const hideMarkers = Boolean(ui?.hideMarkers);
+                return hideMarkers ? <PageNotFound /> : <Scenes />;
+              }}
+            />
             <Route path="/scenes" component={Scenes} />
             <Route path="/images" component={Images} />
             <Route path="/galleries" component={Galleries} />
             <Route path="/performers" component={Performers} />
-            <Route path="/tags" component={Tags} />
+            <Route
+              path="/tags"
+              render={() => {
+                const ui = config.data?.configuration.ui as
+                  | IUIConfig
+                  | undefined;
+                const hideTags = Boolean(ui?.hideTags);
+                return hideTags ? <PageNotFound /> : <Tags />;
+              }}
+            />
             <Route path="/studios" component={Studios} />
-            <Route path="/groups" component={Groups} />
+            <Route path="/labels" component={Labels} />
+            <Route
+              path="/groups"
+              render={() => {
+                const ui = config.data?.configuration.ui as
+                  | IUIConfig
+                  | undefined;
+                const hideGroups = Boolean(ui?.hideGroups);
+                return hideGroups ? <PageNotFound /> : <Groups />;
+              }}
+            />
             <Route path="/stats" component={Stats} />
             <Route path="/settings" component={Settings} />
             <Route
@@ -267,6 +312,10 @@ export const App: React.FC = () => {
             <Route
               path="/sceneDuplicateChecker"
               component={SceneDuplicateChecker}
+            />
+            <Route
+              path="/importTorrentScenesFromFile"
+              component={ImportTorrentScenesFromFile}
             />
             <Route path="/setup" component={Setup} />
             <Route path="/migrate" component={Migrate} />

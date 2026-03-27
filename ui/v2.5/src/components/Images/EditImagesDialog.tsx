@@ -4,6 +4,9 @@ import { FormattedMessage, useIntl } from "react-intl";
 import isEqual from "lodash-es/isEqual";
 import { useBulkImageUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
+import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import { StudioSelect } from "src/components/Shared/Select";
 import { ModalComponent } from "src/components/Shared/Modal";
 import { useToast } from "src/hooks/Toast";
@@ -31,6 +34,10 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
 ) => {
   const intl = useIntl();
   const Toast = useToast();
+
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
   const [rating100, setRating] = useState<number>();
   const [studioId, setStudioId] = useState<string>();
   const [performerMode, setPerformerMode] =
@@ -51,6 +58,7 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
   const [existingGalleryIds, setExistingGalleryIds] = useState<string[]>();
 
   const [organized, setOrganized] = useState<boolean | undefined>();
+  const isMounted = useIsMounted();
 
   const [updateImages] = useBulkImageUpdate();
 
@@ -81,7 +89,9 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
       performerIds,
       aggregatePerformerIds
     );
-    imageInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+    if (!hideTags) {
+      imageInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+    }
     imageInput.gallery_ids = getAggregateInputIDs(
       galleryMode,
       galleryIds,
@@ -113,7 +123,9 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   useEffect(() => {
@@ -258,21 +270,23 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
             />
           </Form.Group>
 
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            <MultiSet
-              type="tags"
-              disabled={isUpdating}
-              onUpdate={(itemIDs) => setTagIds(itemIDs)}
-              onSetMode={(newMode) => setTagMode(newMode)}
-              existingIds={existingTagIds ?? []}
-              ids={tagIds ?? []}
-              mode={tagMode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+          {!hideTags && (
+            <Form.Group controlId="tags">
+              <Form.Label>
+                <FormattedMessage id="tags" />
+              </Form.Label>
+              <MultiSet
+                type="tags"
+                disabled={isUpdating}
+                onUpdate={(itemIDs) => setTagIds(itemIDs)}
+                onSetMode={(newMode) => setTagMode(newMode)}
+                existingIds={existingTagIds ?? []}
+                ids={tagIds ?? []}
+                mode={tagMode}
+                menuPortalTarget={document.body}
+              />
+            </Form.Group>
+          )}
 
           <Form.Group controlId="galleries">
             <Form.Label>
@@ -294,7 +308,7 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
             <Form.Check
               type="checkbox"
               label={intl.formatMessage({ id: "organized" })}
-              checked={organized}
+              checked={organized ?? false}
               ref={checkboxRef}
               onChange={() => cycleOrganized()}
             />

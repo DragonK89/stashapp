@@ -1,6 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Form } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
+import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
+import { IUIConfig } from "src/core/config";
 import { useBulkSceneMarkerUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
 import { ModalComponent } from "../Shared/Modal";
@@ -27,6 +30,10 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
   const intl = useIntl();
   const Toast = useToast();
 
+  const { configuration } = useConfigurationContext();
+  const ui = configuration.ui as IUIConfig | undefined;
+  const hideTags = ui?.hideTags ?? false;
+
   const [updateInput, setUpdateInput] =
     useState<GQL.BulkSceneMarkerUpdateInput>({
       ids: props.selected.map((scenemarker) => {
@@ -37,6 +44,7 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
   const [tagIds, setTagIds] = useState<GQL.BulkUpdateIds>({
     mode: GQL.BulkUpdateIdMode.Add,
   });
+  const isMounted = useIsMounted();
 
   const [updateSceneMarkers] = useBulkSceneMarkerUpdate();
 
@@ -86,8 +94,11 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
   function getSceneMarkerInput(): GQL.BulkSceneMarkerUpdateInput {
     const sceneMarkerInput: GQL.BulkSceneMarkerUpdateInput = {
       ...updateInput,
-      tag_ids: tagIds,
     };
+
+    if (!hideTags) {
+      sceneMarkerInput.tag_ids = tagIds;
+    }
 
     return sceneMarkerInput;
   }
@@ -112,7 +123,9 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
     } catch (e) {
       Toast.error(e);
     }
-    setIsUpdating(false);
+    if (isMounted.current) {
+      setIsUpdating(false);
+    }
   }
 
   function renderTextField(
@@ -162,35 +175,39 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
             setUpdateField({ title: newValue })
           )}
 
-          <Form.Group controlId="primary-tag">
-            <Form.Label>
-              <FormattedMessage id="primary_tag" />
-            </Form.Label>
-            <TagSelect
-              onSelect={(t) => setUpdateField({ primary_tag_id: t[0]?.id })}
-              ids={
-                updateInput.primary_tag_id ? [updateInput.primary_tag_id] : []
-              }
-            />
-          </Form.Group>
+          {!hideTags && (
+            <>
+              <Form.Group controlId="primary-tag">
+                <Form.Label>
+                  <FormattedMessage id="primary_tag" />
+                </Form.Label>
+                <TagSelect
+                  onSelect={(t) => setUpdateField({ primary_tag_id: t[0]?.id })}
+                  ids={
+                    updateInput.primary_tag_id ? [updateInput.primary_tag_id] : []
+                  }
+                />
+              </Form.Group>
 
-          <Form.Group controlId="tags">
-            <Form.Label>
-              <FormattedMessage id="tags" />
-            </Form.Label>
-            <MultiSet
-              type="tags"
-              disabled={isUpdating}
-              onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
-              onSetMode={(newMode) =>
-                setTagIds((v) => ({ ...v, mode: newMode }))
-              }
-              existingIds={aggregateState.tagIds ?? []}
-              ids={tagIds.ids ?? []}
-              mode={tagIds.mode}
-              menuPortalTarget={document.body}
-            />
-          </Form.Group>
+              <Form.Group controlId="tags">
+                <Form.Label>
+                  <FormattedMessage id="tags" />
+                </Form.Label>
+                <MultiSet
+                  type="tags"
+                  disabled={isUpdating}
+                  onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
+                  onSetMode={(newMode) =>
+                    setTagIds((v) => ({ ...v, mode: newMode }))
+                  }
+                  existingIds={aggregateState.tagIds ?? []}
+                  ids={tagIds.ids ?? []}
+                  mode={tagIds.mode}
+                  menuPortalTarget={document.body}
+                />
+              </Form.Group>
+            </>
+          )}
         </Form>
       </ModalComponent>
     );

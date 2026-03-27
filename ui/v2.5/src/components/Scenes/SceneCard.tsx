@@ -11,6 +11,7 @@ import NavUtils from "src/utils/navigation";
 import TextUtils from "src/utils/text";
 import { SceneQueue } from "src/models/sceneQueue";
 import { useConfigurationContext } from "src/hooks/Config";
+import { IUIConfig } from "src/core/config";
 import { PerformerPopoverButton } from "../Shared/PerformerPopoverButton";
 import { GridCard } from "../Shared/GridCard/GridCard";
 import { RatingBanner } from "../Shared/RatingBanner";
@@ -125,6 +126,12 @@ const Description: React.FC<{
 const SceneCardPopovers = PatchComponent(
   "SceneCard.Popovers",
   (props: ISceneCardProps) => {
+    const { configuration } = useConfigurationContext();
+    const ui = configuration.ui as IUIConfig | undefined;
+    const hideTags = ui?.hideTags ?? false;
+    const hideGroups = ui?.hideGroups ?? false;
+    const hideMarkers = ui?.hideMarkers ?? false;
+
     const file = useMemo(
       () => (props.scene.files.length > 0 ? props.scene.files[0] : undefined),
       [props.scene]
@@ -142,7 +149,7 @@ const SceneCardPopovers = PatchComponent(
     }, [props.fromGroupId, props.scene.groups]);
 
     function maybeRenderTagPopoverButton() {
-      if (props.scene.tags.length <= 0) return;
+      if (props.scene.tags.length <= 0 || hideTags) return;
 
       const popoverContent = props.scene.tags.map((tag) => (
         <TagLink key={tag.id} tag={tag} />
@@ -174,7 +181,7 @@ const SceneCardPopovers = PatchComponent(
     }
 
     function maybeRenderGroupPopoverButton() {
-      if (props.scene.groups.length <= 0) return;
+      if (props.scene.groups.length <= 0 || hideGroups) return;
 
       const popoverContent = props.scene.groups.map((sceneGroup) => (
         <GroupTag key={sceneGroup.group.id} group={sceneGroup.group} />
@@ -195,7 +202,7 @@ const SceneCardPopovers = PatchComponent(
     }
 
     function maybeRenderSceneMarkerPopoverButton() {
-      if (props.scene.scene_markers.length <= 0) return;
+      if (props.scene.scene_markers.length <= 0 || hideMarkers) return;
 
       const popoverContent = props.scene.scene_markers.map((marker) => {
         const markerWithScene = { ...marker, scene: { id: props.scene.id } };
@@ -282,10 +289,10 @@ const SceneCardPopovers = PatchComponent(
     function maybeRenderPopoverButtonGroup() {
       if (
         !props.compact &&
-        (props.scene.tags.length > 0 ||
+        ((props.scene.tags.length > 0 && !hideTags) ||
           props.scene.performers.length > 0 ||
-          props.scene.groups.length > 0 ||
-          props.scene.scene_markers.length > 0 ||
+          (props.scene.groups.length > 0 && !hideGroups) ||
+          (props.scene.scene_markers.length > 0 && !hideMarkers) ||
           props.scene?.o_counter ||
           props.scene.galleries.length > 0 ||
           props.scene.organized ||

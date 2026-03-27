@@ -139,6 +139,7 @@ export type CriterionType =
   | "tag_count"
   | "performers"
   | "studios"
+  | "labels"
   | "scenes"
   | "groups"
   | "movies" // legacy

@@ -147,6 +147,7 @@ func (qb *sceneFilterHandler) criterionHandler() criterionHandler {
 		qb.performersCriterionHandler(sceneFilter.Performers),
 		qb.performerCountCriterionHandler(sceneFilter.PerformerCount),
 		studioCriterionHandler(sceneTable, sceneFilter.Studios),
+		qb.labelsCriterionHandler(sceneFilter.Labels),
 
 		qb.groupsCriterionHandler(sceneFilter.Groups),
 		qb.moviesCriterionHandler(sceneFilter.Movies),
@@ -182,6 +183,12 @@ func (qb *sceneFilterHandler) criterionHandler() criterionHandler {
 			relatedIDCol:   "scenes.studio_id",
 			relatedRepo:    studioRepository.repository,
 			relatedHandler: &studioFilterHandler{sceneFilter.StudiosFilter},
+		},
+
+		&relatedFilterHandler{
+			relatedIDCol:   "scenes.label_id",
+			relatedRepo:    labelRepository.repository,
+			relatedHandler: &labelFilterHandler{sceneFilter.LabelsFilter},
 		},
 
 		&relatedFilterHandler{
@@ -579,5 +586,29 @@ func (qb *sceneFilterHandler) phashDistanceCriterionHandler(phashDistance *model
 				}, "fingerprints_phash.fingerprint", nil)(ctx, f)
 			}
 		}
+	}
+}
+
+func (qb *sceneFilterHandler) labelsCriterionHandler(labels *models.HierarchicalMultiCriterionInput) criterionHandlerFunc {
+	return func(ctx context.Context, f *filterBuilder) {
+		if labels == nil {
+			return
+		}
+
+		labelsCopy := *labels
+		switch labelsCopy.Modifier {
+		case models.CriterionModifierEquals:
+			labelsCopy.Modifier = models.CriterionModifierIncludesAll
+		case models.CriterionModifierNotEquals:
+			labelsCopy.Modifier = models.CriterionModifierExcludes
+		}
+
+		hh := hierarchicalMultiCriterionHandlerBuilder{
+			primaryTable: sceneTable,
+			foreignTable: labelTable,
+			foreignFK:    labelIDColumn,
+		}
+
+		hh.handler(&labelsCopy)(ctx, f)
 	}
 }
