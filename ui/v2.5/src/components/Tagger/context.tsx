@@ -38,6 +38,9 @@ export interface ITaggerContextState {
   doSceneQuery: (sceneID: string, searchStr: string) => Promise<void>;
   doSceneFragmentScrape: (sceneID: string) => Promise<void>;
   doMultiSceneFragmentScrape: (sceneIDs: string[]) => Promise<void>;
+  doMultiSceneQueryScrape: (
+    queries: { sceneID: string; searchVal: string }[]
+  ) => Promise<void>;
   stopMultiScrape: () => void;
   createNewTag: (
     tag: GQL.ScrapedTag,
@@ -83,15 +86,16 @@ const dummyValFn = () => {
 
 export const TaggerStateContext = React.createContext<ITaggerContextState>({
   config: initialConfig,
-  setConfig: () => {},
+  setConfig: () => { },
   loading: false,
   sources: [],
   searchResults: {},
-  setCurrentSource: () => {},
+  setCurrentSource: () => { },
   doSceneQuery: dummyFn,
   doSceneFragmentScrape: dummyFn,
   doMultiSceneFragmentScrape: dummyFn,
-  stopMultiScrape: () => {},
+  doMultiSceneQueryScrape: dummyFn,
+  stopMultiScrape: () => { },
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
   linkPerformer: dummyFn,
@@ -285,13 +289,12 @@ export const TaggerContext: React.FC = ({ children }) => {
     });
   }
 
-  async function doSceneQuery(sceneID: string, searchVal: string) {
+  async function sceneQuery(sceneID: string, searchVal: string) {
     if (!currentSource) {
       return;
     }
 
     try {
-      setLoading(true);
       clearSearchResults(sceneID);
 
       const results = await queryScrapeSceneQuery(
@@ -316,11 +319,54 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       }
 
-      setSearchResults({ ...searchResults, [sceneID]: newResult });
+      setSearchResults((current) => ({ ...current, [sceneID]: newResult }));
+    } catch (err: unknown) {
+      setSearchResults((current) => ({
+        ...current,
+        [sceneID]: { error: errorToString(err) },
+      }));
+    }
+  }
+
+  async function doSceneQuery(sceneID: string, searchVal: string) {
+    try {
+      setLoading(true);
+      await sceneQuery(sceneID, searchVal);
     } catch (err) {
       Toast.error(err);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
+    }
+  }
+
+  async function doMultiSceneQueryScrape(
+    queries: { sceneID: string; searchVal: string }[]
+  ) {
+    if (!currentSource) {
+      return;
+    }
+
+    setSearchResults({});
+
+    try {
+      stopping.current = false;
+      setLoadingMulti(true);
+      setMultiError(undefined);
+
+      await queries.reduce(async (promise, q) => {
+        await promise;
+        if (!stopping.current) {
+          await sceneQuery(q.sceneID, q.searchVal);
+        }
+      }, Promise.resolve());
+    } catch (err) {
+      Toast.error(err);
+    } finally {
+      if (isMounted.current) {
+        setLoadingMulti(false);
+      }
     }
   }
 
@@ -796,9 +842,9 @@ export const TaggerContext: React.FC = ({ children }) => {
             studio:
               r.remote_site_id === stashID
                 ? {
-                    ...r.studio,
-                    stored_id: studioID,
-                  }
+                  ...r.studio,
+                  stored_id: studioID,
+                }
                 : r.studio,
           };
         });
@@ -861,9 +907,9 @@ export const TaggerContext: React.FC = ({ children }) => {
             studio:
               r.studio.remote_site_id === studio.remote_site_id
                 ? {
-                    ...r.studio,
-                    stored_id: studioID,
-                  }
+                  ...r.studio,
+                  stored_id: studioID,
+                }
                 : r.studio,
           };
         });
@@ -938,6 +984,7 @@ export const TaggerContext: React.FC = ({ children }) => {
         doSceneQuery,
         doSceneFragmentScrape,
         doMultiSceneFragmentScrape,
+        doMultiSceneQueryScrape,
         stopMultiScrape,
         createNewTag,
         createNewPerformer,

@@ -38,7 +38,7 @@ export const initialConfig: ITaggerConfig = {
   createParentStudios: true,
 };
 
-export type ParseMode = "auto" | "filename" | "dir" | "path" | "metadata";
+export type ParseMode = "auto" | "filename" | "dir" | "path" | "metadata" | "studiocode" | "title";
 export type TagOperation = "merge" | "overwrite";
 export interface ITaggerConfig {
   blacklist: string[];

@@ -270,100 +270,100 @@ const SidebarContent: React.FC<{
   count,
   focus,
 }) => {
-  const showResultsId =
-    count !== undefined ? "actions.show_count_results" : "actions.show_results";
+    const showResultsId =
+      count !== undefined ? "actions.show_count_results" : "actions.show_results";
 
-  const hideStudios = view === View.StudioScenes;
+    const hideStudios = view === View.StudioScenes;
 
-  return (
-    <>
-      <FilteredSidebarHeader
-        sidebarOpen={sidebarOpen}
-        showEditFilter={showEditFilter}
-        filter={filter}
-        setFilter={setFilter}
-        view={view}
-        focus={focus}
-      />
+    return (
+      <>
+        <FilteredSidebarHeader
+          sidebarOpen={sidebarOpen}
+          showEditFilter={showEditFilter}
+          filter={filter}
+          setFilter={setFilter}
+          view={view}
+          focus={focus}
+        />
 
-      <ScenesFilterSidebarSections>
-        {!hideStudios && (
-          <SidebarStudiosFilter
-            title={<FormattedMessage id="studios" />}
-            data-type={StudiosCriterionOption.type}
-            option={StudiosCriterionOption}
+        <ScenesFilterSidebarSections>
+          {!hideStudios && (
+            <SidebarStudiosFilter
+              title={<FormattedMessage id="studios" />}
+              data-type={StudiosCriterionOption.type}
+              option={StudiosCriterionOption}
+              filter={filter}
+              setFilter={setFilter}
+              filterHook={filterHook}
+              sectionID="studios"
+            />
+          )}
+          <SidebarPerformersFilter
+            title={<FormattedMessage id="performers" />}
+            data-type={PerformersCriterionOption.type}
+            option={PerformersCriterionOption}
             filter={filter}
             setFilter={setFilter}
             filterHook={filterHook}
-            sectionID="studios"
+            sectionID="performers"
           />
-        )}
-        <SidebarPerformersFilter
-          title={<FormattedMessage id="performers" />}
-          data-type={PerformersCriterionOption.type}
-          option={PerformersCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          filterHook={filterHook}
-          sectionID="performers"
-        />
-        <SidebarTagsFilter
-          title={<FormattedMessage id="tags" />}
-          data-type={TagsCriterionOption.type}
-          option={TagsCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          filterHook={filterHook}
-          sectionID="tags"
-        />
-        <SidebarRatingFilter
-          title={<FormattedMessage id="rating" />}
-          data-type={RatingCriterionOption.type}
-          option={RatingCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          sectionID="rating"
-        />
-        <SidebarDurationFilter
-          title={<FormattedMessage id="duration" />}
-          option={DurationCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          sectionID="duration"
-        />
-        <SidebarBooleanFilter
-          title={<FormattedMessage id="hasMarkers" />}
-          data-type={HasMarkersCriterionOption.type}
-          option={HasMarkersCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          sectionID="hasMarkers"
-        />
-        <SidebarBooleanFilter
-          title={<FormattedMessage id="organized" />}
-          data-type={OrganizedCriterionOption.type}
-          option={OrganizedCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          sectionID="organized"
-        />
-        <SidebarAgeFilter
-          title={<FormattedMessage id="performer_age" />}
-          option={PerformerAgeCriterionOption}
-          filter={filter}
-          setFilter={setFilter}
-          sectionID="performer_age"
-        />
-      </ScenesFilterSidebarSections>
+          <SidebarTagsFilter
+            title={<FormattedMessage id="tags" />}
+            data-type={TagsCriterionOption.type}
+            option={TagsCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            filterHook={filterHook}
+            sectionID="tags"
+          />
+          <SidebarRatingFilter
+            title={<FormattedMessage id="rating" />}
+            data-type={RatingCriterionOption.type}
+            option={RatingCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            sectionID="rating"
+          />
+          <SidebarDurationFilter
+            title={<FormattedMessage id="duration" />}
+            option={DurationCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            sectionID="duration"
+          />
+          <SidebarBooleanFilter
+            title={<FormattedMessage id="hasMarkers" />}
+            data-type={HasMarkersCriterionOption.type}
+            option={HasMarkersCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            sectionID="hasMarkers"
+          />
+          <SidebarBooleanFilter
+            title={<FormattedMessage id="organized" />}
+            data-type={OrganizedCriterionOption.type}
+            option={OrganizedCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            sectionID="organized"
+          />
+          <SidebarAgeFilter
+            title={<FormattedMessage id="performer_age" />}
+            option={PerformerAgeCriterionOption}
+            filter={filter}
+            setFilter={setFilter}
+            sectionID="performer_age"
+          />
+        </ScenesFilterSidebarSections>
 
-      <div className="sidebar-footer">
-        <Button className="sidebar-close-button" onClick={onClose}>
-          <FormattedMessage id={showResultsId} values={{ count }} />
-        </Button>
-      </div>
-    </>
-  );
-};
+        <div className="sidebar-footer">
+          <Button className="sidebar-close-button" onClick={onClose}>
+            <FormattedMessage id={showResultsId} values={{ count }} />
+          </Button>
+        </div>
+      </>
+    );
+  };
 
 interface IOperations {
   text: string;

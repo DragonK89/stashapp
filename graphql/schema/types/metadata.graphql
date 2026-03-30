@@ -81,6 +81,8 @@ input ScanMetadataInput {
   scanTorrents: Boolean
   "When scanTorrents is enabled, normalize torrent scene title using strict PREFIX-NUMBER parsing"
   scanTorrentsNormalizeTitle: Boolean
+  "When scanTorrents is enabled, also scan for images in the same directory"
+  scanTorrentsScanImages: Boolean
   "When scanTorrentsNormalizeTitle is enabled, optionally rename torrent files to match the normalized title"
   scanTorrentsRenameFile: Boolean
   "Generate covers during scan"
@@ -109,6 +111,8 @@ type ScanMetadataOptions {
   scanTorrents: Boolean!
   "When scanTorrents is enabled, normalize torrent scene title using strict PREFIX-NUMBER parsing"
   scanTorrentsNormalizeTitle: Boolean!
+  "When scanTorrents is enabled, also scan for images in the same directory"
+  scanTorrentsScanImages: Boolean!
   "When scanTorrentsNormalizeTitle is enabled, optionally rename torrent files to match the normalized title"
   scanTorrentsRenameFile: Boolean!
   "Generate covers during scan"

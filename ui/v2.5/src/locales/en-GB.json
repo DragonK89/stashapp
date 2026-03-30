@@ -156,6 +156,7 @@
     "view_random": "View Random"
   },
   "actions_name": "Actions",
+  "labels": "Labels",
   "age": "Age",
   "age_on_date": "{age} at production",
   "aliases": "Aliases",
@@ -206,6 +207,10 @@
       "query_mode_metadata_desc": "Only uses metadata",
       "query_mode_path": "Path",
       "query_mode_path_desc": "Uses entire file path",
+      "query_mode_studiocode": "Studio Code",
+      "query_mode_studiocode_desc": "Only uses studio code",
+      "query_mode_title": "Title",
+      "query_mode_title_desc": "Only uses title",
       "set_cover_desc": "Replace the scene cover if one is found.",
       "set_cover_label": "Set scene cover image",
       "set_tag_desc": "Attach tags to scene, either by overwriting or merging with existing tags on scene.",
@@ -232,6 +237,7 @@
     "verb_match_tag": "Match Tag",
     "verb_matched": "Matched",
     "verb_scrape_all": "Scrape All",
+    "verb_search_all": "Search All",
     "verb_submit_fp": "Submit {fpCount, plural, one{# Fingerprint} other{# Fingerprints}}",
     "verb_toggle_config": "{toggle} {configuration}",
     "verb_toggle_unmatched": "{toggle} unmatched scenes"
@@ -741,15 +747,6 @@
         }
       },
       "interactive_options": "Interactive Options",
-      "label_panel": {
-        "heading": "Labels",
-        "options": {
-          "hide_labels": {
-            "description": "Hide Labels from the user interface",
-            "heading": "Hide Labels"
-          }
-        }
-      },
       "language": {
         "heading": "Language"
       },
@@ -882,17 +879,9 @@
       "marker_panel": {
         "heading": "Marker view",
         "options": {
-          "hide_queue": {
-            "description": "Hide queue features across the UI.",
-            "heading": "Hide queue"
-          },
           "hide_markers": {
             "description": "Hide Markers across the UI (navbar, pages, chips/links, filters, selectors).",
             "heading": "Hide all Marker UI"
-          },
-          "hide_scene_filters": {
-            "description": "Hide the Scene page Filters tab.",
-            "heading": "Hide filter"
           }
         }
       },
@@ -920,7 +909,6 @@
     "performers": "{count, plural, one {Performer} other {Performers}}",
     "scenes": "{count, plural, one {Scene} other {Scenes}}",
     "studios": "{count, plural, one {Studio} other {Studios}}",
-    "labels": "{count, plural, one {Label} other {Labels}}",
     "tags": "{count, plural, one {Tag} other {Tags}}"
   },
   "country": "Country",
@@ -1154,7 +1142,6 @@
   },
   "empty_server": "Add some scenes to your server to view recommendations on this page.",
   "errors": {
-    "cannot_play_torrent": ".torrent files are not playable",
     "custom_fields": {
       "duplicate_field": "Field name must be unique",
       "field_name_length": "Field name must fewer than 65 characters",
@@ -1596,8 +1583,6 @@
   },
   "studio_tags": "Studio Tags",
   "studios": "Studios",
-  "label": "Label",
-  "labels": "Labels",
   "sub_group": "Sub-Group",
   "sub_group_count": "Sub-Group Count",
   "sub_group_of": "Sub-group of {parent}",

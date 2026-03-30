@@ -260,6 +260,16 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
                       id: "component_tagger.config.query_mode_metadata",
                     })}
                   </option>
+                  <option value="title">
+                    {intl.formatMessage({
+                      id: "component_tagger.config.query_mode_title",
+                    })}
+                  </option>
+                  <option value="studiocode">
+                    {intl.formatMessage({
+                      id: "component_tagger.config.query_mode_studiocode",
+                    })}
+                  </option>
                 </Form.Control>
               </div>
               <Form.Text>

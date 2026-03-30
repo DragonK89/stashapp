@@ -228,6 +228,7 @@ interface IScenePlayerProps {
   onComplete: () => void;
   onNext: () => void;
   onPrevious: () => void;
+  isVisible?: boolean;
 }
 
 export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
@@ -242,6 +243,7 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
     onComplete,
     onNext,
     onPrevious,
+    isVisible = true,
   }) => {
     const { configuration } = useConfigurationContext();
     const interfaceConfig = configuration?.interface;
@@ -452,6 +454,15 @@ export const ScenePlayer: React.FC<IScenePlayerProps> = PatchComponent(
       skipButtons.setForwardHandler(onNext);
       skipButtons.setBackwardHandler(onPrevious);
     }, [getPlayer, onNext, onPrevious]);
+
+    useEffect(() => {
+      if (!isVisible) {
+        const player = getPlayer();
+        if (player && !player.paused()) {
+          player.pause();
+        }
+      }
+    }, [isVisible, getPlayer]);
 
     useEffect(() => {
       if (scene.interactive && interactiveInitialised) {

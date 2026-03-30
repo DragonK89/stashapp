@@ -41,6 +41,9 @@ func (d *Decorator) Decorate(ctx context.Context, fs models.FS, f models.File) (
 		return decorateFallback(fs, f)
 	}
 
+	if d.FFProbe == nil {
+		return decorateFallback(fs, f)
+	}
 	probe, err := d.FFProbe.NewVideoFile(base.Path)
 	if err != nil {
 		logger.Warnf("File %q could not be read with ffprobe: %s, assuming ImageFile", base.Path, err)

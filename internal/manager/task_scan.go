@@ -76,7 +76,7 @@ func (j *ScanJob) Execute(ctx context.Context, progress *job.Progress) error {
 
 	j.scanner.Scan(ctx, getScanHandlers(j.input, taskQueue, progress, recordSkipped), file.ScanOptions{
 		Paths:                  paths,
-		ScanFilters:            []file.PathFilter{newScanFilter(c, repo, minModTime, input.ScanTorrents)},
+		ScanFilters:            []file.PathFilter{newScanFilter(c, repo, minModTime, input.ScanTorrents, input.ScanTorrentsScanImages)},
 		ZipFileExtensions:      cfg.GetGalleryExtensions(),
 		ParallelTasks:          cfg.GetParallelTasksWithAutoDetection(),
 		HandlerRequiredFilters: []file.Filter{newHandlerRequiredFilter(cfg, repo)},
@@ -271,22 +271,24 @@ type scanFilter struct {
 	FileFinder     models.FileFinder
 	CaptionUpdater video.CaptionUpdater
 
-	scanTorrentsOnly bool
-	stashPaths        config.StashConfigs
+	scanTorrentsOnly       bool
+	scanTorrentsScanImages bool
+	stashPaths             config.StashConfigs
 	generatedPath     string
 	videoExcludeRegex []*regexp.Regexp
 	imageExcludeRegex []*regexp.Regexp
 	minModTime        time.Time
 }
 
-func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time, scanTorrentsOnly bool) *scanFilter {
+func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time, scanTorrentsOnly bool, scanTorrentsScanImages bool) *scanFilter {
 	return &scanFilter{
 		extensionConfig:   newExtensionConfig(c),
 		txnManager:        repo.TxnManager,
 		FileFinder:        repo.File,
-		CaptionUpdater:    repo.File,
-		scanTorrentsOnly:  scanTorrentsOnly,
-		stashPaths:        c.GetStashPaths(),
+		CaptionUpdater:         repo.File,
+		scanTorrentsOnly:       scanTorrentsOnly,
+		scanTorrentsScanImages: scanTorrentsScanImages,
+		stashPaths:             c.GetStashPaths(),
 		generatedPath:     c.GetGeneratedPath(),
 		videoExcludeRegex: generateRegexps(c.GetExcludes()),
 		imageExcludeRegex: generateRegexps(c.GetImageExcludes()),
@@ -314,7 +316,10 @@ func (f *scanFilter) Accept(ctx context.Context, path string, info fs.FileInfo) 
 	if f.scanTorrentsOnly {
 		// Always allow directories so we can traverse the library tree,
 		// but only accept .torrent files for scanning.
-		if !info.IsDir() && !strings.EqualFold(filepath.Ext(path), ".torrent") {
+		// If scanTorrentsScanImages is enabled, also accept image files.
+		isTorrent := strings.EqualFold(filepath.Ext(path), ".torrent")
+		isImage := useAsImage(path)
+		if !info.IsDir() && !isTorrent && !(f.scanTorrentsScanImages && isImage) {
 			return false
 		}
 	}
@@ -403,12 +408,37 @@ func getScanHandlers(options ScanMetadataInput, taskQueue *job.TaskQueue, progre
 			RenameFile:      options.ScanTorrentsRenameFile,
 			recordSkipped:   recordSkippedTorrent,
 		}
-		return []file.Handler{
+		handlers := []file.Handler{
 			&file.FilteredHandler{
 				Filter:  file.FilterFunc(torrentVideoFileFilter),
 				Handler: handler,
 			},
 		}
+
+		if options.ScanTorrentsScanImages {
+			handlers = append(handlers, &file.FilteredHandler{
+				Filter: file.FilterFunc(imageFileFilter),
+				Handler: &image.ScanHandler{
+					CreatorUpdater: r.Image,
+					GalleryFinder:  r.Gallery,
+					ScanGenerator: &imageGenerators{
+						input:              options,
+						taskQueue:          taskQueue,
+						progress:           progress,
+						paths:              mgr.Paths,
+						sequentialScanning: c.GetSequentialScanning(),
+					},
+					ScanConfig: &scanConfig{
+						isGenerateThumbnails:       options.ScanGenerateThumbnails,
+						isGenerateClipPreviews:     options.ScanGenerateClipPreviews,
+						createGalleriesFromFolders: c.GetCreateGalleriesFromFolders(),
+					},
+					PluginCache: pluginCache,
+					Paths:       instance.Paths,
+				},
+			})
+		}
+		return handlers
 	}
 
 	return []file.Handler{

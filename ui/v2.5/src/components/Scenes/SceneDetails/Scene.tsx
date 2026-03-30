@@ -5,7 +5,6 @@ import React, {
   useMemo,
   useRef,
   useLayoutEffect,
-  useCallback,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link, RouteComponentProps } from "react-router-dom";
@@ -34,11 +33,12 @@ import Mousetrap from "mousetrap";
 import { OrganizedButton } from "./OrganizedButton";
 import { useConfigurationContext } from "src/hooks/Config";
 import { getPlayerPosition } from "src/components/ScenePlayer/util";
-import { useIsMounted } from "src/hooks/state";
 import {
   faEllipsisV,
   faChevronRight,
   faChevronLeft,
+  faImage,
+  faPlay,
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
@@ -54,7 +54,7 @@ import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { PatchComponent, PatchContainerComponent } from "src/patch";
 import { goBackOrReplace } from "src/utils/history";
 import { FormattedDate } from "src/components/Shared/Date";
-import { IUIConfig } from "src/core/config";
+import { useInterfaceLocalForage } from "src/hooks/LocalForage";
 
 const SubmitStashBoxDraft = lazyComponent(
   () => import("src/components/Dialogs/SubmitDraft")
@@ -83,6 +83,7 @@ const DeleteScenesDialog = lazyComponent(() => import("../DeleteScenesDialog"));
 const GenerateDialog = lazyComponent(
   () => import("../../Dialogs/GenerateDialog")
 );
+import { SceneCoverGallery } from "./SceneCoverGallery";
 const SceneVideoFilterPanel = lazyComponent(
   () => import("./SceneVideoFilterPanel")
 );
@@ -152,6 +153,10 @@ interface IProps {
   collapsed: boolean;
   setCollapsed: (state: boolean) => void;
   setContinuePlaylist: (value: boolean) => void;
+  sidebarWidth?: number;
+  onSidebarResize?: (width: number) => void;
+  onResizingChange?: (isResizing: boolean) => void;
+  isResizing?: boolean;
 }
 
 interface ISceneParams {
@@ -181,19 +186,20 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     collapsed,
     setCollapsed,
     setContinuePlaylist,
+    sidebarWidth,
+    onSidebarResize,
+    onResizingChange,
+    isResizing,
   } = props;
 
   const Toast = useToast();
   const intl = useIntl();
   const [updateScene] = useSceneUpdate();
-  const isMounted = useIsMounted();
   const [generateScreenshot] = useSceneGenerateScreenshot();
   const { configuration } = useConfigurationContext();
-  const ui = configuration?.ui as IUIConfig | undefined;
-  const hideGroups = Boolean(ui?.hideGroups);
-  const hideMarkers = Boolean(ui?.hideMarkers);
-  const hideQueue = Boolean(ui?.hideQueue);
-  const hideSceneFilters = Boolean(ui?.hideSceneFilters);
+  const hideTags = Boolean((configuration?.ui as any)?.hideTags);
+  const hideGroups = Boolean((configuration?.ui as any)?.hideGroups);
+  const hideMarkers = Boolean((configuration?.ui as any)?.hideMarkers);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const boxes = configuration?.general?.stashBoxes ?? [];
@@ -222,26 +228,13 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
-  const onIncrementOClick = useCallback(async () => {
+  const onIncrementOClick = async () => {
     try {
       await incrementO();
     } catch (e) {
       Toast.error(e);
     }
-  }, [Toast, incrementO]);
-
-  const onGenerateScreenshot = useCallback(
-    async (at?: number) => {
-      await generateScreenshot({
-        variables: {
-          id: scene.id,
-          at,
-        },
-      });
-      Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
-    },
-    [Toast, generateScreenshot, intl, scene.id]
-  );
+  };
 
   function setRating(v: number | null) {
     updateScene({
@@ -263,9 +256,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   // set up hotkeys
   useEffect(() => {
     Mousetrap.bind("a", () => setActiveTabKey("scene-details-panel"));
-    if (!hideQueue) {
-      Mousetrap.bind("q", () => setActiveTabKey("scene-queue-panel"));
-    }
+    Mousetrap.bind("q", () => setActiveTabKey("scene-queue-panel"));
     Mousetrap.bind("e", () => setActiveTabKey("scene-edit-panel"));
     if (!hideMarkers) {
       Mousetrap.bind("k", () => setActiveTabKey("scene-markers-panel"));
@@ -275,11 +266,9 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     Mousetrap.bind("o", () => {
       onIncrementOClick();
     });
-    if (!hideQueue) {
-      Mousetrap.bind("p n", () => onQueueNext());
-      Mousetrap.bind("p p", () => onQueuePrevious());
-      Mousetrap.bind("p r", () => onQueueRandom());
-    }
+    Mousetrap.bind("p n", () => onQueueNext());
+    Mousetrap.bind("p p", () => onQueuePrevious());
+    Mousetrap.bind("p r", () => onQueueRandom());
     Mousetrap.bind(",", () => setCollapsed(!collapsed));
     Mousetrap.bind("c c", () => {
       onGenerateScreenshot(getPlayerPosition());
@@ -303,7 +292,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       Mousetrap.unbind("c c");
       Mousetrap.unbind("c d");
     };
-  }, [collapsed, hideMarkers, hideQueue, onGenerateScreenshot, onIncrementOClick, onQueueNext, onQueuePrevious, onQueueRandom, setCollapsed]);
+  }, [collapsed, setCollapsed, hideMarkers, onGenerateScreenshot, onIncrementOClick, onQueueNext, onQueuePrevious, onQueueRandom]);
 
   async function onSave(input: GQL.SceneCreateInput) {
     await updateScene({
@@ -336,9 +325,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     } catch (e) {
       Toast.error(e);
     } finally {
-      if (isMounted.current) {
-        setOrganizedLoading(false);
-      }
+      setOrganizedLoading(false);
     }
   };
 
@@ -363,6 +350,16 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
         }
       )
     );
+  }
+
+  async function onGenerateScreenshot(at?: number) {
+    await generateScreenshot({
+      variables: {
+        id: scene.id,
+        at,
+      },
+    });
+    Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
   }
 
   function onDeleteDialogClosed(deleted: boolean) {
@@ -472,15 +469,11 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
               </Nav.Link>
             </Nav.Item>
             {queueScenes.length > 0 ? (
-              !hideQueue ? (
-                <Nav.Item>
-                  <Nav.Link eventKey="scene-queue-panel">
-                    <FormattedMessage id="queue" />
-                  </Nav.Link>
-                </Nav.Item>
-              ) : (
-                ""
-              )
+              <Nav.Item>
+                <Nav.Link eventKey="scene-queue-panel">
+                  <FormattedMessage id="queue" />
+                </Nav.Link>
+              </Nav.Item>
             ) : (
               ""
             )}
@@ -513,13 +506,11 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
                 </Nav.Link>
               </Nav.Item>
             ) : undefined}
-            {!hideSceneFilters && (
-              <Nav.Item>
-                <Nav.Link eventKey="scene-video-filter-panel">
-                  <FormattedMessage id="effect_filters.name" />
-                </Nav.Link>
-              </Nav.Item>
-            )}
+            <Nav.Item>
+              <Nav.Link eventKey="scene-video-filter-panel">
+                <FormattedMessage id="effect_filters.name" />
+              </Nav.Link>
+            </Nav.Item>
             <Nav.Item>
               <Nav.Link eventKey="scene-file-info-panel">
                 <FormattedMessage id="file_info" />
@@ -545,33 +536,28 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
           <Tab.Pane eventKey="scene-details-panel">
             <SceneDetailPanel scene={scene} />
           </Tab.Pane>
-          {!hideQueue && (
-            <Tab.Pane eventKey="scene-queue-panel">
-              <QueueViewer
-                scenes={queueScenes}
-                currentID={scene.id}
-                continue={continuePlaylist}
-                setContinue={setContinuePlaylist}
-                onSceneClicked={onQueueSceneClicked}
-                onNext={onQueueNext}
-                onPrevious={onQueuePrevious}
-                onRandom={onQueueRandom}
-                start={queueStart}
-                hasMoreScenes={queueHasMoreScenes}
-                onLessScenes={onQueueLessScenes}
-                onMoreScenes={onQueueMoreScenes}
-              />
-            </Tab.Pane>
-          )}
+          <Tab.Pane eventKey="scene-queue-panel">
+            <QueueViewer
+              scenes={queueScenes}
+              currentID={scene.id}
+              continue={continuePlaylist}
+              setContinue={setContinuePlaylist}
+              onSceneClicked={onQueueSceneClicked}
+              onNext={onQueueNext}
+              onPrevious={onQueuePrevious}
+              onRandom={onQueueRandom}
+              start={queueStart}
+              hasMoreScenes={queueHasMoreScenes}
+              onLessScenes={onQueueLessScenes}
+              onMoreScenes={onQueueMoreScenes}
+            />
+          </Tab.Pane>
           {!hideMarkers && (
             <Tab.Pane eventKey="scene-markers-panel">
               <SceneMarkersPanel
                 sceneId={scene.id}
                 onClickMarker={onClickMarker}
                 isVisible={activeTabKey === "scene-markers-panel"}
-                studioId={scene.studio?.id ?? undefined}
-                studioName={scene.studio?.name ?? undefined}
-                labelId={(scene as any).label?.id ?? undefined}
               />
             </Tab.Pane>
           )}
@@ -588,11 +574,9 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
               )}
             </Tab.Pane>
           )}
-          {!hideSceneFilters && (
-            <Tab.Pane eventKey="scene-video-filter-panel">
-              <SceneVideoFilterPanel scene={scene} />
-            </Tab.Pane>
-          )}
+          <Tab.Pane eventKey="scene-video-filter-panel">
+            <SceneVideoFilterPanel scene={scene} />
+          </Tab.Pane>
           <Tab.Pane
             className="file-info-panel"
             eventKey="scene-file-info-panel"
@@ -634,9 +618,9 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       {maybeRenderSceneGenerateDialog()}
       {maybeRenderDeleteDialog()}
       <div
-        className={`scene-tabs order-xl-first order-last ${
-          collapsed ? "collapsed" : ""
-        }`}
+        className={`scene-tabs order-xl-first order-last ${collapsed ? "collapsed" : ""
+          }`}
+        style={!collapsed && sidebarWidth ? { flex: `0 0 ${sidebarWidth}px`, maxWidth: `${sidebarWidth}px` } : {}}
       >
         <div>
           <div className="scene-header-container">
@@ -705,7 +689,42 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
         </div>
         {renderTabs()}
       </div>
-      <div className="scene-divider d-none d-xl-block">
+      <div
+        className="scene-divider d-none d-xl-block"
+        onPointerDown={(e) => {
+          if (onSidebarResize) {
+            const startX = e.clientX;
+            const startWidth = sidebarWidth ?? 450;
+            let dragged = false;
+            const onPointerMove = (moveEvent: PointerEvent) => {
+              if (!dragged) {
+                onResizingChange?.(true);
+              }
+              const deltaX = moveEvent.clientX - startX;
+              if (Math.abs(deltaX) > 5) {
+                dragged = true;
+              }
+              onSidebarResize(Math.max(200, startWidth + deltaX));
+            };
+            const onPointerUp = () => {
+              if (dragged) {
+                onResizingChange?.(false);
+                // block the next click event
+                const blockClick = (clickEvent: MouseEvent) => {
+                  clickEvent.stopPropagation();
+                  clickEvent.preventDefault();
+                  window.removeEventListener("click", blockClick, true);
+                };
+                window.addEventListener("click", blockClick, true);
+              }
+              window.removeEventListener("pointermove", onPointerMove);
+              window.removeEventListener("pointerup", onPointerUp);
+            };
+            window.addEventListener("pointermove", onPointerMove);
+            window.addEventListener("pointerup", onPointerUp);
+          }
+        }}
+      >
         <Button onClick={() => setCollapsed(!collapsed)}>
           <Icon className="fa-fw" icon={getCollapseButtonIcon()} />
         </Button>
@@ -729,6 +748,17 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   const { id } = match.params;
   const { configuration } = useConfigurationContext();
   const { data, loading, error } = useFindScene(id);
+
+  const [interfaceConfig, setInterfaceConfig] = useInterfaceLocalForage();
+  const sidebarWidth = (interfaceConfig.data as any)?.sceneSidebarWidth ?? 450;
+  const [isResizing, setIsResizing] = useState(false);
+
+  function setSidebarWidth(width: number) {
+    setInterfaceConfig((prev: any) => ({
+      ...prev,
+      sceneSidebarWidth: width,
+    }));
+  }
 
   const [scene, setScene] = useState<GQL.SceneDataFragment>();
 
@@ -764,6 +794,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   const [hideScrubber, setHideScrubber] = useState(
     !(configuration?.interface.showScrubber ?? true)
   );
+  const [activeTab, setActiveTab] = useState<"cover" | "player">("cover");
 
   const _setTimestamp = useRef<(value: number) => void>();
   const initialTimestamp = useMemo(() => {
@@ -983,7 +1014,7 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   }
 
   return (
-    <div className="row">
+    <div className="row no-gutters vh-100-menu">
       <ScenePage
         scene={scene}
         setTimestamp={setTimestamp}
@@ -1001,29 +1032,68 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
         collapsed={collapsed}
         setCollapsed={setCollapsed}
         setContinuePlaylist={setContinuePlaylist}
+        sidebarWidth={sidebarWidth}
+        onSidebarResize={setSidebarWidth}
+        isResizing={isResizing}
+        onResizingChange={setIsResizing}
       />
-      <div className={`scene-player-container ${collapsed ? "expanded" : ""}`}>
-        {scene.files?.[0]?.path?.toLowerCase().endsWith(".torrent") ? (
-          <div className="p-4 text-center">
-            <FormattedMessage
-              id="errors.cannot_play_torrent"
-              defaultMessage=".torrent files are not playable"
-            />
+      <div
+        className={cx("scene-player-container", {
+          expanded: collapsed,
+          "has-tabs": true,
+          "no-pointer-events": isResizing,
+        })}
+        style={!collapsed ? {
+          flex: `0 0 calc(100% - ${sidebarWidth}px - 10px)`,
+          maxWidth: `calc(100% - ${sidebarWidth}px - 10px)`
+        } : {}}
+      >
+        <Nav className="player-area-tabs">
+          <Nav.Link
+            active={activeTab === "cover"}
+            onClick={() => setActiveTab("cover")}
+            className={cx({ active: activeTab === "cover" })}
+          >
+            <Icon icon={faImage} />
+          </Nav.Link>
+          <Nav.Link
+            active={activeTab === "player"}
+            onClick={() => setActiveTab("player")}
+            className={cx({ active: activeTab === "player" })}
+          >
+            <Icon icon={faPlay} />
+          </Nav.Link>
+        </Nav>
+
+        <div className="player-content flex-grow-1 d-flex flex-column min-vh-0">
+          <div className={cx("flex-grow-1 d-flex flex-column min-vh-0", { hidden: activeTab !== "cover" })}>
+            <SceneCoverGallery scene={scene} galleryId={scene.galleries[0]?.id} />
           </div>
-        ) : (
-          <ScenePlayer
-            key="ScenePlayer"
-            scene={scene}
-            hideScrubberOverride={hideScrubber}
-            autoplay={autoplay}
-            permitLoop={!continuePlaylist}
-            initialTimestamp={initialTimestamp}
-            sendSetTimestamp={getSetTimestamp}
-            onComplete={onComplete}
-            onNext={() => queueNext(true)}
-            onPrevious={() => queuePrevious(true)}
-          />
-        )}
+
+          <div className={cx("flex-grow-1 d-flex flex-column min-vh-0", { hidden: activeTab !== "player" })}>
+            {scene.files?.[0]?.path?.toLowerCase().endsWith(".torrent") ? (
+              <div className="p-4 text-center">
+                <FormattedMessage
+                  id="errors.cannot_play_torrent"
+                  defaultMessage=".torrent files are not playable"
+                />
+              </div>
+            ) : (
+              <ScenePlayer
+                key="ScenePlayer"
+                scene={scene}
+                hideScrubberOverride={hideScrubber}
+                autoplay={autoplay}
+                permitLoop={!continuePlaylist}
+                initialTimestamp={initialTimestamp}
+                sendSetTimestamp={getSetTimestamp}
+                onComplete={onComplete}
+                onNext={() => queueNext(true)}
+                onPrevious={() => queuePrevious(true)}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

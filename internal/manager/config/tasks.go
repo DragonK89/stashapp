@@ -7,6 +7,8 @@ type ScanMetadataOptions struct {
 	ScanTorrents bool `json:"scanTorrents"`
 	// When ScanTorrents is enabled, normalize torrent scene title using strict PREFIX-NUMBER parsing.
 	ScanTorrentsNormalizeTitle bool `json:"scanTorrentsNormalizeTitle"`
+	// When ScanTorrents is enabled, optionally scan for images in the same directory.
+	ScanTorrentsScanImages bool `json:"scanTorrentsScanImages"`
 	// When ScanTorrentsNormalizeTitle is enabled, optionally rename torrent files to match the normalized title.
 	ScanTorrentsRenameFile bool `json:"scanTorrentsRenameFile"`
 	// Generate scene covers during scan

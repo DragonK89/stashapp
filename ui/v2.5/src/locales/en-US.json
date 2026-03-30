@@ -5,6 +5,18 @@
         "customise": "Customize",
         "optimise_database": "Optimize Database"
     },
+    "donate": "Donate",
+    "galleries": "Galleries",
+    "groups": "Groups",
+    "images": "Images",
+    "labels": "Labels",
+    "markers": "Markers",
+    "performers": "Performers",
+    "scenes": "Scenes",
+    "sceneTagger": "Scene Tagger",
+    "statistics": "Statistics",
+    "studios": "Studios",
+    "tags": "Tags",
     "config": {
         "tools": {
             "scene_filename_parser": {
@@ -25,8 +37,13 @@
     "performer_favorite": "Performer Favorited",
     "component_tagger": {
         "config": {
-            "mark_organized_label": "Mark as Organized on save"
-        }
+            "mark_organized_label": "Mark as Organized on save",
+            "query_mode_studiocode": "Studio Code",
+            "query_mode_studiocode_desc": "Only uses studio code",
+            "query_mode_title": "Title",
+            "query_mode_title_desc": "Only uses title"
+        },
+        "verb_search_all": "Search All"
     },
     "errors": {
         "cannot_play_torrent": ".torrent files are not playable"

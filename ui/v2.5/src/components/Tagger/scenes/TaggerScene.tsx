@@ -16,7 +16,6 @@ import { TaggerStateContext } from "../context";
 import {
   faChevronDown,
   faChevronUp,
-  faImage,
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { useConfigurationContext } from "src/hooks/Config";
@@ -206,26 +205,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
     );
   }
 
-  function onSpriteClick(ev: React.MouseEvent<HTMLElement>) {
-    ev.preventDefault();
-    showLightboxImage(scene.paths.sprite ?? "");
-  }
 
-  function maybeRenderSpriteIcon() {
-    // If a scene doesn't have any files, or doesn't have a sprite generated, the
-    // path will be http://localhost:9999/scene/_sprite.jpg
-    if (scene.files.length > 0) {
-      return (
-        <Button
-          className="sprite-button"
-          variant="link"
-          onClick={onSpriteClick}
-        >
-          <Icon icon={faImage} />
-        </Button>
-      );
-    }
-  }
 
   function onScrubberClick(timestamp: number) {
     const link = queue
@@ -253,7 +233,6 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
                 vttPath={scene.paths.vtt ?? undefined}
                 onScrubberClick={onScrubberClick}
               />
-              {maybeRenderSpriteIcon()}
             </Link>
           </div>
           <Link to={url} className="scene-link overflow-hidden">

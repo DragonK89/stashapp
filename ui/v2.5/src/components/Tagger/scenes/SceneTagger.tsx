@@ -13,8 +13,10 @@ import { TaggerScene } from "./TaggerScene";
 import { SceneTaggerModals } from "./sceneTaggerModals";
 import { SceneSearchResults } from "./StashSearchResult";
 import { useConfigurationContext } from "src/hooks/Config";
+import { objectPath } from "src/core/files";
 import { faCog } from "@fortawesome/free-solid-svg-icons";
 import { useLightbox } from "src/hooks/Lightbox/hooks";
+import { parsePath, prepareQueryString } from "../utils";
 
 const Scene: React.FC<{
   scene: GQL.SlimSceneDataFragment;
@@ -90,7 +92,9 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     setCurrentSource,
     currentSource,
     doMultiSceneFragmentScrape,
+    doMultiSceneQueryScrape,
     stopMultiScrape,
+    config,
     searchResults,
     loading,
     loadingMulti,
@@ -109,26 +113,24 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper">
-        <Form.Label>
+      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+        <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
-        <div>
-          <Form.Control
-            as="select"
-            value={currentSource?.id}
-            className="input-control"
-            disabled={loading || !sources.length}
-            onChange={handleSourceSelect}
-          >
-            {!sources.length && <option>No scraper sources</option>}
-            {sources.map((i) => (
-              <option value={i.id} key={i.id}>
-                {i.displayName}
-              </option>
-            ))}
-          </Form.Control>
-        </div>
+        <Form.Control
+          as="select"
+          value={currentSource?.id}
+          className="input-control w-auto"
+          disabled={loading || !sources.length}
+          onChange={handleSourceSelect}
+        >
+          {!sources.length && <option>No scraper sources</option>}
+          {sources.map((i) => (
+            <option value={i.id} key={i.id}>
+              {i.displayName}
+            </option>
+          ))}
+        </Form.Control>
       </Form.Group>
     );
   }
@@ -252,6 +254,42 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
     );
   }
 
+  function renderSearchAllButton() {
+    if (!currentSource?.supportSceneQuery) {
+      return;
+    }
+
+    if (scenes.length === 0) {
+      return;
+    }
+
+    return (
+      <div className="ml-1">
+        <OperationButton
+          disabled={loading || loadingMulti}
+          operation={async () => {
+            const queries = scenes.map((s) => {
+              const { paths, file: basename } = parsePath(objectPath(s));
+              return {
+                sceneID: s.id,
+                searchVal: prepareQueryString(
+                  s,
+                  paths,
+                  basename,
+                  config.mode,
+                  config.blacklist
+                ),
+              };
+            });
+            await doMultiSceneQueryScrape(queries);
+          }}
+        >
+          {intl.formatMessage({ id: "component_tagger.verb_search_all" })}
+        </OperationButton>
+      </div>
+    );
+  }
+
   return (
     <SceneTaggerModals>
       <div className="tagger-container mx-md-auto">
@@ -261,6 +299,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
             <div className="d-flex">
               {maybeRenderShowHideUnmatchedButton()}
               {maybeRenderSubmitFingerprintsButton()}
+              {renderSearchAllButton()}
               {renderFragmentScrapeButton()}
               {renderConfigButton()}
             </div>

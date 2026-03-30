@@ -14,6 +14,7 @@ export const ScanOptions: React.FC<IScanOptions> = ({
   const {
     scanTorrents,
     scanTorrentsNormalizeTitle,
+    scanTorrentsScanImages,
     scanTorrentsRenameFile,
     scanGenerateCovers,
     scanGeneratePreviews,
@@ -39,6 +40,20 @@ export const ScanOptions: React.FC<IScanOptions> = ({
         onChange={(v) =>
           setOptions({
             scanTorrents: v,
+          })
+        }
+      />
+      <BooleanSetting
+        advanced
+        id="scan-torrents-scan-images"
+        className="sub-setting"
+        headingID="config.tasks.scan_torrents_scan_images"
+        tooltipID="config.tasks.scan_torrents_scan_images_tooltip"
+        checked={scanTorrentsScanImages ?? false}
+        disabled={!scanTorrents}
+        onChange={(v) =>
+          setOptions({
+            scanTorrentsScanImages: v,
           })
         }
       />

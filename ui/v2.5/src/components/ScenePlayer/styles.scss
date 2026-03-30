@@ -15,7 +15,7 @@ $sceneTabWidth: 450px;
   padding-bottom: 0.25rem;
 
   @media (min-width: 1200px) {
-    height: 100vh;
+    height: calc(100vh - #{$menuHeight});
   }
 
   &.portrait .video-wrapper {
@@ -35,6 +35,7 @@ $sceneTabWidth: 450px;
 }
 
 .VideoPlayer.no-file .video-js {
+
   .vjs-big-play-button,
   .vjs-control-bar {
     display: none;
@@ -55,6 +56,7 @@ $sceneTabWidth: 450px;
   &.vjs-error .vjs-control-bar {
     display: flex !important;
   }
+
   /* stylelint-enable declaration-no-important */
 
   // allow interaction with the controls when error is displayed
@@ -162,11 +164,9 @@ $sceneTabWidth: 450px;
     font-size: 15px;
 
     &::before {
-      background: linear-gradient(
-        0deg,
-        rgba(0, 0, 0, 0.4) 0%,
-        rgba(0, 0, 0, 0) 100%
-      );
+      background: linear-gradient(0deg,
+          rgba(0, 0, 0, 0.4) 0%,
+          rgba(0, 0, 0, 0) 100%);
       bottom: 0;
       content: "";
       height: 10rem;
@@ -212,6 +212,7 @@ $sceneTabWidth: 450px;
   .vjs-play-progress .vjs-time-tooltip {
     display: none !important;
   }
+
   /* stylelint-enable declaration-no-important */
 
   .vjs-volume-control {
@@ -223,6 +224,7 @@ $sceneTabWidth: 450px;
     box-shadow: none !important;
     text-shadow: none !important;
   }
+
   /* stylelint-enable declaration-no-important */
 
   .vjs-vtt-thumbnail-display {
@@ -254,6 +256,7 @@ $sceneTabWidth: 450px;
   }
 
   &.vjs-skip-buttons {
+
     .vjs-icon-next-item,
     .vjs-icon-previous-item {
       display: none;
@@ -274,7 +277,7 @@ $sceneTabWidth: 450px;
       font-size: 0.8em;
     }
 
-    .vjs-button > .vjs-icon-placeholder::before {
+    .vjs-button>.vjs-icon-placeholder::before {
       content: "\f110";
       font-family: VideoJS;
     }
@@ -395,6 +398,7 @@ $sceneTabWidth: 450px;
       }
     }
   }
+
   @media (max-width: 576px) {
     .vjs-control-bar {
       .vjs-autostart-button {
@@ -419,7 +423,7 @@ $sceneTabWidth: 450px;
         width: 3em;
       }
 
-      .vjs-button > .vjs-icon-placeholder::before,
+      .vjs-button>.vjs-icon-placeholder::before,
       .vjs-skip-button::before {
         font-size: 1.5em;
         line-height: 2;
@@ -472,14 +476,10 @@ $sceneTabWidth: 450px;
 
 .scene-tabs,
 .scene-player-container {
-  padding-left: 15px;
   position: relative;
   width: 100%;
 }
 
-.scene-player-container {
-  padding-right: 15px;
-}
 
 .scrubber-wrapper {
   display: flex;
@@ -644,10 +644,29 @@ $sceneTabWidth: 450px;
     margin-right: 5px;
   }
 }
+
+.no-pointer-events {
+  pointer-events: none !important;
+}
+
+.vh-100-menu {
+  height: calc(100vh - #{$menuHeight});
+  overflow: hidden;
+}
+
+.min-vh-0 {
+  min-height: 0;
+}
+
 @media (min-width: 1200px) {
+  .scene-tabs,
+  .scene-divider,
+  .scene-player-container {
+    height: 100%;
+  }
+
   .scene-tabs {
-    flex: 0 0 $sceneTabWidth;
-    max-width: $sceneTabWidth;
+    flex: 1 1 auto;
     overflow: auto;
 
     &.collapsed {
@@ -663,8 +682,17 @@ $sceneTabWidth: 450px;
   }
 
   .scene-divider {
-    flex: 0 0 15px;
-    max-width: 15px;
+    flex: 0 0 10px;
+    max-width: 10px;
+    cursor: col-resize;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: rgba($link-color, 0.1);
+    }
 
     button {
       background-color: transparent;
@@ -678,6 +706,12 @@ $sceneTabWidth: 450px;
       padding: 0;
       text-align: center;
       width: 100%;
+      opacity: 0.3;
+      transition: opacity 0.2s;
+
+      &:hover {
+        opacity: 1;
+      }
 
       &:active:not(:hover),
       &:focus:not(:hover) {
@@ -689,13 +723,268 @@ $sceneTabWidth: 450px;
   }
 
   .scene-player-container {
-    flex: 0 0 calc(100% - #{$sceneTabWidth} - 15px);
-    max-width: calc(100% - #{$sceneTabWidth} - 15px);
+    flex: 1 1 auto;
     padding-left: 0;
 
     &.expanded {
-      flex: 0 0 calc(100% - 15px);
-      max-width: calc(100% - 15px);
+      flex: 0 0 calc(100% - 10px);
+      max-width: calc(100% - 10px);
+    }
+
+    &.has-tabs {
+      position: relative;
+
+      .player-area-tabs {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding: 20px;
+        z-index: 1000;
+        opacity: 0;
+        transition: opacity 0.2s ease-in-out;
+        pointer-events: auto;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        .nav-link {
+          padding: 0.25rem 0.75rem;
+          font-size: 0.8rem;
+          background: rgba(0, 0, 0, 0.6) !important;
+          color: white !important;
+          margin-right: 5px;
+          border-radius: 4px;
+          cursor: pointer;
+
+          &.active {
+            background: var(--primary) !important;
+          }
+
+          &:hover {
+            background: rgba(0, 0, 0, 0.8) !important;
+          }
+        }
+      }
+
+
+      .player-content {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - #{$menuHeight});
+        padding-bottom: 0.25rem;
+        background-color: #000;
+        width: 100%;
+
+        @media (min-width: 1200px) {
+          height: calc(100vh - #{$menuHeight});
+        }
+
+        .scene-cover-container {
+          height: 56.25vw;
+          overflow: hidden;
+          position: relative;
+          width: 100%;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+
+          @media (min-width: 1200px) {
+            height: 100%;
+            flex: 1;
+          }
+
+          .scene-cover-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+          }
+        }
+
+        .hidden {
+          display: none !important;
+        }
+
+        .scene-cover-gallery {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          width: 100%;
+          background-color: #000;
+          position: relative;
+          min-height: 0; // Allow shrinking
+
+          .gallery-main-image {
+            flex: 1 1 0;
+            min-height: 0; // Allow shrinking
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden !important;
+            position: relative;
+            background-color: #000;
+            width: 100% !important;
+            height: 100% !important;
+            background-size: cover;
+            background-position: center;
+
+            &::before {
+              content: "";
+              position: absolute;
+              top: -10%;
+              left: -10%;
+              right: -10%;
+              bottom: -10%;
+              background-image: inherit;
+              background-size: cover;
+              background-position: center;
+              filter: blur(40px) brightness(0.4);
+              z-index: 1;
+              pointer-events: none;
+            }
+
+            .gallery-main-content {
+              width: 100%;
+              height: 100%;
+              display: flex;
+              justify-content: center;
+              align-items: center;
+              z-index: 2;
+              position: relative;
+            }
+
+            &.dragging {
+              cursor: grabbing;
+              user-select: none;
+
+              .scene-cover-image {
+                transition: none !important;
+              }
+            }
+
+            .scene-cover-image {
+              max-width: 100%;
+              max-height: 100%;
+              width: auto;
+              height: auto;
+              object-fit: contain;
+              cursor: grab;
+              box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+              position: relative;
+              z-index: 3;
+
+              &:active {
+                cursor: grabbing;
+              }
+            }
+          }
+
+          .zoom-controls {
+            position: absolute;
+            top: 50%;
+            right: 0;
+            padding: 20px;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+            pointer-events: auto;
+
+            &:hover {
+              opacity: 1;
+            }
+
+            .btn {
+              pointer-events: auto;
+              width: 36px;
+              height: 36px;
+              padding: 0;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: rgba(0, 0, 0, 0.7);
+              border: 1px solid rgba(255, 255, 255, 0.2);
+              border-radius: 4px;
+              color: #fff;
+              box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+              &:hover {
+                background: rgba(0, 0, 0, 0.9);
+                border-color: var(--primary);
+                transform: scale(1.05);
+              }
+
+              svg {
+                width: 16px;
+                height: 16px;
+              }
+            }
+          }
+
+
+          .gallery-thumbnails {
+            background-color: #000;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            scrollbar-width: none;
+            height: 120px; // Ensure fixed height to avoid expansion
+            flex-shrink: 0;
+            margin-top: 0; // Explicitly remove any margin
+
+            &::-webkit-scrollbar {
+              height: 4px;
+            }
+
+            &::-webkit-scrollbar-thumb {
+              background: rgba(255, 255, 255, 0.2);
+              border-radius: 2px;
+            }
+
+            .thumbnail-item {
+              flex: 0 0 auto;
+              height: 100%;
+              aspect-ratio: 16 / 9;
+              margin-right: 8px;
+              cursor: pointer;
+              border: 2px solid transparent;
+              border-radius: 4px;
+              overflow: hidden;
+              transition: all 0.2s ease-in-out;
+              background-color: #1a1a1a;
+
+              img {
+                width: 100%;
+                height: 100%;
+                object-fit: contain;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+              }
+
+              &:hover {
+                border-color: rgba(255, 255, 255, 0.5);
+
+                img {
+                  opacity: 1;
+                }
+              }
+
+              &.active {
+                border-color: var(--primary);
+
+                img {
+                  opacity: 1;
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

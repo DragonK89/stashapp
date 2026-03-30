@@ -132,6 +132,10 @@ export function prepareQueryString(
     s = [...paths, filename].join(" ");
   } else if (mode === "dir" && paths.length) {
     s = paths[paths.length - 1];
+  } else if (mode === "title") {
+    s = scene.title ?? "";
+  } else if (mode === "studiocode") {
+    s = scene.code ?? "";
   }
 
   regexs.forEach((re) => {
