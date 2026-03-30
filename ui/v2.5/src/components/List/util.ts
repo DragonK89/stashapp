@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Mousetrap from "mousetrap";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import { useHistory, useLocation } from "react-router-dom";
@@ -37,6 +37,19 @@ export function useFilterURL(
   const location = useLocation();
   const prevLocation = usePrevious(location);
 
+  // Ref to hold a pending URL replacement that needs to happen outside of the
+  // setState updater to avoid "Cannot update during an existing state
+  // transition" warnings.
+  const pendingReplace = useRef<string | null>(null);
+
+  // Apply any pending URL replacement after render.
+  useEffect(() => {
+    if (pendingReplace.current !== null) {
+      history.replace({ ...history.location, search: pendingReplace.current });
+      pendingReplace.current = null;
+    }
+  });
+
   // when the filter changes, update the URL
   const updateFilter = useCallback(
     (
@@ -73,10 +86,11 @@ export function useFilterURL(
       let newFilter = prevFilter.empty();
       newFilter.configureFromQueryString(location.search);
       if (!isEqual(newFilter, prevFilter)) {
-        // filter may have changed if random seed was set, update the URL
+        // filter may have changed if random seed was set, schedule a URL
+        // replacement via a ref so it runs outside this state updater.
         const newParams = newFilter.makeQueryParameters();
         if (newParams !== location.search) {
-          history.replace({ ...history.location, search: newParams });
+          pendingReplace.current = newParams;
         }
 
         return newFilter;
