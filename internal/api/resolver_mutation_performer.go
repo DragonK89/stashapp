@@ -40,7 +40,12 @@ func (r *mutationResolver) PerformerCreate(ctx context.Context, input models.Per
 
 	newPerformer.Name = strings.TrimSpace(input.Name)
 	newPerformer.Disambiguation = translator.string(input.Disambiguation)
-	newPerformer.Aliases = models.NewRelatedStrings(stringslice.TrimSpace(input.AliasList))
+
+	aliasList := ensureSplitAliases(input.AliasList)
+	if input.Aliases != nil && *input.Aliases != "" {
+		aliasList = append(aliasList, ensureSplitAliases([]string{*input.Aliases})...)
+	}
+	newPerformer.Aliases = models.NewRelatedStrings(stringslice.TrimSpace(aliasList))
 	newPerformer.Gender = input.Gender
 	newPerformer.Ethnicity = translator.string(input.Ethnicity)
 	newPerformer.Country = translator.string(input.Country)
@@ -289,6 +294,7 @@ func (r *mutationResolver) PerformerUpdate(ctx context.Context, input models.Per
 
 	// prefer alias_list over aliases
 	if translator.hasField("alias_list") {
+		input.AliasList = ensureSplitAliases(input.AliasList)
 		updatedPerformer.Aliases = translator.updateStrings(input.AliasList, "alias_list")
 	}
 
@@ -405,7 +411,8 @@ func (r *mutationResolver) BulkPerformerUpdate(ctx context.Context, input BulkPe
 	}
 
 	// prefer alias_list over aliases
-	if translator.hasField("alias_list") {
+	if translator.hasField("alias_list") && input.AliasList != nil {
+		input.AliasList.Values = ensureSplitAliases(input.AliasList.Values)
 		updatedPerformer.Aliases = translator.updateStringsBulk(input.AliasList, "alias_list")
 	}
 
@@ -505,4 +512,18 @@ func (r *mutationResolver) PerformersDestroy(ctx context.Context, performerIDs [
 	}
 
 	return true, nil
+}
+
+func ensureSplitAliases(aliases []string) []string {
+	var ret []string
+	for _, a := range aliases {
+		parts := strings.Split(a, " / ")
+		for _, p := range parts {
+			trimmed := strings.TrimSpace(p)
+			if trimmed != "" {
+				ret = append(ret, trimmed)
+			}
+		}
+	}
+	return ret
 }

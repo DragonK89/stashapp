@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/antchfx/htmlquery"
 
@@ -286,10 +287,11 @@ func (s *xpathScraper) getXPathQuery(doc *html.Node, url string) *xpathQuery {
 }
 
 type xpathQuery struct {
-	doc       *html.Node
-	scraper   *xpathScraper
-	queryType QueryType
-	url       string
+	doc            *html.Node
+	scraper        *xpathScraper
+	queryType      QueryType
+	url            string
+	subScrapeCache sync.Map // map[string]mappedQuery
 }
 
 func (q *xpathQuery) getType() QueryType {
@@ -302,6 +304,24 @@ func (q *xpathQuery) setType(t QueryType) {
 
 func (q *xpathQuery) getURL() string {
 	return q.url
+}
+
+func (q *xpathQuery) getDoc() string {
+	return htmlquery.OutputHTML(q.doc, true)
+}
+
+func (q *xpathQuery) hasSubScrape(value string) mappedQuery {
+	if cached, ok := q.subScrapeCache.Load(value); ok {
+		logger.Debugf("Sub-scrape cache hit for: %s", value)
+		return cached.(mappedQuery)
+	}
+	logger.Debugf("Sub-scrape cache miss for: %s", value)
+	return nil
+}
+
+func (q *xpathQuery) setSubScrape(value string, ss mappedQuery) {
+	logger.Debugf("Caching sub-scrape for: %s", value)
+	q.subScrapeCache.Store(value, ss)
 }
 
 func (q *xpathQuery) runQuery(selector string) ([]string, error) {

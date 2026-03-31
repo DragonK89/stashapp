@@ -3,6 +3,10 @@ import * as GQL from "src/core/generated-graphql";
 import { ScrapeDialogRow } from "src/components/Shared/ScrapeDialog/ScrapeDialogRow";
 import { PerformerSelect } from "src/components/Performers/PerformerSelect";
 import {
+  LabelIDSelect,
+  Label as LocalLabel,
+} from "src/components/Labels/LabelSelect";
+import {
   ObjectScrapeResult,
   ScrapeResult,
 } from "src/components/Shared/ScrapeDialog/scrapeResult";
@@ -101,7 +105,7 @@ export const ScrapedStudioRow: React.FC<IScrapedStudioRow> = ({
   function renderScrapedStudio(
     scrapeResult: ObjectScrapeResult<GQL.ScrapedStudio>,
     isNew?: boolean,
-    onChangeFn?: (value: GQL.ScrapedStudio) => void
+    onChangeFn?: (value: GQL.ScrapedStudio | undefined) => void
   ) {
     const resultValue = isNew
       ? scrapeResult.newValue
@@ -125,7 +129,17 @@ export const ScrapedStudioRow: React.FC<IScrapedStudioRow> = ({
         isDisabled={!isNew}
         onSelect={(items) => {
           if (onChangeFn) {
-            const { id, aliases, ...data } = items[0];
+            const item = items[0];
+            if (!item) {
+              onChangeFn(
+                scrapeResult.newValue
+                  ? { ...scrapeResult.newValue, stored_id: undefined }
+                  : undefined
+              );
+              return;
+            }
+
+            const { id, aliases, ...data } = item;
             onChangeFn({
               ...data,
               stored_id: id,
@@ -155,6 +169,96 @@ export const ScrapedStudioRow: React.FC<IScrapedStudioRow> = ({
             onCreateNew={onCreateNew}
             getName={getObjectName}
             onLinkExisting={onLinkExisting}
+          />
+        ) : undefined
+      }
+    />
+  );
+};
+
+interface IScrapedLabelRow {
+  title: string;
+  field: string;
+  result: ScrapeResult<GQL.ScrapedLabel>;
+  onChange: (value: ScrapeResult<GQL.ScrapedLabel>) => void;
+  studioID?: string;
+  studioName?: string;
+  newLabel?: GQL.ScrapedLabel;
+  onCreateNew?: (value: GQL.ScrapedLabel) => void;
+}
+
+export const ScrapedLabelRow: React.FC<IScrapedLabelRow> = ({
+  title,
+  field,
+  result,
+  onChange,
+  studioID,
+  studioName,
+  newLabel,
+  onCreateNew,
+}) => {
+  function renderScrapedLabel(
+    scrapeResult: ScrapeResult<GQL.ScrapedLabel>,
+    isNew?: boolean,
+    onChangeFn?: (value: GQL.ScrapedLabel) => void
+  ) {
+    const resultValue = isNew
+      ? scrapeResult.newValue
+      : scrapeResult.originalValue;
+    const ids = resultValue?.stored_id ? [resultValue.stored_id] : [];
+
+    return (
+      <LabelIDSelect
+        className="form-control react-select"
+        ids={ids}
+        onSelect={(items: LocalLabel[]) => {
+          if (!onChangeFn) {
+            return;
+          }
+
+          const item = items[0];
+          if (!item) {
+            onChangeFn({
+              name: scrapeResult.newValue?.name ?? "",
+              aliases: scrapeResult.newValue?.aliases,
+              image: scrapeResult.newValue?.image,
+              remote_site_id: scrapeResult.newValue?.remote_site_id,
+            });
+            return;
+          }
+
+          onChangeFn({
+            stored_id: item.id,
+            name: item.name ?? "",
+            aliases: item.aliases?.join(", "),
+            image: item.image_path ?? undefined,
+            remote_site_id: scrapeResult.newValue?.remote_site_id,
+          });
+        }}
+        isDisabled={!isNew}
+        studioId={studioID}
+        studioName={studioName}
+        noSelectionString={isNew ? scrapeResult.newValue?.name : undefined}
+      />
+    );
+  }
+
+  return (
+    <ScrapeDialogRow
+      title={title}
+      field={field}
+      result={result}
+      originalField={renderScrapedLabel(result)}
+      newField={renderScrapedLabel(result, true, (value) =>
+        onChange(result.cloneWithValue(value))
+      )}
+      onChange={onChange}
+      newValues={
+        newLabel && onCreateNew ? (
+          <NewScrapedObjects
+            newValues={[newLabel]}
+            onCreateNew={onCreateNew}
+            getName={getObjectName}
           />
         ) : undefined
       }

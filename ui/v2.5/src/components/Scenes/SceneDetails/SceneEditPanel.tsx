@@ -477,6 +477,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
       });
     }
 
+    if (updatedScene.label?.stored_id) {
+      formik.setFieldValue("label_id", updatedScene.label.stored_id);
+    }
+
     if (updatedScene.performers && updatedScene.performers.length > 0) {
       const idPerfs = updatedScene.performers.filter((p) => {
         return p.stored_id !== undefined && p.stored_id !== null;

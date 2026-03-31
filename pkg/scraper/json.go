@@ -12,6 +12,7 @@ import (
 	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/tidwall/gjson"
+	"sync"
 )
 
 type jsonScraper struct {
@@ -288,10 +289,11 @@ func (s *jsonScraper) getJsonQuery(doc string, url string) *jsonQuery {
 }
 
 type jsonQuery struct {
-	doc       string
-	scraper   *jsonScraper
-	queryType QueryType
-	url       string
+	doc            string
+	scraper        *jsonScraper
+	queryType      QueryType
+	url            string
+	subScrapeCache sync.Map // map[string]mappedQuery
 }
 
 func (q *jsonQuery) getType() QueryType {
@@ -304,6 +306,24 @@ func (q *jsonQuery) setType(t QueryType) {
 
 func (q *jsonQuery) getURL() string {
 	return q.url
+}
+
+func (q *jsonQuery) getDoc() string {
+	return q.doc
+}
+
+func (q *jsonQuery) hasSubScrape(value string) mappedQuery {
+	if cached, ok := q.subScrapeCache.Load(value); ok {
+		logger.Debugf("Sub-scrape cache hit for: %s", value)
+		return cached.(mappedQuery)
+	}
+	logger.Debugf("Sub-scrape cache miss for: %s", value)
+	return nil
+}
+
+func (q *jsonQuery) setSubScrape(value string, ss mappedQuery) {
+	logger.Debugf("Caching sub-scrape for: %s", value)
+	q.subScrapeCache.Store(value, ss)
 }
 
 func (q *jsonQuery) runQuery(selector string) ([]string, error) {

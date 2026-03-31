@@ -161,6 +161,14 @@ fragment ScrapedSceneTagData on ScrapedTag {
   remote_site_id
 }
 
+fragment ScrapedLabelData on ScrapedLabel {
+  stored_id
+  name
+  aliases
+  image
+  remote_site_id
+}
+
 fragment ScrapedSceneData on ScrapedScene {
   title
   code
@@ -188,6 +196,14 @@ fragment ScrapedSceneData on ScrapedScene {
 
   tags {
     ...ScrapedSceneTagData
+  }
+
+  label {
+    ...ScrapedLabelData
+  }
+
+  galleries {
+    ...ScrapedGalleryData
   }
 
   performers {

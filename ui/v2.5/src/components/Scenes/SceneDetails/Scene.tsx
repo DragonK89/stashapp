@@ -200,6 +200,8 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const hideTags = Boolean((configuration?.ui as any)?.hideTags);
   const hideGroups = Boolean((configuration?.ui as any)?.hideGroups);
   const hideMarkers = Boolean((configuration?.ui as any)?.hideMarkers);
+  const hideQueue = Boolean((configuration?.ui as any)?.hideQueue);
+  const hideSceneFilters = Boolean((configuration?.ui as any)?.hideSceneFilters);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const boxes = configuration?.general?.stashBoxes ?? [];
@@ -468,7 +470,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
                 <FormattedMessage id="details" />
               </Nav.Link>
             </Nav.Item>
-            {queueScenes.length > 0 ? (
+            {!hideQueue && queueScenes.length > 0 ? (
               <Nav.Item>
                 <Nav.Link eventKey="scene-queue-panel">
                   <FormattedMessage id="queue" />
@@ -506,11 +508,13 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
                 </Nav.Link>
               </Nav.Item>
             ) : undefined}
-            <Nav.Item>
-              <Nav.Link eventKey="scene-video-filter-panel">
-                <FormattedMessage id="effect_filters.name" />
-              </Nav.Link>
-            </Nav.Item>
+            {!hideSceneFilters && (
+              <Nav.Item>
+                <Nav.Link eventKey="scene-video-filter-panel">
+                  <FormattedMessage id="effect_filters.name" />
+                </Nav.Link>
+              </Nav.Item>
+            )}
             <Nav.Item>
               <Nav.Link eventKey="scene-file-info-panel">
                 <FormattedMessage id="file_info" />
@@ -536,22 +540,24 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
           <Tab.Pane eventKey="scene-details-panel">
             <SceneDetailPanel scene={scene} />
           </Tab.Pane>
-          <Tab.Pane eventKey="scene-queue-panel">
-            <QueueViewer
-              scenes={queueScenes}
-              currentID={scene.id}
-              continue={continuePlaylist}
-              setContinue={setContinuePlaylist}
-              onSceneClicked={onQueueSceneClicked}
-              onNext={onQueueNext}
-              onPrevious={onQueuePrevious}
-              onRandom={onQueueRandom}
-              start={queueStart}
-              hasMoreScenes={queueHasMoreScenes}
-              onLessScenes={onQueueLessScenes}
-              onMoreScenes={onQueueMoreScenes}
-            />
-          </Tab.Pane>
+          {!hideQueue && (
+            <Tab.Pane eventKey="scene-queue-panel">
+              <QueueViewer
+                scenes={queueScenes}
+                currentID={scene.id}
+                continue={continuePlaylist}
+                setContinue={setContinuePlaylist}
+                onSceneClicked={onQueueSceneClicked}
+                onNext={onQueueNext}
+                onPrevious={onQueuePrevious}
+                onRandom={onQueueRandom}
+                start={queueStart}
+                hasMoreScenes={queueHasMoreScenes}
+                onLessScenes={onQueueLessScenes}
+                onMoreScenes={onQueueMoreScenes}
+              />
+            </Tab.Pane>
+          )}
           {!hideMarkers && (
             <Tab.Pane eventKey="scene-markers-panel">
               <SceneMarkersPanel
@@ -574,9 +580,11 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
               )}
             </Tab.Pane>
           )}
-          <Tab.Pane eventKey="scene-video-filter-panel">
-            <SceneVideoFilterPanel scene={scene} />
-          </Tab.Pane>
+          {!hideSceneFilters && (
+            <Tab.Pane eventKey="scene-video-filter-panel">
+              <SceneVideoFilterPanel scene={scene} />
+            </Tab.Pane>
+          )}
           <Tab.Pane
             className="file-info-panel"
             eventKey="scene-file-info-panel"

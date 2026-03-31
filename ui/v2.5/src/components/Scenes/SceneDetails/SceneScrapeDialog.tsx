@@ -18,11 +18,13 @@ import {
 } from "src/components/Shared/ScrapeDialog/scrapeResult";
 import {
   ScrapedGroupsRow,
+  ScrapedLabelRow,
   ScrapedPerformersRow,
   ScrapedStudioRow,
 } from "src/components/Shared/ScrapeDialog/ScrapedObjectsRow";
 import {
   useCreateScrapedGroup,
+  useCreateScrapedLabel,
   useCreateScrapedPerformer,
   useCreateScrapedStudio,
 } from "src/components/Shared/ScrapeDialog/createObjects";
@@ -89,6 +91,28 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   const [newStudio, setNewStudio] = useState<GQL.ScrapedStudio | undefined>(
     scraped.studio && !scraped.studio.stored_id ? scraped.studio : undefined
   );
+  const [label, setLabel] = useState<ScrapeResult<GQL.ScrapedLabel>>(
+    new ScrapeResult<GQL.ScrapedLabel>(
+      scene.label_id
+        ? {
+            stored_id: scene.label_id,
+            name: "",
+          }
+        : undefined,
+      scraped.label,
+      undefined,
+      (original, next) => {
+        if (original?.stored_id || next?.stored_id) {
+          return original?.stored_id === next?.stored_id;
+        }
+
+        return original?.name === next?.name;
+      }
+    )
+  );
+  const [newLabel, setNewLabel] = useState<GQL.ScrapedLabel | undefined>(
+    scraped.label && !scraped.label.stored_id ? scraped.label : undefined
+  );
 
   const [stashID, setStashID] = useState(
     new ScrapeResult<string>(
@@ -145,6 +169,13 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     new ScrapeResult<string>(scene.cover_image, scraped.image)
   );
 
+  const labelStudioID = (
+    studio.useNewValue ? studio.getNewValue()?.stored_id : sceneStudio?.id
+  ) ?? sceneStudio?.id;
+  const labelStudioName = (
+    studio.useNewValue ? studio.getNewValue()?.name : sceneStudio?.name
+  ) ?? sceneStudio?.name;
+
   const createNewStudio = useCreateScrapedStudio({
     scrapeResult: studio,
     setScrapeResult: setStudio,
@@ -167,6 +198,12 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     setNewObjects: setNewGroups,
     endpoint,
   });
+  const createNewLabel = useCreateScrapedLabel({
+    scrapeResult: label,
+    setScrapeResult: setLabel,
+    setNewObject: setNewLabel,
+    studioID: labelStudioID,
+  });
 
   const intl = useIntl();
 
@@ -179,6 +216,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
       date,
       director,
       studio,
+      label,
       performers,
       groups,
       tags,
@@ -205,6 +243,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
       date: date.getNewValue(),
       director: director.getNewValue(),
       studio: newStudioValue,
+      label: label.getNewValue(),
       performers: performers.getNewValue(),
       groups: groups.getNewValue(),
       tags: tags.getNewValue(),
@@ -255,6 +294,16 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           onChange={(value) => setStudio(value)}
           newStudio={newStudio}
           onCreateNew={createNewStudio}
+        />
+        <ScrapedLabelRow
+          field="label"
+          title={intl.formatMessage({ id: "label" })}
+          result={label}
+          onChange={(value) => setLabel(value)}
+          studioID={labelStudioID}
+          studioName={labelStudioName}
+          newLabel={newLabel}
+          onCreateNew={labelStudioID ? createNewLabel : undefined}
         />
         <ScrapedPerformersRow
           field="performers"

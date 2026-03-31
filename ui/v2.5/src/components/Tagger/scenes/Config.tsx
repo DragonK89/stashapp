@@ -15,6 +15,7 @@ import { ParseMode, TagOperation } from "../constants";
 import { TaggerStateContext } from "../context";
 import { GenderEnum } from "src/core/generated-graphql";
 import { genderList } from "src/utils/gender";
+import SceneFieldSelector from "../SceneFieldSelector";
 
 const Blacklist: React.FC<{
   list: string[];
@@ -119,6 +120,14 @@ interface IConfigProps {
 const Config: React.FC<IConfigProps> = ({ show }) => {
   const { config, setConfig } = useContext(TaggerStateContext);
   const intl = useIntl();
+  const [showExclusionModal, setShowExclusionModal] = useState(false);
+
+  const excludedFields = config.excludedSceneFields ?? [];
+
+  const handleFieldSelect = (fields: string[]) => {
+    setConfig({ ...config, excludedSceneFields: fields });
+    setShowExclusionModal(false);
+  };
 
   function renderGenderCheckbox(gender: GenderEnum) {
     const performerGenders = config.performerGenders || genderList.slice();
@@ -142,6 +151,7 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
   }
 
   return (
+    <>
     <Collapse in={show}>
       <Card>
         <div className="row">
@@ -298,6 +308,32 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
             </Form.Group>
           </Form>
           <div className="col-md-6">
+            <Form.Group controlId="excluded-scene-fields">
+              <h6>
+                <FormattedMessage id="component_tagger.config.excluded_fields" />
+              </h6>
+              <span>
+                {excludedFields.length > 0 ? (
+                  excludedFields.map((f) => (
+                    <Badge variant="secondary" className="tag-item" key={f}>
+                      <FormattedMessage id={f} />
+                    </Badge>
+                  ))
+                ) : (
+                  <FormattedMessage id="component_tagger.config.no_fields_are_excluded" />
+                )}
+              </span>
+              <Form.Text>
+                <FormattedMessage id="component_tagger.config.these_fields_will_not_be_changed_when_updating_scenes" />
+              </Form.Text>
+              <Button
+                onClick={() => setShowExclusionModal(true)}
+                className="mt-2"
+              >
+                <FormattedMessage id="component_tagger.config.edit_excluded_fields" />
+              </Button>
+            </Form.Group>
+            <hr />
             <Blacklist
               list={config.blacklist}
               setList={(blacklist) => setConfig({ ...config, blacklist })}
@@ -306,6 +342,12 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
         </div>
       </Card>
     </Collapse>
+    <SceneFieldSelector
+      show={showExclusionModal}
+      onSelect={handleFieldSelect}
+      excludedFields={excludedFields}
+    />
+    </>
   );
 };
 

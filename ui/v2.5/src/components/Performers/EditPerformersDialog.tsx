@@ -91,6 +91,7 @@ export const EditPerformersDialog: React.FC<IListOperationProps> = (
 
   // Network state
   const [isUpdating, setIsUpdating] = useState(false);
+  const isMounted = useIsMounted();
 
   function setUpdateField(input: Partial<GQL.BulkPerformerUpdateInput>) {
     setUpdateInput({ ...updateInput, ...input });

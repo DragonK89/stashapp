@@ -24,6 +24,7 @@ export const DEFAULT_BLACKLIST = [
 ];
 export const DEFAULT_EXCLUDED_PERFORMER_FIELDS = ["name"];
 export const DEFAULT_EXCLUDED_STUDIO_FIELDS = ["name"];
+export const DEFAULT_EXCLUDED_SCENE_FIELDS: string[] = [];
 
 export const initialConfig: ITaggerConfig = {
   blacklist: DEFAULT_BLACKLIST,
@@ -35,6 +36,7 @@ export const initialConfig: ITaggerConfig = {
   excludedPerformerFields: DEFAULT_EXCLUDED_PERFORMER_FIELDS,
   markSceneAsOrganizedOnSave: false,
   excludedStudioFields: DEFAULT_EXCLUDED_STUDIO_FIELDS,
+  excludedSceneFields: DEFAULT_EXCLUDED_SCENE_FIELDS,
   createParentStudios: true,
 };
 
@@ -52,8 +54,23 @@ export interface ITaggerConfig {
   excludedPerformerFields?: string[];
   markSceneAsOrganizedOnSave?: boolean;
   excludedStudioFields?: string[];
+  excludedSceneFields?: string[];
   createParentStudios: boolean;
 }
+
+export const SCENE_FIELDS = [
+  "title",
+  "date",
+  "url",
+  "details",
+  "studio",
+  "label",
+  "galleries",
+  "code",
+  "director",
+  "cover_image",
+  "stash_ids",
+];
 
 export const PERFORMER_FIELDS = [
   "name",

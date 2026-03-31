@@ -8,6 +8,7 @@
     "donate": "Donate",
     "galleries": "Galleries",
     "groups": "Groups",
+    "label": "Label",
     "images": "Images",
     "labels": "Labels",
     "markers": "Markers",
@@ -18,6 +19,10 @@
     "studios": "Studios",
     "tags": "Tags",
     "config": {
+        "tasks": {
+            "scan_torrents_scan_images": "Scan images within torrents",
+            "scan_torrents_scan_images_tooltip": "If enabled, image files within torrents will be scanned. If disabled, they will be ignored."
+        },
         "tools": {
             "scene_filename_parser": {
                 "ignore_organized": "Ignore organized scenes"
@@ -27,6 +32,32 @@
             "custom_locales": {
                 "heading": "Custom localization",
                 "option_label": "Custom localization enabled"
+            },
+            "label_panel": {
+                "heading": "Label view",
+                "options": {
+                    "hide_labels": {
+                        "description": "Hide Labels across the UI (navbar, pages, chips/links, filters, selectors).",
+                        "heading": "Hide all Label UI"
+                    }
+                }
+            },
+            "marker_panel": {
+                "heading": "Marker view",
+                "options": {
+                    "hide_markers": {
+                        "description": "Hide Markers across the UI (navbar, pages, chips/links, filters, selectors).",
+                        "heading": "Hide all Marker UI"
+                    },
+                    "hide_queue": {
+                        "description": "Hide the marker queue in the player.",
+                        "heading": "Hide markers queue"
+                    },
+                    "hide_scene_filters": {
+                        "description": "Hide scene filters in the Marker view.",
+                        "heading": "Hide scene filters"
+                    }
+                }
             }
         }
     },
@@ -37,11 +68,15 @@
     "performer_favorite": "Performer Favorited",
     "component_tagger": {
         "config": {
+            "edit_excluded_fields": "Edit Excluded Fields",
+            "excluded_fields": "Excluded fields:",
             "mark_organized_label": "Mark as Organized on save",
+            "no_fields_are_excluded": "No fields are excluded",
             "query_mode_studiocode": "Studio Code",
             "query_mode_studiocode_desc": "Only uses studio code",
             "query_mode_title": "Title",
-            "query_mode_title_desc": "Only uses title"
+            "query_mode_title_desc": "Only uses title",
+            "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes"
         },
         "verb_search_all": "Search All"
     },

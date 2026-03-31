@@ -30,6 +30,7 @@ import { OptionalField } from "../IncludeButton";
 import { SceneTaggerModalsState } from "./sceneTaggerModals";
 import PerformerResult from "./PerformerResult";
 import StudioResult from "./StudioResult";
+import LabelResult from "./LabelResult";
 import { useInitialState } from "src/hooks/state";
 import { getStashboxBase } from "src/utils/stashbox";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
@@ -286,10 +287,16 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   const getInitialStudio = useCallback(() => {
     return scene.studio?.stored_id ?? stashScene.studio?.id;
   }, [stashScene, scene]);
+  const getInitialLabel = useCallback(() => {
+    return scene.label?.stored_id ?? stashScene.label?.id;
+  }, [stashScene, scene]);
 
   const [loading, setLoading] = useState(false);
   const [excludedFields, setExcludedFields] = useState<Record<string, boolean>>(
-    {}
+    (config.excludedSceneFields ?? []).reduce(
+      (dict, field) => ({ ...dict, [field]: true }),
+      {} as Record<string, boolean>
+    )
   );
   const [tagIDs, setTagIDs, setInitialTagIDs] = useInitialState<string[]>(
     getInitialTags()
@@ -302,6 +309,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   const [studioID, setStudioID, setInitialStudioID] = useInitialState<
     string | undefined
   >(getInitialStudio());
+  const [labelID, setLabelID, setInitialLabelID] = useInitialState<
+    string | undefined
+  >(getInitialLabel());
 
   useEffect(() => {
     setInitialTagIDs(getInitialTags());
@@ -314,6 +324,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   useEffect(() => {
     setInitialStudioID(getInitialStudio());
   }, [getInitialStudio, setInitialStudioID]);
+  useEffect(() => {
+    setInitialLabelID(getInitialLabel());
+  }, [getInitialLabel, setInitialLabelID]);
 
   useEffect(() => {
     async function doResolveScene() {
@@ -390,6 +403,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
         stashScene.performers.map((p) => p.id).concat(filteredPerformerIDs)
       ),
       studio_id: studioID,
+      label_id: labelID,
       cover_image: resolveField("cover_image", undefined, imgData),
       tag_ids: !hideTags ? tagIDs : stashScene.tags.map((t) => t.id),
       stash_ids: stashScene.stash_ids ?? [],
@@ -522,6 +536,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     url: "url",
     details: "details",
     studio: "studio",
+    label: "label",
     stash_ids: "stash_ids",
     code: "code",
     director: "director",
@@ -581,10 +596,20 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   function renderStudioDate() {
-    const text =
-      scene.studio && scene.date
-        ? `${scene.studio.name} • ${scene.date}`
-        : `${scene.studio?.name ?? scene.date ?? ""}`;
+    const studio = scene.studio?.name;
+    const label = scene.label?.name;
+    const date = scene.date;
+
+    let text = "";
+    if (studio && label) {
+      text = studio === label ? studio : `${studio} (${label})`;
+    } else {
+      text = studio || label || "";
+    }
+
+    if (date) {
+      text = text ? `${text} • ${date}` : date;
+    }
 
     if (text) {
       return <h5>{text}</h5>;
@@ -722,6 +747,22 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
   };
 
+  const maybeRenderLabelField = () => {
+    if (scene.label) {
+      return (
+        <div className="mt-2">
+          <LabelResult
+            label={scene.label}
+            selectedID={labelID}
+            setSelectedID={(id) => setLabelID(id)}
+            studioID={studioID}
+          />
+        </div>
+      );
+    }
+  };
+
+
   function setPerformerID(performerIndex: number, id: string | undefined) {
     const newPerformerIDs = [...performerIDs];
     newPerformerIDs[performerIndex] = id;
@@ -854,6 +895,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       {isActive && (
         <div className="col-lg-6">
           {maybeRenderStudioField()}
+          {maybeRenderLabelField()}
           {renderPerformerField()}
           {maybeRenderTagsField()}
 

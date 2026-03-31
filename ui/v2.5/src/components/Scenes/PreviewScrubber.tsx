@@ -91,6 +91,9 @@ export const PreviewScrubber: React.FC<IScenePreviewProps> = ({
     }
 
     const s = spriteInfo[index];
+    if (!s) {
+      return;
+    }
     onClick(s.start);
   }
 

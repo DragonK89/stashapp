@@ -2,6 +2,7 @@ import { useToast } from "src/hooks/Toast";
 import * as GQL from "src/core/generated-graphql";
 import {
   useGroupCreate,
+  useLabelCreate,
   usePerformerCreate,
   useStudioCreate,
   useTagCreate,
@@ -181,6 +182,57 @@ export function useCreateScrapedGroup(
   }
 
   return useCreateObject("group", createNewGroup);
+}
+
+interface IUseCreateNewLabelProps {
+  scrapeResult: ScrapeResult<GQL.ScrapedLabel>;
+  setScrapeResult: (scrapeResult: ScrapeResult<GQL.ScrapedLabel>) => void;
+  setNewObject: (newObject: GQL.ScrapedLabel | undefined) => void;
+  studioID?: string;
+}
+
+export function useCreateScrapedLabel(props: IUseCreateNewLabelProps) {
+  const [createLabel] = useLabelCreate();
+  const { scrapeResult, setScrapeResult, setNewObject, studioID } = props;
+
+  async function createNewLabel(toCreate: GQL.ScrapedLabel) {
+    if (!studioID) {
+      throw new Error("Cannot create label without a studio");
+    }
+
+    const input: GQL.LabelCreateInput = {
+      name: toCreate.name,
+      studio_id: studioID,
+      aliases:
+        toCreate.aliases
+          ?.split(",")
+          .map((a) => a.trim())
+          .filter((a) => a) || [],
+      image: toCreate.image,
+    };
+
+    const result = await createLabel({
+      variables: {
+        input,
+      },
+    });
+
+    if (result.data?.labelCreate) {
+      setScrapeResult(
+        scrapeResult.cloneWithValue({
+          stored_id: result.data.labelCreate.id,
+          name: result.data.labelCreate.name,
+          aliases: result.data.labelCreate.aliases.join(", "),
+          image: result.data.labelCreate.image_path,
+          remote_site_id: toCreate.remote_site_id,
+        })
+      );
+    }
+
+    setNewObject(undefined);
+  }
+
+  return useCreateObject("label", createNewLabel);
 }
 
 export function useLinkScrapedTag(

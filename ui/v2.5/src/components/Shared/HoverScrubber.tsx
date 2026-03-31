@@ -21,8 +21,15 @@ export const HoverScrubber: React.FC<IHoverScrubber> = ({
     e:
       | React.MouseEvent<HTMLDivElement, MouseEvent>
       | React.TouchEvent<HTMLDivElement>
-  ) {
+  ): number | undefined {
+    if (!totalSprites) {
+      return undefined;
+    }
+
     const { width } = e.currentTarget.getBoundingClientRect();
+    if (width <= 0) {
+      return undefined;
+    }
 
     let x = 0;
     if (e.nativeEvent instanceof MouseEvent) {

@@ -109,7 +109,11 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   saveScene: dummyFn,
 });
 
-export type IScrapedScene = GQL.ScrapedScene & { resolved?: boolean };
+export type ScrapedLabel = NonNullable<GQL.ScrapedScene["label"]>;
+
+export type IScrapedScene = GQL.ScrapedScene & {
+  resolved?: boolean;
+};
 
 export interface ISceneQueryResult {
   results?: IScrapedScene[];

@@ -157,6 +157,7 @@
   },
   "actions_name": "Actions",
   "labels": "Labels",
+  "label": "Label",
   "age": "Age",
   "age_on_date": "{age} at production",
   "aliases": "Aliases",
@@ -187,11 +188,14 @@
       "active_instance": "Active stash-box instance:",
       "blacklist_desc": "Blacklist items are excluded from queries. Note that they are regular expressions and also case-insensitive. Certain characters must be escaped with a backslash: {chars_require_escape}",
       "blacklist_label": "Blacklist",
+      "edit_excluded_fields": "Edit Excluded Fields",
+      "excluded_fields": "Excluded fields:",
       "errors": {
         "blacklist_duplicate": "Duplicate blacklist item"
       },
       "mark_organized_desc": "Immediately mark the scene as Organized after the Save button is clicked.",
       "mark_organized_label": "Mark as Organized on save",
+      "no_fields_are_excluded": "No fields are excluded",
       "performer_genders": {
         "heading": "Performer genders",
         "description": "Performers with these genders will be shown when tagging scenes."
@@ -215,7 +219,8 @@
       "set_cover_label": "Set scene cover image",
       "set_tag_desc": "Attach tags to scene, either by overwriting or merging with existing tags on scene.",
       "set_tag_label": "Set tags",
-      "source": "Source"
+      "source": "Source",
+      "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes"
     },
     "noun_query": "Query",
     "results": {
@@ -531,6 +536,8 @@
       "generate_thumbnails_during_scan": "Generate thumbnails for images",
       "scan_torrents": "Scan torrents (torrent-only)",
       "scan_torrents_tooltip": "Only scan .torrent files. This scan can run without ffmpeg/ffprobe, but torrent scenes are non-playable.",
+      "scan_torrents_scan_images": "Scan images within torrents",
+      "scan_torrents_scan_images_tooltip": "If enabled, image files within torrents will be scanned. If disabled, they will be ignored.",
       "scan_torrents_normalize_title": "Normalize torrent scene title (strict)",
       "scan_torrents_normalize_title_tooltip": "If enabled, torrent scenes are named PREFIX-### by extracting exactly one letters+digits match from the torrent filename (0 or multiple matches are skipped).",
       "scan_torrents_rename_file": "Rename torrent file to match title",
@@ -876,12 +883,29 @@
           }
         }
       },
+      "label_panel": {
+        "heading": "Label view",
+        "options": {
+          "hide_labels": {
+            "description": "Hide Labels across the UI (navbar, pages, chips/links, filters, selectors).",
+            "heading": "Hide all Label UI"
+          }
+        }
+      },
       "marker_panel": {
         "heading": "Marker view",
         "options": {
           "hide_markers": {
             "description": "Hide Markers across the UI (navbar, pages, chips/links, filters, selectors).",
             "heading": "Hide all Marker UI"
+          },
+          "hide_queue": {
+            "description": "Hide the marker queue in the player.",
+            "heading": "Hide markers queue"
+          },
+          "hide_scene_filters": {
+            "description": "Hide scene filters in the Marker view.",
+            "heading": "Hide scene filters"
           }
         }
       },
