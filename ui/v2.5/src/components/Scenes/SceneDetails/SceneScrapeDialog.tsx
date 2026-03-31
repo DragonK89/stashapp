@@ -10,19 +10,22 @@ import { ScrapeDialog } from "src/components/Shared/ScrapeDialog/ScrapeDialog";
 import { useIntl } from "react-intl";
 import { uniq } from "lodash-es";
 import { Performer } from "src/components/Performers/PerformerSelect";
+import { Gallery } from "src/components/Galleries/GallerySelect";
 import { sortStoredIdObjects } from "src/utils/data";
 import {
-  ObjectListScrapeResult,
   ObjectScrapeResult,
   ScrapeResult,
+  ObjectListScrapeResult,
 } from "src/components/Shared/ScrapeDialog/scrapeResult";
 import {
+  ScrapedGalleriesRow,
   ScrapedGroupsRow,
   ScrapedLabelRow,
   ScrapedPerformersRow,
   ScrapedStudioRow,
 } from "src/components/Shared/ScrapeDialog/ScrapedObjectsRow";
 import {
+  useCreateScrapedGallery,
   useCreateScrapedGroup,
   useCreateScrapedLabel,
   useCreateScrapedPerformer,
@@ -35,6 +38,7 @@ import { useScrapedTags } from "src/components/Shared/ScrapeDialog/scrapedTags";
 
 interface ISceneScrapeDialogProps {
   scene: Partial<GQL.SceneUpdateInput>;
+  sceneGalleries: Gallery[];
   sceneStudio: Studio | null;
   scenePerformers: Performer[];
   sceneTags: Tag[];
@@ -42,11 +46,15 @@ interface ISceneScrapeDialogProps {
   scraped: GQL.ScrapedScene;
   endpoint?: string;
 
-  onClose: (scrapedScene?: GQL.ScrapedScene) => void;
+  onClose: (result?: {
+    scrapedScene: GQL.ScrapedSceneDataFragment;
+    galleries?: Gallery[];
+  }) => void;
 }
 
 export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   scene,
+  sceneGalleries,
   sceneStudio,
   scenePerformers,
   sceneTags,
@@ -112,6 +120,12 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   );
   const [newLabel, setNewLabel] = useState<GQL.ScrapedLabel | undefined>(
     scraped.label && !scraped.label.stored_id ? scraped.label : undefined
+  );
+  const [galleries, setGalleries] = useState<ScrapeResult<Gallery[]>>(
+    new ScrapeResult<Gallery[]>(sceneGalleries, undefined)
+  );
+  const [newGalleries, setNewGalleries] = useState<GQL.ScrapedGallery[]>(
+    scraped.galleries ?? []
   );
 
   const [stashID, setStashID] = useState(
@@ -204,6 +218,12 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     setNewObject: setNewLabel,
     studioID: labelStudioID,
   });
+  const createNewGallery = useCreateScrapedGallery({
+    scrapeResult: galleries,
+    setScrapeResult: setGalleries,
+    newObjects: newGalleries,
+    setNewObjects: setNewGalleries,
+  });
 
   const intl = useIntl();
 
@@ -215,6 +235,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
       urls,
       date,
       director,
+      galleries,
       studio,
       label,
       performers,
@@ -225,6 +246,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
       stashID,
     ].every((r) => !r.scraped) &&
     newTags.length === 0 &&
+    newGalleries.length === 0 &&
     newPerformers.length === 0 &&
     newGroups.length === 0 &&
     !newStudio
@@ -286,6 +308,14 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           title={intl.formatMessage({ id: "director" })}
           result={director}
           onChange={(value) => setDirector(value)}
+        />
+        <ScrapedGalleriesRow
+          field="galleries"
+          title={intl.formatMessage({ id: "galleries" })}
+          result={galleries}
+          onChange={(value) => setGalleries(value)}
+          newObjects={newGalleries}
+          onCreateNew={createNewGallery}
         />
         <ScrapedStudioRow
           field="studio"
@@ -358,7 +388,14 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
         { entity_type: intl.formatMessage({ id: "scene" }) }
       )}
       onClose={(apply) => {
-        onClose(apply ? makeNewScrapedItem() : undefined);
+        onClose(
+          apply
+            ? {
+                scrapedScene: makeNewScrapedItem(),
+                galleries: galleries.getNewValue(),
+              }
+            : undefined
+        );
       }}
     >
       {renderScrapeRows()}

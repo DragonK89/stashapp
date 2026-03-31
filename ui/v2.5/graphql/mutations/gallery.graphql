@@ -40,6 +40,13 @@ mutation AddGalleryImages($gallery_id: ID!, $image_ids: [ID!]!) {
   addGalleryImages(input: { gallery_id: $gallery_id, image_ids: $image_ids })
 }
 
+mutation AddGalleryImagesByURL($gallery_id: ID!, $urls: [String!]!) {
+  addGalleryImagesByURL(input: { gallery_id: $gallery_id, urls: $urls }) {
+    created_ids
+    linked_ids
+  }
+}
+
 mutation RemoveGalleryImages($gallery_id: ID!, $image_ids: [ID!]!) {
   removeGalleryImages(input: { gallery_id: $gallery_id, image_ids: $image_ids })
 }

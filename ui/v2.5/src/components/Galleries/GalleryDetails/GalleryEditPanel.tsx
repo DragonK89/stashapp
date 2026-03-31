@@ -9,6 +9,7 @@ import {
   queryScrapeGallery,
   queryScrapeGalleryURL,
   useListGalleryScrapers,
+  mutateAddGalleryImagesByURL,
   mutateReloadScrapers,
 } from "src/core/StashService";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
@@ -38,6 +39,74 @@ interface IProps {
   isVisible: boolean;
   onSubmit: (input: GQL.GalleryCreateInput) => Promise<void>;
   onDelete: () => void;
+}
+
+const IMAGE_URL_EXTENSIONS = [
+  ".avif",
+  ".bmp",
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".tif",
+  ".tiff",
+  ".webp",
+];
+
+function isLikelyImageURL(value: string): boolean {
+  const url = value.trim();
+  if (!url) return false;
+
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.toLowerCase();
+    return IMAGE_URL_EXTENSIONS.some((ext) => path.endsWith(ext));
+  } catch {
+    const path = url.split(/[?#]/, 1)[0]?.toLowerCase() ?? "";
+    return IMAGE_URL_EXTENSIONS.some((ext) => path.endsWith(ext));
+  }
+}
+
+function extractImageURLs(urls?: string[] | null): string[] {
+  if (!urls?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const imageURLs: string[] = [];
+
+  for (const rawURL of urls) {
+    const url = rawURL.trim();
+    if (!url || seen.has(url) || !isLikelyImageURL(url)) {
+      continue;
+    }
+
+    seen.add(url);
+    imageURLs.push(url);
+  }
+
+  return imageURLs;
+}
+
+function extractNonImageURLs(urls?: string[] | null): string[] {
+  if (!urls?.length) {
+    return [];
+  }
+
+  const seen = new Set<string>();
+  const pageURLs: string[] = [];
+
+  for (const rawURL of urls) {
+    const url = rawURL.trim();
+    if (!url || seen.has(url) || isLikelyImageURL(url)) {
+      continue;
+    }
+
+    seen.add(url);
+    pageURLs.push(url);
+  }
+
+  return pageURLs;
 }
 
 export const GalleryEditPanel: React.FC<IProps> = ({
@@ -227,10 +296,42 @@ export const GalleryEditPanel: React.FC<IProps> = ({
     }
   }
 
-  function onScrapeDialogClosed(data?: GQL.ScrapedGalleryDataFragment) {
-    if (data) {
-      updateGalleryFromScrapedGallery(data);
+  async function addScrapedGalleryImages(
+    galleryData: GQL.ScrapedGalleryDataFragment
+  ) {
+    if (!gallery.id) {
+      return;
     }
+
+    const imageURLs = extractImageURLs(galleryData.urls);
+    if (imageURLs.length === 0) {
+      return;
+    }
+
+    await mutateAddGalleryImagesByURL({
+      gallery_id: gallery.id,
+      urls: imageURLs,
+    });
+  }
+
+  async function onScrapeDialogClosed(data?: GQL.ScrapedGalleryDataFragment) {
+    if (!data) {
+      setScrapedGallery(undefined);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      updateGalleryFromScrapedGallery(data);
+      await addScrapedGalleryImages(data);
+    } catch (e) {
+      Toast.error(e);
+    } finally {
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
+    }
+
     setScrapedGallery(undefined);
   }
 
@@ -252,7 +353,7 @@ export const GalleryEditPanel: React.FC<IProps> = ({
         galleryPerformers={performers}
         scraped={scrapedGallery}
         onClose={(data) => {
-          onScrapeDialogClosed(data);
+          void onScrapeDialogClosed(data);
         }}
       />
     );
@@ -288,7 +389,7 @@ export const GalleryEditPanel: React.FC<IProps> = ({
     }
 
     if (galleryData.urls) {
-      formik.setFieldValue("urls", galleryData.urls);
+      formik.setFieldValue("urls", extractNonImageURLs(galleryData.urls));
     }
 
     if (galleryData.studio?.stored_id) {

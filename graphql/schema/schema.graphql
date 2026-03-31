@@ -369,6 +369,7 @@ type Mutation {
   galleriesUpdate(input: [GalleryUpdateInput!]!): [Gallery]
 
   addGalleryImages(input: GalleryAddInput!): Boolean!
+  addGalleryImagesByURL(input: GalleryAddURLsInput!): GalleryAddURLsResult!
   removeGalleryImages(input: GalleryRemoveInput!): Boolean!
   setGalleryCover(input: GallerySetCoverInput!): Boolean!
   resetGalleryCover(input: GalleryResetCoverInput!): Boolean!

@@ -3,6 +3,7 @@ import {
   DocumentNode,
   FetchResult,
   NetworkStatus,
+  gql,
   useQuery,
 } from "@apollo/client";
 import { Modifiers } from "@apollo/client/cache";
@@ -1611,6 +1612,27 @@ const galleryMutationImpactedQueries = [
   GQL.FindTagsDocument, // filter by gallery count
 ];
 
+type AddGalleryImagesByURLMutationVariables = {
+  gallery_id: string;
+  urls: string[];
+};
+
+type AddGalleryImagesByURLMutation = {
+  addGalleryImagesByURL: {
+    created_ids: string[];
+    linked_ids: string[];
+  };
+};
+
+const AddGalleryImagesByURLDocument = gql`
+  mutation AddGalleryImagesByURL($gallery_id: ID!, $urls: [String!]!) {
+    addGalleryImagesByURL(input: { gallery_id: $gallery_id, urls: $urls }) {
+      created_ids
+      linked_ids
+    }
+  }
+`;
+
 export const useGalleryCreate = () =>
   GQL.useGalleryCreateMutation({
     update(cache, result) {
@@ -1686,6 +1708,50 @@ export const mutateAddGalleryImages = (input: GQL.GalleryAddInput) =>
       }
 
       evictQueries(cache, [
+        GQL.FindGalleriesDocument, // filter by image count
+        GQL.FindImagesDocument, // filter by gallery
+      ]);
+    },
+  });
+
+export const mutateAddGalleryImagesByURL = (
+  input: AddGalleryImagesByURLMutationVariables
+) =>
+  client.mutate<
+    AddGalleryImagesByURLMutation,
+    AddGalleryImagesByURLMutationVariables
+  >({
+    mutation: AddGalleryImagesByURLDocument,
+    variables: input,
+    update(cache, result) {
+      const added = result.data?.addGalleryImagesByURL;
+      if (!added) return;
+
+      const galleryCacheID = cache.identify({
+        __typename: "Gallery",
+        id: input.gallery_id,
+      });
+
+      if (galleryCacheID) {
+        cache.evict({
+          id: galleryCacheID,
+          fieldName: "image_count",
+        });
+        cache.evict({
+          id: galleryCacheID,
+          fieldName: "images",
+        });
+      }
+
+      for (const id of added.linked_ids) {
+        cache.evict({
+          id: cache.identify({ __typename: "Image", id }),
+          fieldName: "galleries",
+        });
+      }
+
+      evictQueries(cache, [
+        GQL.FindGalleryDocument,
         GQL.FindGalleriesDocument, // filter by image count
         GQL.FindImagesDocument, // filter by gallery
       ]);

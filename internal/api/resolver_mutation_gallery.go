@@ -4,7 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
+	"path"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -450,6 +453,136 @@ func (r *mutationResolver) AddGalleryImages(ctx context.Context, input GalleryAd
 	}
 
 	return true, nil
+}
+
+func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input GalleryAddURLsInput) (ret *GalleryAddURLsResult, err error) {
+	galleryID, err := strconv.Atoi(input.GalleryID)
+	if err != nil {
+		return nil, fmt.Errorf("converting gallery id: %w", err)
+	}
+
+	createdIDSet := make(map[int]struct{})
+	linkedIDSet := make(map[int]struct{})
+	seenURLs := make(map[string]struct{})
+
+	if err := r.withTxn(ctx, func(ctx context.Context) error {
+		qb := r.repository.Gallery
+		gallery, err := qb.Find(ctx, galleryID)
+		if err != nil {
+			return err
+		}
+
+		if gallery == nil {
+			return fmt.Errorf("gallery with id %d not found", galleryID)
+		}
+
+		for _, scrapedURL := range input.Urls {
+			normalizedURL := strings.TrimSpace(scrapedURL)
+			if normalizedURL == "" {
+				continue
+			}
+
+			if _, exists := seenURLs[normalizedURL]; exists {
+				continue
+			}
+			seenURLs[normalizedURL] = struct{}{}
+
+			foundIDs, err := r.findImageIDsByURL(ctx, normalizedURL)
+			if err != nil {
+				return err
+			}
+
+			if len(foundIDs) == 0 {
+				newImage := models.NewImage()
+				newImage.URLs = models.NewRelatedStrings([]string{normalizedURL})
+				newImage.Title = imageTitleFromURL(normalizedURL)
+
+				if err := r.repository.Image.Create(ctx, &newImage, nil); err != nil {
+					return fmt.Errorf("creating image for url %q: %w", normalizedURL, err)
+				}
+
+				foundIDs = []int{newImage.ID}
+				createdIDSet[newImage.ID] = struct{}{}
+			}
+
+			for _, imageID := range foundIDs {
+				linkedIDSet[imageID] = struct{}{}
+			}
+		}
+
+		if len(linkedIDSet) > 0 {
+			linkedIDs := make([]int, 0, len(linkedIDSet))
+			for id := range linkedIDSet {
+				linkedIDs = append(linkedIDs, id)
+			}
+			sort.Ints(linkedIDs)
+
+			if err := r.galleryService.AddImages(ctx, gallery, linkedIDs...); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	createdIDs := make([]string, 0, len(createdIDSet))
+	for id := range createdIDSet {
+		createdIDs = append(createdIDs, strconv.Itoa(id))
+	}
+	sort.Strings(createdIDs)
+
+	linkedIDs := make([]string, 0, len(linkedIDSet))
+	for id := range linkedIDSet {
+		linkedIDs = append(linkedIDs, strconv.Itoa(id))
+	}
+	sort.Strings(linkedIDs)
+
+	return &GalleryAddURLsResult{
+		CreatedIds: createdIDs,
+		LinkedIds:  linkedIDs,
+	}, nil
+}
+
+func (r *mutationResolver) findImageIDsByURL(ctx context.Context, imageURL string) ([]int, error) {
+	queryResult, err := r.repository.Image.Query(ctx, models.ImageQueryOptions{
+		ImageFilter: &models.ImageFilterType{
+			URL: &models.StringCriterionInput{
+				Value:    imageURL,
+				Modifier: models.CriterionModifierEquals,
+			},
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("querying image by url %q: %w", imageURL, err)
+	}
+
+	images, err := queryResult.Resolve(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving images by url %q: %w", imageURL, err)
+	}
+
+	ret := make([]int, 0, len(images))
+	for _, image := range images {
+		ret = append(ret, image.ID)
+	}
+
+	return ret, nil
+}
+
+func imageTitleFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+
+	base := path.Base(u.Path)
+	if base == "." || base == "/" {
+		return ""
+	}
+
+	return strings.TrimSpace(base)
 }
 
 func (r *mutationResolver) RemoveGalleryImages(ctx context.Context, input GalleryRemoveInput) (bool, error) {

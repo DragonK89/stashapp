@@ -67,6 +67,29 @@ func (r *imageResolver) Files(ctx context.Context, obj *models.Image) ([]*ImageF
 }
 
 func (r *imageResolver) Paths(ctx context.Context, obj *models.Image) (*ImagePathsType, error) {
+	// URL-only images have no checksum/file, so local thumbnail routes resolve to
+	// the default placeholder. Use the first stored URL directly in that case.
+	if obj.Checksum == "" {
+		if !obj.URLs.Loaded() {
+			if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+				return obj.LoadURLs(ctx, r.repository.Image)
+			}); err != nil {
+				return nil, err
+			}
+		}
+
+		urls := obj.URLs.List()
+		if len(urls) > 0 {
+			imagePath := urls[0]
+			previewPath := ""
+			return &ImagePathsType{
+				Image:     &imagePath,
+				Thumbnail: &imagePath,
+				Preview:   &previewPath,
+			}, nil
+		}
+	}
+
 	baseURL, _ := ctx.Value(BaseURLCtxKey).(string)
 	builder := urlbuilders.NewImageURLBuilder(baseURL, obj)
 	thumbnailPath := builder.GetThumbnailURL()

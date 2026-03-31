@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { ScrapeDialogRow } from "src/components/Shared/ScrapeDialog/ScrapeDialogRow";
 import { PerformerSelect } from "src/components/Performers/PerformerSelect";
+import { GallerySelect, Gallery } from "src/components/Galleries/GallerySelect";
 import {
   LabelIDSelect,
   Label as LocalLabel,
@@ -259,6 +260,73 @@ export const ScrapedLabelRow: React.FC<IScrapedLabelRow> = ({
             newValues={[newLabel]}
             onCreateNew={onCreateNew}
             getName={getObjectName}
+          />
+        ) : undefined
+      }
+    />
+  );
+};
+
+interface IScrapedGalleriesRow {
+  title: string;
+  field: string;
+  result: ScrapeResult<Gallery[]>;
+  onChange: (value: ScrapeResult<Gallery[]>) => void;
+  newObjects?: GQL.ScrapedGallery[];
+  onCreateNew?: (value: GQL.ScrapedGallery) => void;
+}
+
+function getScrapedGalleryName(value: GQL.ScrapedGallery) {
+  return value.title ?? value.code ?? value.urls?.[0] ?? "Gallery";
+}
+
+export const ScrapedGalleriesRow: React.FC<IScrapedGalleriesRow> = ({
+  title,
+  field,
+  result,
+  onChange,
+  newObjects,
+  onCreateNew,
+}) => {
+  function renderScrapedGalleries(
+    scrapeResult: ScrapeResult<Gallery[]>,
+    isNew?: boolean,
+    onChangeFn?: (value: Gallery[]) => void
+  ) {
+    const resultValue = isNew
+      ? scrapeResult.newValue
+      : scrapeResult.originalValue;
+    const value = resultValue ?? [];
+
+    return (
+      <GallerySelect
+        isMulti
+        className="form-control"
+        isDisabled={!isNew}
+        onSelect={(items) => {
+          onChangeFn?.(items);
+        }}
+        values={value}
+      />
+    );
+  }
+
+  return (
+    <ScrapeDialogRow
+      title={title}
+      field={field}
+      result={result}
+      originalField={renderScrapedGalleries(result)}
+      newField={renderScrapedGalleries(result, true, (value) =>
+        onChange(result.cloneWithValue(value))
+      )}
+      onChange={onChange}
+      newValues={
+        onCreateNew && newObjects && newObjects.length > 0 ? (
+          <NewScrapedObjects
+            newValues={newObjects}
+            onCreateNew={onCreateNew}
+            getName={getScrapedGalleryName}
           />
         ) : undefined
       }

@@ -372,10 +372,18 @@ export const SceneEditPanel: React.FC<IProps> = ({
     }
   }
 
-  function onScrapeDialogClosed(sceneData?: GQL.ScrapedSceneDataFragment) {
-    if (sceneData) {
-      updateSceneFromScrapedScene(sceneData);
+  function onScrapeDialogClosed(result?: {
+    scrapedScene: GQL.ScrapedSceneDataFragment;
+    galleries?: Gallery[];
+  }) {
+    if (result?.scrapedScene) {
+      updateSceneFromScrapedScene(result.scrapedScene);
     }
+
+    if (result?.galleries) {
+      onSetGalleries(result.galleries);
+    }
+
     setScrapedScene(undefined);
   }
 
@@ -396,6 +404,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
     return (
       <SceneScrapeDialog
         scene={currentScene}
+        sceneGalleries={galleries}
         sceneStudio={studio}
         sceneTags={tags}
         scenePerformers={performers}

@@ -1,6 +1,7 @@
 import { useToast } from "src/hooks/Toast";
 import * as GQL from "src/core/generated-graphql";
 import {
+  useGalleryCreate,
   useGroupCreate,
   useLabelCreate,
   usePerformerCreate,
@@ -11,6 +12,7 @@ import { ObjectScrapeResult, ScrapeResult } from "./scrapeResult";
 import { useIntl } from "react-intl";
 import { scrapedPerformerToCreateInput } from "src/core/performers";
 import { scrapedGroupToCreateInput } from "src/core/groups";
+import { Gallery } from "src/components/Galleries/GallerySelect";
 
 function useCreateObject<T>(
   entityTypeID: string,
@@ -182,6 +184,74 @@ export function useCreateScrapedGroup(
   }
 
   return useCreateObject("group", createNewGroup);
+}
+
+interface IUseCreateNewGalleryProps {
+  scrapeResult: ScrapeResult<Gallery[]>;
+  setScrapeResult: (scrapeResult: ScrapeResult<Gallery[]>) => void;
+  newObjects: GQL.ScrapedGallery[];
+  setNewObjects: (newObject: GQL.ScrapedGallery[]) => void;
+}
+
+function galleryKey(gallery: GQL.ScrapedGallery) {
+  return [gallery.title ?? "", gallery.code ?? "", gallery.urls?.[0] ?? ""].join(
+    "::"
+  );
+}
+
+export function useCreateScrapedGallery(props: IUseCreateNewGalleryProps) {
+  const [createGallery] = useGalleryCreate();
+  const { scrapeResult, setScrapeResult, newObjects, setNewObjects } = props;
+
+  async function createNewGallery(toCreate: GQL.ScrapedGallery) {
+    const title = toCreate.title ?? toCreate.code ?? toCreate.urls?.[0];
+    if (!title) {
+      throw new Error("Cannot create gallery without a title, code, or URL");
+    }
+
+    const input: GQL.GalleryCreateInput = {
+      title,
+      code: toCreate.code,
+      urls: toCreate.urls,
+      date: toCreate.date,
+      details: toCreate.details,
+      photographer: toCreate.photographer,
+      studio_id: toCreate.studio?.stored_id ?? undefined,
+      tag_ids: (toCreate.tags ?? [])
+        .filter((t) => t.stored_id)
+        .map((t) => t.stored_id!),
+      performer_ids: (toCreate.performers ?? [])
+        .filter((p) => p.stored_id)
+        .map((p) => p.stored_id!),
+    };
+
+    const result = await createGallery({
+      variables: { input },
+    });
+
+    const created = result.data?.galleryCreate;
+    if (!created) {
+      return;
+    }
+
+    const newValue = [...(scrapeResult.newValue ?? [])];
+    newValue.push({
+      id: created.id,
+      title: created.title ?? title,
+      date: created.date,
+      code: created.code,
+      files: [],
+      folder: created.folder,
+      studio: created.studio ? { name: created.studio.name } : null,
+      cover: null,
+    });
+    setScrapeResult(scrapeResult.cloneWithValue(newValue));
+
+    const key = galleryKey(toCreate);
+    setNewObjects(newObjects.filter((g) => galleryKey(g) !== key));
+  }
+
+  return useCreateObject("gallery", createNewGallery);
 }
 
 interface IUseCreateNewLabelProps {

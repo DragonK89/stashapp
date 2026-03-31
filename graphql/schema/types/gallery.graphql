@@ -112,6 +112,16 @@ input GalleryAddInput {
   image_ids: [ID!]!
 }
 
+input GalleryAddURLsInput {
+  gallery_id: ID!
+  urls: [String!]!
+}
+
+type GalleryAddURLsResult {
+  created_ids: [ID!]!
+  linked_ids: [ID!]!
+}
+
 input GalleryRemoveInput {
   gallery_id: ID!
   image_ids: [ID!]!

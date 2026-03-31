@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useIntl } from "react-intl";
 import * as GQL from "src/core/generated-graphql";
 import {
+  ScrapedImagesRow,
   ScrapedInputGroupRow,
   ScrapedStringListRow,
   ScrapedTextAreaRow,
@@ -27,6 +28,54 @@ import { Tag } from "src/components/Tags/TagSelect";
 import { Studio } from "src/components/Studios/StudioSelect";
 import { useScrapedTags } from "src/components/Shared/ScrapeDialog/scrapedTags";
 
+const IMAGE_URL_EXTENSIONS = [
+  ".avif",
+  ".bmp",
+  ".gif",
+  ".jpeg",
+  ".jpg",
+  ".png",
+  ".tif",
+  ".tiff",
+  ".webp",
+];
+
+function isLikelyImageURL(value: string): boolean {
+  const url = value.trim();
+  if (!url) return false;
+
+  try {
+    const parsed = new URL(url);
+    const path = parsed.pathname.toLowerCase();
+    return IMAGE_URL_EXTENSIONS.some((ext) => path.endsWith(ext));
+  } catch {
+    const path = url.split(/[?#]/, 1)[0]?.toLowerCase() ?? "";
+    return IMAGE_URL_EXTENSIONS.some((ext) => path.endsWith(ext));
+  }
+}
+
+function splitScrapedURLs(urls?: string[] | null) {
+  const pageURLs: string[] = [];
+  const imageURLs: string[] = [];
+  const seen = new Set<string>();
+
+  for (const rawURL of urls ?? []) {
+    const url = rawURL.trim();
+    if (!url || seen.has(url)) {
+      continue;
+    }
+
+    seen.add(url);
+    if (isLikelyImageURL(url)) {
+      imageURLs.push(url);
+    } else {
+      pageURLs.push(url);
+    }
+  }
+
+  return { pageURLs, imageURLs };
+}
+
 interface IGalleryScrapeDialogProps {
   gallery: Partial<GQL.GalleryUpdateInput>;
   galleryStudio: Studio | null;
@@ -46,6 +95,10 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
   onClose,
 }) => {
   const intl = useIntl();
+  const { pageURLs: existingGalleryURLs } = splitScrapedURLs(gallery.urls);
+  const { pageURLs: scrapedGalleryURLs, imageURLs: scrapedImageURLs } =
+    splitScrapedURLs(scraped.urls);
+
   const [title, setTitle] = useState<ScrapeResult<string>>(
     new ScrapeResult<string>(gallery.title, scraped.title)
   );
@@ -54,10 +107,14 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
   );
   const [urls, setURLs] = useState<ScrapeResult<string[]>>(
     new ScrapeResult<string[]>(
-      gallery.urls,
-      scraped.urls
-        ? uniq((gallery.urls ?? []).concat(scraped.urls ?? []))
-        : undefined
+      existingGalleryURLs,
+      uniq(existingGalleryURLs.concat(scrapedGalleryURLs))
+    )
+  );
+  const [images, setImages] = useState<ScrapeResult<string>>(
+    new ScrapeResult<string>(
+      undefined,
+      scrapedImageURLs.length > 0 ? scrapedImageURLs[0] : undefined
     )
   );
   const [date, setDate] = useState<ScrapeResult<string>>(
@@ -126,6 +183,7 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
       title,
       code,
       urls,
+      images,
       date,
       photographer,
       studio,
@@ -143,11 +201,16 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
 
   function makeNewScrapedItem(): GQL.ScrapedGalleryDataFragment {
     const newStudioValue = studio.getNewValue();
+    let newURLs = urls.getNewValue();
+
+    if (images.useNewValue && scrapedImageURLs.length > 0) {
+      newURLs = uniq((newURLs ?? []).concat(scrapedImageURLs));
+    }
 
     return {
       title: title.getNewValue(),
       code: code.getNewValue(),
-      urls: urls.getNewValue(),
+      urls: newURLs,
       date: date.getNewValue(),
       photographer: photographer.getNewValue(),
       studio: newStudioValue,
@@ -178,6 +241,16 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
           result={urls}
           onChange={(value) => setURLs(value)}
         />
+        {scrapedImageURLs.length > 0 && (
+          <ScrapedImagesRow
+            field="images"
+            title={intl.formatMessage({ id: "images" })}
+            className="performer-image"
+            result={images}
+            images={scrapedImageURLs}
+            onChange={(value) => setImages(value)}
+          />
+        )}
         <ScrapedInputGroupRow
           field="date"
           title={intl.formatMessage({ id: "date" })}
