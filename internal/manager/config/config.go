@@ -290,6 +290,8 @@ const (
 
 	// Developer options
 	ExtraBlobsPaths = "developer_options.extra_blob_paths"
+
+	DisableVersionCheck = "disable_version_check"
 )
 
 // slice default values
@@ -1598,6 +1600,10 @@ func (i *Config) GetDLNADefaultIPWhitelist() []string {
 // empty, runs on all interfaces.
 func (i *Config) GetDLNAInterfaces() []string {
 	return i.getStringSlice(DLNAInterfaces)
+}
+
+func (i *Config) GetDisableVersionCheck() bool {
+	return i.getBool(DisableVersionCheck)
 }
 
 // GetDLNAPort returns the port to run the DLNA server on. If empty, 1338

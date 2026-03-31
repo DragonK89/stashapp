@@ -291,7 +291,9 @@ func Initialize() (*Server, error) {
 	})
 
 	logger.Infof("stash version: %s", build.VersionString())
-	go printLatestVersion(context.TODO())
+	if !cfg.GetDisableVersionCheck() {
+		go printLatestVersion(context.TODO())
+	}
 
 	return server, nil
 }
