@@ -62,8 +62,8 @@ export const useGalleryLightbox = (id: string, chapters: IChapter[] = []) => {
     };
   }, [page]);
 
-  const [fetchGallery, { data }] = GQL.useFindImagesLazyQuery({
-    variables: {
+  const variables = useMemo<GQL.FindImagesQueryVariables>(
+    () => ({
       filter: currentFilter,
       image_filter: {
         galleries: {
@@ -71,8 +71,11 @@ export const useGalleryLightbox = (id: string, chapters: IChapter[] = []) => {
           value: [id],
         },
       },
-    },
-  });
+    }),
+    [currentFilter, id]
+  );
+
+  const [fetchGallery, { data, called }] = GQL.useFindImagesLazyQuery();
 
   const pages = useMemo(() => {
     const totalCount = data?.findImages.count ?? 0;
@@ -117,6 +120,12 @@ export const useGalleryLightbox = (id: string, chapters: IChapter[] = []) => {
       });
   }, [setLightboxState, data, handleLightBoxPage, page, pages]);
 
+  useEffect(() => {
+    if (called) {
+      fetchGallery({ variables });
+    }
+  }, [called, fetchGallery, variables]);
+
   const show = (index: number = 0) => {
     if (index > pageSize) {
       setPage(Math.floor(index / pageSize) + 1);
@@ -147,7 +156,7 @@ export const useGalleryLightbox = (id: string, chapters: IChapter[] = []) => {
         pageSize,
         chapters: chapters,
       });
-      fetchGallery();
+      fetchGallery({ variables });
     }
   };
 

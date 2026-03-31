@@ -23,6 +23,7 @@ type GalleryFinder interface {
 
 type GalleryImageFinder interface {
 	FindByGalleryIDIndex(ctx context.Context, galleryID int, index uint) (*models.Image, error)
+	models.URLLoader
 	image.Queryer
 	image.CoverQueryer
 }
@@ -68,6 +69,14 @@ func (rs galleryRoutes) Cover(w http.ResponseWriter, r *http.Request) {
 			i = nil
 		}
 
+		if i != nil {
+			if err := i.LoadURLs(ctx, rs.imageFinder); err != nil {
+				if !errors.Is(err, context.Canceled) {
+					logger.Errorf("error loading URLs for image %d: %v", i.ID, err)
+				}
+			}
+		}
+
 		return nil
 	})
 
@@ -107,6 +116,14 @@ func (rs galleryRoutes) Preview(w http.ResponseWriter, r *http.Request) {
 			}
 			// set image to nil so that it doesn't try to use the primary file
 			i = nil
+		}
+
+		if i != nil {
+			if err := i.LoadURLs(ctx, rs.imageFinder); err != nil {
+				if !errors.Is(err, context.Canceled) {
+					logger.Errorf("error loading URLs for image %d: %v", i.ID, err)
+				}
+			}
 		}
 
 		return nil

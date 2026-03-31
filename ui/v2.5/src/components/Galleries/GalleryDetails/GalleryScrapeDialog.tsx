@@ -204,7 +204,8 @@ export const GalleryScrapeDialog: React.FC<IGalleryScrapeDialogProps> = ({
     let newURLs = urls.getNewValue();
 
     if (images.useNewValue && scrapedImageURLs.length > 0) {
-      newURLs = uniq((newURLs ?? []).concat(scrapedImageURLs));
+      const baseURLs = newURLs ?? urls.originalValue ?? [];
+      newURLs = uniq(baseURLs.concat(scrapedImageURLs));
     }
 
     return {

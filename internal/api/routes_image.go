@@ -23,6 +23,7 @@ import (
 
 type ImageFinder interface {
 	models.ImageGetter
+	models.URLLoader
 	FindByChecksum(ctx context.Context, checksum string) ([]*models.Image, error)
 }
 
@@ -146,6 +147,14 @@ func (rs imageRoutes) serveImage(w http.ResponseWriter, r *http.Request, i *mode
 		logger.Debugf("Error serving %s: %v", i.DisplayName(), err)
 	}
 
+	if i.URLs.Loaded() {
+		urls := i.URLs.List()
+		if len(urls) > 0 {
+			http.Redirect(w, r, urls[0], http.StatusTemporaryRedirect)
+			return
+		}
+	}
+
 	if !useDefault {
 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		return
@@ -180,6 +189,14 @@ func (rs imageRoutes) ImageCtx(next http.Handler) http.Handler {
 					}
 					// set image to nil so that it doesn't try to use the primary file
 					image = nil
+				}
+
+				if image != nil {
+					if err := image.LoadURLs(ctx, rs.imageFinder); err != nil {
+						if !errors.Is(err, context.Canceled) {
+							logger.Errorf("error loading URLs for image %d: %v", imageID, err)
+						}
+					}
 				}
 			}
 

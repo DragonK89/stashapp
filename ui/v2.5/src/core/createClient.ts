@@ -92,6 +92,16 @@ const typePolicies: TypePolicies = {
       studio: {
         read: readDanglingNull,
       },
+      paths: {
+        // Some gallery queries only return one of {cover, preview}.
+        // Merge shallowly to preserve the other value and avoid cache warnings.
+        merge(existing, incoming) {
+          return {
+            ...(existing ?? {}),
+            ...(incoming ?? {}),
+          };
+        },
+      },
     },
   },
   Studio: {
