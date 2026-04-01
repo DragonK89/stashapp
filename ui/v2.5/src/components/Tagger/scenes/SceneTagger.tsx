@@ -49,6 +49,8 @@ const Scene: React.FC<{
       });
     }
   }, [intl, searchResult]);
+  const canRunScrapeWithSource =
+    currentSource?.supportSceneFragment || currentSource?.supportSceneQuery;
 
   return (
     <TaggerScene
@@ -64,9 +66,9 @@ const Scene: React.FC<{
           : undefined
       }
       scrapeSceneFragment={
-        currentSource?.supportSceneFragment
+        canRunScrapeWithSource
           ? async () => {
-              await doSceneFragmentScrape(scene.id);
+              await doSceneFragmentScrape(scene);
             }
           : undefined
       }
@@ -209,7 +211,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
   }
 
   function renderFragmentScrapeButton() {
-    if (!currentSource?.supportSceneFragment) {
+    if (!currentSource?.supportSceneFragment && !currentSource?.supportSceneQuery) {
       return;
     }
 
@@ -239,7 +241,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
         <OperationButton
           disabled={loading}
           operation={async () => {
-            await doMultiSceneFragmentScrape(scenes.map((s) => s.id));
+            await doMultiSceneFragmentScrape(scenes);
           }}
         >
           {intl.formatMessage({ id: "component_tagger.verb_scrape_all" })}

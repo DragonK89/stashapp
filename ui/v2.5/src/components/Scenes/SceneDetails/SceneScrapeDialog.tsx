@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import {
   ScrapedInputGroupRow,
@@ -35,6 +35,30 @@ import { Tag } from "src/components/Tags/TagSelect";
 import { Studio } from "src/components/Studios/StudioSelect";
 import { Group } from "src/components/Groups/GroupSelect";
 import { useScrapedTags } from "src/components/Shared/ScrapeDialog/scrapedTags";
+import { useToast } from "src/hooks/Toast";
+import { useBulkGalleryUpdate } from "src/core/StashService";
+import { Badge, Col, Form, Row } from "react-bootstrap";
+
+function normalizeKey(value?: string | null) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function galleryMatchesScraped(existing: Gallery, scraped: GQL.ScrapedGallery) {
+  const existingTitle = normalizeKey(existing.title);
+  const existingCode = normalizeKey(existing.code);
+  const scrapedTitle = normalizeKey(scraped.title);
+  const scrapedCode = normalizeKey(scraped.code);
+
+  if (existingCode && scrapedCode && existingCode === scrapedCode) {
+    return true;
+  }
+
+  if (existingTitle && scrapedTitle && existingTitle === scrapedTitle) {
+    return true;
+  }
+
+  return false;
+}
 
 interface ISceneScrapeDialogProps {
   scene: Partial<GQL.SceneUpdateInput>;
@@ -63,6 +87,8 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   onClose,
   endpoint,
 }) => {
+  const Toast = useToast();
+  const intl = useIntl();
   const [title, setTitle] = useState<ScrapeResult<string>>(
     new ScrapeResult<string>(scene.title, scraped.title)
   );
@@ -121,11 +147,56 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   const [newLabel, setNewLabel] = useState<GQL.ScrapedLabel | undefined>(
     scraped.label && !scraped.label.stored_id ? scraped.label : undefined
   );
+  const matchedGalleryURLAdds = useMemo(() => {
+    const ret: Record<string, string[]> = {};
+    for (const scrapedGallery of scraped.galleries ?? []) {
+      const matched = sceneGalleries.find((g) =>
+        galleryMatchesScraped(g, scrapedGallery)
+      );
+      if (!matched?.id) {
+        continue;
+      }
+
+      const scrapedURLs = uniq((scrapedGallery.urls ?? []).filter(Boolean));
+      if (scrapedURLs.length === 0) {
+        continue;
+      }
+
+      ret[matched.id] = uniq([...(ret[matched.id] ?? []), ...scrapedURLs]);
+    }
+    return ret;
+  }, [sceneGalleries, scraped.galleries]);
+
+  const unmatchedScrapedGalleries = useMemo(
+    () =>
+      (scraped.galleries ?? []).filter(
+        (sg) => !sceneGalleries.find((g) => galleryMatchesScraped(g, sg))
+      ),
+    [sceneGalleries, scraped.galleries]
+  );
+  const matchedGalleryMergeHints = useMemo(
+    () =>
+      Object.entries(matchedGalleryURLAdds).map(([galleryID, galleryURLs]) => {
+        const existingGallery = sceneGalleries.find((g) => g.id === galleryID);
+        const galleryName =
+          existingGallery?.title ??
+          existingGallery?.code ??
+          intl.formatMessage({ id: "gallery" });
+
+        return {
+          galleryID,
+          galleryName,
+          urlCount: galleryURLs.length,
+        };
+      }),
+    [matchedGalleryURLAdds, sceneGalleries, intl]
+  );
+
   const [galleries, setGalleries] = useState<ScrapeResult<Gallery[]>>(
     new ScrapeResult<Gallery[]>(sceneGalleries, undefined)
   );
   const [newGalleries, setNewGalleries] = useState<GQL.ScrapedGallery[]>(
-    scraped.galleries ?? []
+    unmatchedScrapedGalleries
   );
 
   const [stashID, setStashID] = useState(
@@ -224,8 +295,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     newObjects: newGalleries,
     setNewObjects: setNewGalleries,
   });
-
-  const intl = useIntl();
+  const [bulkGalleryUpdate] = useBulkGalleryUpdate();
 
   // don't show the dialog if nothing was scraped
   if (
@@ -317,6 +387,29 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           newObjects={newGalleries}
           onCreateNew={createNewGallery}
         />
+        {matchedGalleryMergeHints.length > 0 ? (
+          <Row className="px-3" data-field="gallery-url-merge-notice">
+            <Form.Label column lg="3"></Form.Label>
+            <Col lg="9">
+              <div className="small text-muted mt-2">
+                {intl.formatMessage({
+                  id: "dialogs.scrape_results_gallery_url_merge",
+                  defaultMessage:
+                    "On Apply, scraped gallery URLs will be added to existing galleries:",
+                })}
+              </div>
+              <div className="mt-2">
+                {matchedGalleryMergeHints.map((hint) => (
+                  <Badge className="tag-item" variant="secondary" key={hint.galleryID}>
+                    {`${hint.galleryName} (+${hint.urlCount} URL${
+                      hint.urlCount === 1 ? "" : "s"
+                    })`}
+                  </Badge>
+                ))}
+              </div>
+            </Col>
+          </Row>
+        ) : null}
         <ScrapedStudioRow
           field="studio"
           title={intl.formatMessage({ id: "studios" })}
@@ -381,6 +474,45 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     return linkDialog;
   }
 
+  async function appendURLsToMatchedGalleries() {
+    for (const [galleryID, galleryURLs] of Object.entries(matchedGalleryURLAdds)) {
+      if (!galleryURLs.length) {
+        continue;
+      }
+
+      await bulkGalleryUpdate({
+        variables: {
+          input: {
+            ids: [galleryID],
+            urls: {
+              mode: GQL.BulkUpdateIdMode.Add,
+              values: galleryURLs,
+            },
+          },
+        },
+      });
+    }
+  }
+
+  async function handleClose(apply?: boolean) {
+    if (!apply) {
+      onClose();
+      return;
+    }
+
+    try {
+      await appendURLsToMatchedGalleries();
+    } catch (e) {
+      Toast.error(e);
+      return;
+    }
+
+    onClose({
+      scrapedScene: makeNewScrapedItem(),
+      galleries: galleries.getNewValue(),
+    });
+  }
+
   return (
     <ScrapeDialog
       title={intl.formatMessage(
@@ -388,14 +520,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
         { entity_type: intl.formatMessage({ id: "scene" }) }
       )}
       onClose={(apply) => {
-        onClose(
-          apply
-            ? {
-                scrapedScene: makeNewScrapedItem(),
-                galleries: galleries.getNewValue(),
-              }
-            : undefined
-        );
+        void handleClose(apply);
       }}
     >
       {renderScrapeRows()}

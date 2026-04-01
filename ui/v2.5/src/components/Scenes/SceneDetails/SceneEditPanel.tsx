@@ -313,24 +313,17 @@ export const SceneEditPanel: React.FC<IProps> = ({
     setIsLoading(true);
     try {
       const scrapeQuery = getScrapeQueryValue(sceneScrapeWithSource);
-      const scrapeFragmentInput = getScrapeFragmentInput(sceneScrapeWithSource);
 
       let result: Awaited<ReturnType<typeof queryScrapeScene>>;
       if (sceneScrapeWithSource === "scene_id") {
         result = await queryScrapeScene(s, scene.id!);
       } else if (s.scraper_id) {
-        const supportsFragment = scraperSupportsSceneScrape(
-          s.scraper_id,
-          GQL.ScrapeType.Fragment
-        );
         const supportsName = scraperSupportsSceneScrape(
           s.scraper_id,
           GQL.ScrapeType.Name
         );
 
-        if (supportsFragment && scrapeFragmentInput) {
-          result = await queryScrapeSceneQueryFragment(s, scrapeFragmentInput);
-        } else if (supportsName && scrapeQuery) {
+        if (supportsName && scrapeQuery) {
           result = await queryScrapeSceneQuery(s, scrapeQuery);
         } else {
           result = await queryScrapeScene(s, scene.id!);
@@ -367,22 +360,6 @@ export const SceneEditPanel: React.FC<IProps> = ({
     }
 
     return "";
-  }
-
-  function getScrapeFragmentInput(
-    source: SceneScrapeWithSource
-  ): GQL.ScrapedSceneInput | null {
-    if (source === "studio_code") {
-      const code = formik.values.code.trim();
-      return code ? { code } : null;
-    }
-
-    if (source === "title") {
-      const title = (formik.values.title || objectTitle(scene) || "").trim();
-      return title ? { title } : null;
-    }
-
-    return null;
   }
 
   function scraperSupportsSceneScrape(

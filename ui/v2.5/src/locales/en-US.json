@@ -82,5 +82,8 @@
     },
     "errors": {
         "cannot_play_torrent": ".torrent files are not playable"
+    },
+    "dialogs": {
+        "scrape_results_gallery_url_merge": "On Apply, scraped gallery URLs will be added to existing galleries:"
     }
 }

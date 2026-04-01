@@ -109,6 +109,7 @@ export const SettingsContext: React.FC = ({ children }) => {
 
   const { data, error, loading, refetch } = useConfiguration();
   const initialRef = useRef(false);
+  const mountedRef = useRef(true);
 
   const [general, setGeneral] = useState<GQL.ConfigGeneralInput>({});
   const [pendingGeneral, setPendingGeneral] =
@@ -147,6 +148,12 @@ export const SettingsContext: React.FC = ({ children }) => {
   const [apiKey, setApiKey] = useState("");
 
   useEffect(() => {
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!data?.configuration || error) return;
 
     // always set api key
@@ -166,15 +173,26 @@ export const SettingsContext: React.FC = ({ children }) => {
     setPlugins(data.configuration.plugins);
   }, [data, error]);
 
-  const resetSuccess = useDebounce(() => setUpdateSuccess(undefined), 4000);
+  const resetSuccess = useDebounce(() => {
+    if (!mountedRef.current) {
+      return;
+    }
+    setUpdateSuccess(undefined);
+  }, 4000);
 
   const onSuccess = useCallback(() => {
+    if (!mountedRef.current) {
+      return;
+    }
     setUpdateSuccess(true);
     resetSuccess();
   }, [resetSuccess]);
 
   const onError = useCallback(
     (err) => {
+      if (!mountedRef.current) {
+        return;
+      }
       Toast.error(err);
       setUpdateSuccess(false);
     },
@@ -185,6 +203,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   const saveGeneralConfig = useDebounce(
     async (input: GQL.ConfigGeneralInput) => {
       try {
+        if (!mountedRef.current) {
+          return;
+        }
         setUpdateSuccess(undefined);
         await updateGeneralConfig({
           variables: {
@@ -192,6 +213,9 @@ export const SettingsContext: React.FC = ({ children }) => {
           },
         });
 
+        if (!mountedRef.current) {
+          return;
+        }
         setPendingGeneral(undefined);
         onSuccess();
       } catch (e) {
@@ -234,6 +258,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   const saveInterfaceConfig = useDebounce(
     async (input: GQL.ConfigInterfaceInput) => {
       try {
+        if (!mountedRef.current) {
+          return;
+        }
         setUpdateSuccess(undefined);
         await updateInterfaceConfig({
           variables: {
@@ -241,6 +268,9 @@ export const SettingsContext: React.FC = ({ children }) => {
           },
         });
 
+        if (!mountedRef.current) {
+          return;
+        }
         setPendingInterface(undefined);
         onSuccess();
       } catch (e) {
@@ -283,6 +313,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   const saveDefaultsConfig = useDebounce(
     async (input: GQL.ConfigDefaultSettingsInput) => {
       try {
+        if (!mountedRef.current) {
+          return;
+        }
         setUpdateSuccess(undefined);
         await updateDefaultsConfig({
           variables: {
@@ -290,6 +323,9 @@ export const SettingsContext: React.FC = ({ children }) => {
           },
         });
 
+        if (!mountedRef.current) {
+          return;
+        }
         setPendingDefaults(undefined);
         onSuccess();
       } catch (e) {
@@ -332,6 +368,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   const saveScrapingConfig = useDebounce(
     async (input: GQL.ConfigScrapingInput) => {
       try {
+        if (!mountedRef.current) {
+          return;
+        }
         setUpdateSuccess(undefined);
         await updateScrapingConfig({
           variables: {
@@ -339,6 +378,9 @@ export const SettingsContext: React.FC = ({ children }) => {
           },
         });
 
+        if (!mountedRef.current) {
+          return;
+        }
         setPendingScraping(undefined);
         onSuccess();
       } catch (e) {
@@ -380,6 +422,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   // saves the configuration if no further changes are made after a half second
   const saveDLNAConfig = useDebounce(async (input: GQL.ConfigDlnaInput) => {
     try {
+      if (!mountedRef.current) {
+        return;
+      }
       setUpdateSuccess(undefined);
       await updateDLNAConfig({
         variables: {
@@ -387,6 +432,9 @@ export const SettingsContext: React.FC = ({ children }) => {
         },
       });
 
+      if (!mountedRef.current) {
+        return;
+      }
       setPendingDLNA(undefined);
       onSuccess();
     } catch (e) {
@@ -428,6 +476,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   // saves the configuration if no further changes are made after a half second
   const saveUIConfig = useDebounce(async (input: Partial<IUIConfig>) => {
     try {
+      if (!mountedRef.current) {
+        return;
+      }
       setUpdateSuccess(undefined);
       await updateUIConfig({
         variables: {
@@ -435,6 +486,9 @@ export const SettingsContext: React.FC = ({ children }) => {
         },
       });
 
+      if (!mountedRef.current) {
+        return;
+      }
       setPendingUI(undefined);
       onSuccess();
     } catch (e) {
@@ -477,6 +531,9 @@ export const SettingsContext: React.FC = ({ children }) => {
   // saves the configuration if no further changes are made after a half second
   const savePluginConfig = useDebounce(async (input: PluginConfigs) => {
     try {
+      if (!mountedRef.current) {
+        return;
+      }
       setUpdateSuccess(undefined);
 
       for (const pluginID in input) {
@@ -488,12 +545,37 @@ export const SettingsContext: React.FC = ({ children }) => {
         });
       }
 
+      if (!mountedRef.current) {
+        return;
+      }
       setPendingPlugins(undefined);
       onSuccess();
     } catch (e) {
       onError(e);
     }
   }, 500);
+
+  useEffect(() => {
+    return () => {
+      resetSuccess.cancel();
+      saveGeneralConfig.cancel();
+      saveInterfaceConfig.cancel();
+      saveDefaultsConfig.cancel();
+      saveScrapingConfig.cancel();
+      saveDLNAConfig.cancel();
+      saveUIConfig.cancel();
+      savePluginConfig.cancel();
+    };
+  }, [
+    resetSuccess,
+    saveGeneralConfig,
+    saveInterfaceConfig,
+    saveDefaultsConfig,
+    saveScrapingConfig,
+    saveDLNAConfig,
+    saveUIConfig,
+    savePluginConfig,
+  ]);
 
   useEffect(() => {
     if (!pendingPlugins) {

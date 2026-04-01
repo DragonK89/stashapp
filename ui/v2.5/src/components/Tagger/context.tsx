@@ -24,6 +24,10 @@ import { errorToString } from "src/utils";
 import { mergeStudioStashIDs } from "./utils";
 import { useTaggerConfig } from "./config";
 import { useIsMounted } from "src/hooks/state";
+import {
+  defaultSceneScrapeWithSource,
+  IUIConfig,
+} from "src/core/config";
 
 export interface ITaggerContextState {
   config: ITaggerConfig;
@@ -36,8 +40,10 @@ export interface ITaggerContextState {
   searchResults: Record<string, ISceneQueryResult>;
   setCurrentSource: (src?: ITaggerSource) => void;
   doSceneQuery: (sceneID: string, searchStr: string) => Promise<void>;
-  doSceneFragmentScrape: (sceneID: string) => Promise<void>;
-  doMultiSceneFragmentScrape: (sceneIDs: string[]) => Promise<void>;
+  doSceneFragmentScrape: (scene: GQL.SlimSceneDataFragment) => Promise<void>;
+  doMultiSceneFragmentScrape: (
+    scenes: GQL.SlimSceneDataFragment[]
+  ) => Promise<void>;
   doMultiSceneQueryScrape: (
     queries: { sceneID: string; searchVal: string }[]
   ) => Promise<void>;
@@ -133,6 +139,9 @@ export const TaggerContext: React.FC = ({ children }) => {
   const stopping = useRef(false);
 
   const { configuration: stashConfig } = useConfigurationContext();
+  const ui = stashConfig?.ui as IUIConfig | undefined;
+  const sceneScrapeWithSource =
+    ui?.sceneScrapeWithSource ?? defaultSceneScrapeWithSource;
   const isMounted = useIsMounted();
   const { config, setConfig } = useTaggerConfig();
 
@@ -374,20 +383,40 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function sceneFragmentScrape(sceneID: string) {
+  function getSceneScrapeQueryValue(
+    scene: Pick<GQL.SlimSceneDataFragment, "title" | "code">
+  ) {
+    if (sceneScrapeWithSource === "studio_code") {
+      return (scene.code ?? "").trim();
+    }
+
+    if (sceneScrapeWithSource === "title") {
+      return (scene.title ?? "").trim();
+    }
+
+    return "";
+  }
+
+  async function sceneFragmentScrapeBySource(scene: GQL.SlimSceneDataFragment) {
     if (!currentSource) {
       return;
     }
 
-    clearSearchResults(sceneID);
+    clearSearchResults(scene.id);
 
     let newResult: ISceneQueryResult;
 
+    const source = currentSource.sourceInput;
+    const scrapeQuery = getSceneScrapeQueryValue(scene);
+    const useQuerySource =
+      sceneScrapeWithSource !== "scene_id" &&
+      scrapeQuery !== "" &&
+      currentSource.supportSceneQuery;
+
     try {
-      const results = await queryScrapeScene(
-        currentSource.sourceInput,
-        sceneID
-      );
+      const results = useQuerySource
+        ? await queryScrapeSceneQuery(source, scrapeQuery)
+        : await queryScrapeScene(source, scene.id);
 
       if (results.error) {
         newResult = { error: results.error.message };
@@ -397,8 +426,9 @@ export const TaggerContext: React.FC = ({ children }) => {
         newResult = {
           results: results.data.scrapeSingleScene.map((r) => ({
             ...r,
-            // scenes are already resolved if they are scraped via fragment
-            resolved: true,
+            // query results for scraper sources may need resolve, stash-box and scene-id do not.
+            resolved:
+              source.stash_box_endpoint !== undefined || !useQuerySource,
           })),
         };
       }
@@ -407,20 +437,20 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
 
     setSearchResults((current) => {
-      return { ...current, [sceneID]: newResult };
+      return { ...current, [scene.id]: newResult };
     });
   }
 
-  async function doSceneFragmentScrape(sceneID: string) {
+  async function doSceneFragmentScrape(scene: GQL.SlimSceneDataFragment) {
     if (!currentSource) {
       return;
     }
 
-    clearSearchResults(sceneID);
+    clearSearchResults(scene.id);
 
     try {
       setLoading(true);
-      await sceneFragmentScrape(sceneID);
+      await sceneFragmentScrapeBySource(scene);
     } catch (err) {
       Toast.error(err);
     } finally {
@@ -428,7 +458,9 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function doMultiSceneFragmentScrape(sceneIDs: string[]) {
+  async function doMultiSceneFragmentScrape(
+    scenes: GQL.SlimSceneDataFragment[]
+  ) {
     if (!currentSource) {
       return;
     }
@@ -442,12 +474,13 @@ export const TaggerContext: React.FC = ({ children }) => {
 
       const stashBoxEndpoint =
         currentSource.sourceInput.stash_box_endpoint ?? undefined;
+      const useSceneIDSource = sceneScrapeWithSource === "scene_id";
 
       // if current source is stash-box, we can use the multi-scene
       // interface
-      if (stashBoxEndpoint !== undefined) {
+      if (stashBoxEndpoint !== undefined && useSceneIDSource) {
         const results = await stashBoxSceneBatchQuery(
-          sceneIDs,
+          scenes.map((s) => s.id),
           stashBoxEndpoint
         );
 
@@ -457,7 +490,7 @@ export const TaggerContext: React.FC = ({ children }) => {
           setMultiError(results.errors.toString());
         } else {
           const newSearchResults = { ...searchResults };
-          sceneIDs.forEach((sceneID, index) => {
+          scenes.forEach((scene, index) => {
             const newResults = results.data.scrapeMultiScenes[index].map(
               (r) => ({
                 ...r,
@@ -465,7 +498,7 @@ export const TaggerContext: React.FC = ({ children }) => {
               })
             );
 
-            newSearchResults[sceneID] = {
+            newSearchResults[scene.id] = {
               results: newResults,
             };
           });
@@ -476,10 +509,10 @@ export const TaggerContext: React.FC = ({ children }) => {
         setLoadingMulti(true);
 
         // do singular calls
-        await sceneIDs.reduce(async (promise, id) => {
+        await scenes.reduce(async (promise, scene) => {
           await promise;
           if (!stopping.current) {
-            await sceneFragmentScrape(id);
+            await sceneFragmentScrapeBySource(scene);
           }
         }, Promise.resolve());
       }
@@ -508,6 +541,7 @@ export const TaggerContext: React.FC = ({ children }) => {
 
     try {
       const sceneInput: GQL.ScrapedSceneInput = {
+        code: scene.code,
         date: scene.date,
         details: scene.details,
         remote_site_id: scene.remote_site_id,

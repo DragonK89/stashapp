@@ -68,6 +68,16 @@ const typePolicies: TypePolicies = {
       studio: {
         read: readDanglingNull,
       },
+      paths: {
+        // Some scene queries only return a subset of paths (for example screenshot only).
+        // Merge shallowly so we don't drop existing fields and avoid Apollo cache warnings.
+        merge(existing, incoming) {
+          return {
+            ...(existing ?? {}),
+            ...(incoming ?? {}),
+          };
+        },
+      },
     },
   },
   Image: {

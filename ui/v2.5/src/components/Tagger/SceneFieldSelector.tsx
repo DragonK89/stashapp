@@ -28,6 +28,8 @@ const SceneFieldSelect: React.FC<IProps> = ({
       ...excluded,
       [field]: !excluded[field],
     });
+  const getFieldLabelID = (field: string) =>
+    field === "code" ? "scene_code" : field;
 
   const renderField = (field: string) => (
     <Col xs={6} className="mb-1" key={field}>
@@ -38,7 +40,9 @@ const SceneFieldSelect: React.FC<IProps> = ({
       >
         <Icon icon={excluded[field] ? faTimes : faCheck} />
       </Button>
-      <span className="ml-3">{intl.formatMessage({ id: field })}</span>
+      <span className="ml-3">
+        {intl.formatMessage({ id: getFieldLabelID(field) })}
+      </span>
     </Col>
   );
 
