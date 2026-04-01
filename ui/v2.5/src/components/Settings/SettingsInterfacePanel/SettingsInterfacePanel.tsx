@@ -42,7 +42,11 @@ import {
   defaultImageWallDirection,
   defaultImageWallMargin,
 } from "src/utils/imageWall";
-import { defaultMaxOptionsShown } from "src/core/config";
+import {
+  defaultMaxOptionsShown,
+  defaultSceneScrapeWithSource,
+  SceneScrapeWithSource,
+} from "src/core/config";
 import { PatchComponent } from "src/patch";
 
 const allMenuItems = [
@@ -814,6 +818,31 @@ export const SettingsInterfacePanel: React.FC = PatchComponent(
             value={ui.maxOptionsShown ?? defaultMaxOptionsShown}
             onChange={(v) => saveUI({ maxOptionsShown: v })}
           />
+          <SelectSetting
+            id="scene_scrape_with_source"
+            headingID="config.ui.editing.scene_scrape_with_source.label"
+            subHeadingID="config.ui.editing.scene_scrape_with_source.description"
+            value={ui.sceneScrapeWithSource ?? defaultSceneScrapeWithSource}
+            onChange={(v) =>
+              saveUI({ sceneScrapeWithSource: v as SceneScrapeWithSource })
+            }
+          >
+            <option value="scene_id">
+              {intl.formatMessage({
+                id: "config.ui.editing.scene_scrape_with_source.options.scene_id",
+              })}
+            </option>
+            <option value="studio_code">
+              {intl.formatMessage({
+                id: "config.ui.editing.scene_scrape_with_source.options.studio_code",
+              })}
+            </option>
+            <option value="title">
+              {intl.formatMessage({
+                id: "config.ui.editing.scene_scrape_with_source.options.title",
+              })}
+            </option>
+          </SelectSetting>
           <SelectSetting
             id="rating_system"
             headingID="config.ui.editing.rating_system.type.label"

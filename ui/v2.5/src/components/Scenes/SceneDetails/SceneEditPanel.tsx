@@ -6,6 +6,7 @@ import * as GQL from "src/core/generated-graphql";
 import * as yup from "yup";
 import {
   queryScrapeScene,
+  queryScrapeSceneQuery,
   queryScrapeSceneURL,
   useListSceneScrapers,
   mutateReloadScrapers,
@@ -20,7 +21,11 @@ import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { useFormik } from "formik";
 import { Prompt } from "react-router-dom";
 import { useConfigurationContext } from "src/hooks/Config";
-import { IUIConfig } from "src/core/config";
+import {
+  defaultSceneScrapeWithSource,
+  IUIConfig,
+  SceneScrapeWithSource,
+} from "src/core/config";
 import { IGroupEntry, SceneGroupTable } from "./SceneGroupTable";
 import { faSearch, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { objectTitle } from "src/core/files";
@@ -110,6 +115,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
   }, [scene.studio]);
 
   const { configuration: stashConfig } = useConfigurationContext();
+  const ui = stashConfig?.ui as IUIConfig | undefined;
+  const sceneScrapeWithSource =
+    ui?.sceneScrapeWithSource ?? defaultSceneScrapeWithSource;
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
@@ -304,7 +312,35 @@ export const SceneEditPanel: React.FC<IProps> = ({
   async function onScrapeClicked(s: GQL.ScraperSourceInput) {
     setIsLoading(true);
     try {
-      const result = await queryScrapeScene(s, scene.id!);
+      const scrapeQuery = getScrapeQueryValue(sceneScrapeWithSource);
+      const scrapeFragmentInput = getScrapeFragmentInput(sceneScrapeWithSource);
+
+      let result: Awaited<ReturnType<typeof queryScrapeScene>>;
+      if (sceneScrapeWithSource === "scene_id") {
+        result = await queryScrapeScene(s, scene.id!);
+      } else if (s.scraper_id) {
+        const supportsFragment = scraperSupportsSceneScrape(
+          s.scraper_id,
+          GQL.ScrapeType.Fragment
+        );
+        const supportsName = scraperSupportsSceneScrape(
+          s.scraper_id,
+          GQL.ScrapeType.Name
+        );
+
+        if (supportsFragment && scrapeFragmentInput) {
+          result = await queryScrapeSceneQueryFragment(s, scrapeFragmentInput);
+        } else if (supportsName && scrapeQuery) {
+          result = await queryScrapeSceneQuery(s, scrapeQuery);
+        } else {
+          result = await queryScrapeScene(s, scene.id!);
+        }
+      } else {
+        // stash-box path supports scene_id or query
+        result = scrapeQuery
+          ? await queryScrapeSceneQuery(s, scrapeQuery)
+          : await queryScrapeScene(s, scene.id!);
+      }
       if (!result.data || !result.data.scrapeSingleScene?.length) {
         Toast.success("No scenes found");
         return;
@@ -319,6 +355,44 @@ export const SceneEditPanel: React.FC<IProps> = ({
         setIsLoading(false);
       }
     }
+  }
+
+  function getScrapeQueryValue(source: SceneScrapeWithSource) {
+    if (source === "studio_code") {
+      return formik.values.code.trim();
+    }
+
+    if (source === "title") {
+      return (formik.values.title || objectTitle(scene) || "").trim();
+    }
+
+    return "";
+  }
+
+  function getScrapeFragmentInput(
+    source: SceneScrapeWithSource
+  ): GQL.ScrapedSceneInput | null {
+    if (source === "studio_code") {
+      const code = formik.values.code.trim();
+      return code ? { code } : null;
+    }
+
+    if (source === "title") {
+      const title = (formik.values.title || objectTitle(scene) || "").trim();
+      return title ? { title } : null;
+    }
+
+    return null;
+  }
+
+  function scraperSupportsSceneScrape(
+    scraperID: string,
+    scrapeType: GQL.ScrapeType
+  ) {
+    const scraper = (Scrapers?.data?.listScrapers ?? []).find(
+      (x) => x.id === scraperID
+    );
+    return scraper?.scene?.supported_scrapes.includes(scrapeType) ?? false;
   }
 
   async function scrapeFromQuery(
@@ -740,7 +814,6 @@ export const SceneEditPanel: React.FC<IProps> = ({
   }
 
   function renderTagsField() {
-    const ui = stashConfig?.ui as IUIConfig | undefined;
     if (Boolean(ui?.hideTags)) {
       return;
     }

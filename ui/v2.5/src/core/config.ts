@@ -38,6 +38,8 @@ export type DefaultFilters = {
 export type FrontPageContent = ISavedFilterRow | ICustomFilter;
 
 export const defaultMaxOptionsShown = 200;
+export const defaultSceneScrapeWithSource = "scene_id";
+export type SceneScrapeWithSource = "scene_id" | "studio_code" | "title";
 
 export interface IUIConfig {
   // unknown to prevent direct access - use getFrontPageContent
@@ -86,6 +88,9 @@ export interface IUIConfig {
   // maximum number of items to shown in the dropdown list - defaults to 200
   // upper limit of 1000
   maxOptionsShown?: number;
+
+  // field used by the main Scene "Scrape with..." button
+  sceneScrapeWithSource?: SceneScrapeWithSource;
 
   imageWallOptions?: ImageWallOptions;
 

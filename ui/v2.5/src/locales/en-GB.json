@@ -694,6 +694,15 @@
         "max_options_shown": {
           "label": "Maximum number of items to show in select dropdowns"
         },
+        "scene_scrape_with_source": {
+          "description": "Choose which field the main \"Scrape with...\" button uses to find scene matches.",
+          "label": "Main scene scrape source",
+          "options": {
+            "scene_id": "Scene ID",
+            "studio_code": "Studio Code",
+            "title": "Title"
+          }
+        },
         "rating_system": {
           "star_precision": {
             "label": "Rating Star Precision",
