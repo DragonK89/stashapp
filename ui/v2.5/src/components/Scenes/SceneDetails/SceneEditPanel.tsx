@@ -53,6 +53,7 @@ import { LabelIDSelect } from "src/components/Labels/LabelSelect";
 
 const SceneScrapeDialog = lazyComponent(() => import("./SceneScrapeDialog"));
 const SceneQueryModal = lazyComponent(() => import("./SceneQueryModal"));
+const builtinAutoTagScraperID = "builtin_autotag";
 
 interface IProps {
   scene: Partial<GQL.SceneDataFragment>;
@@ -251,7 +252,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
   });
 
   useEffect(() => {
-    const toFilter = Scrapers?.data?.listScrapers ?? [];
+    const toFilter = (Scrapers?.data?.listScrapers ?? []).filter(
+      (s) => s.id !== builtinAutoTagScraperID
+    );
 
     const newFragmentScrapers = toFilter.filter((s) =>
       s.scene?.supported_scrapes.includes(GQL.ScrapeType.Fragment)

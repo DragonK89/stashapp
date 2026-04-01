@@ -126,6 +126,8 @@ export interface ISceneQueryResult {
   error?: string;
 }
 
+const builtinAutoTagScraperID = "builtin_autotag";
+
 export const TaggerContext: React.FC = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [loadingMulti, setLoadingMulti] = useState(false);
@@ -162,7 +164,9 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
 
     const { stashBoxes } = stashConfig.general;
-    const scrapers = Scrapers.data.listScrapers;
+    const scrapers = Scrapers.data.listScrapers.filter(
+      (s) => s.id !== builtinAutoTagScraperID
+    );
 
     const stashboxSources: ITaggerSource[] = stashBoxes.map((s, i) => ({
       id: `${STASH_BOX_PREFIX}${s.endpoint}`,

@@ -161,6 +161,8 @@ input CleanGeneratedInput {
 input AutoTagMetadataInput {
   "Paths to tag, null for all files"
   paths: [String!]
+  "Whether to auto-tag scenes. Defaults to true if omitted."
+  scenes: Boolean
   """
   IDs of performers to tag files with, or "*" for all
   """
@@ -180,6 +182,8 @@ input AutoTagMetadataInput {
 }
 
 type AutoTagMetadataOptions {
+  "Whether to auto-tag scenes"
+  scenes: Boolean
   """
   IDs of performers to tag files with, or "*" for all
   """

@@ -31,7 +31,7 @@ const AutoTagOptions: React.FC<IAutoTagOptions> = ({
   options,
   setOptions: setOptionsState,
 }) => {
-  const { performers, studios, tags } = options;
+  const { scenes, performers, studios, tags } = options;
   const wildcard = ["*"];
 
   function set(v?: boolean) {
@@ -47,6 +47,12 @@ const AutoTagOptions: React.FC<IAutoTagOptions> = ({
 
   return (
     <>
+      <BooleanSetting
+        id="autotag-scenes"
+        checked={scenes ?? true}
+        headingID="scenes"
+        onChange={(v) => setOptions({ scenes: !!v })}
+      />
       <BooleanSetting
         id="autotag-performers"
         checked={!!performers?.length}
@@ -118,6 +124,7 @@ export const LibraryTasks: React.FC = () => {
   });
   const [autoTagOptions, setAutoTagOptions] =
     useState<GQL.AutoTagMetadataInput>({
+      scenes: true,
       performers: ["*"],
       studios: ["*"],
       tags: ["*"],

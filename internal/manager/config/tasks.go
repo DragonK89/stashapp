@@ -28,6 +28,8 @@ type ScanMetadataOptions struct {
 }
 
 type AutoTagMetadataOptions struct {
+	// Whether to auto-tag scenes. Defaults to true if nil.
+	Scenes *bool `json:"scenes,omitempty"`
 	// IDs of performers to tag files with, or "*" for all
 	Performers []string `json:"performers"`
 	// IDs of studios to tag files with, or "*" for all

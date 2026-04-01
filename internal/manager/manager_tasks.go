@@ -266,6 +266,8 @@ func (s *Manager) generateScreenshot(ctx context.Context, sceneId string, at *fl
 type AutoTagMetadataInput struct {
 	// Paths to tag, null for all files
 	Paths []string `json:"paths"`
+	// Whether to auto-tag scenes. Defaults to true if nil.
+	Scenes *bool `json:"scenes"`
 	// IDs of performers to tag files with, or "*" for all
 	Performers []string `json:"performers"`
 	// IDs of studios to tag files with, or "*" for all

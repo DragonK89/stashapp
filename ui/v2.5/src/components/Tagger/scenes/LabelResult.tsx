@@ -11,6 +11,8 @@ interface ILabelResultProps {
   label: ScrapedLabel;
   selectedID: string | undefined;
   setSelectedID: (id: string | undefined) => void;
+  onCreate: () => void;
+  canCreate?: boolean;
   studioID?: string;
   studioName?: string;
 }
@@ -19,6 +21,8 @@ const LabelResult: React.FC<ILabelResultProps> = ({
   label,
   selectedID,
   setSelectedID,
+  onCreate,
+  canCreate = true,
   studioID,
   studioName,
 }) => {
@@ -45,6 +49,13 @@ const LabelResult: React.FC<ILabelResultProps> = ({
         </b>
       </div>
       <ButtonGroup>
+        <Button
+          variant="secondary"
+          onClick={onCreate}
+          disabled={!canCreate}
+        >
+          <FormattedMessage id="actions.create" />
+        </Button>
         <Button
           variant={selectedSource === "skip" ? "primary" : "secondary"}
           onClick={() => handleSkip()}

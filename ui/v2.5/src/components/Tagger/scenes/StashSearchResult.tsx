@@ -21,6 +21,7 @@ import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { TagSelect } from "src/components/Shared/Select";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { OperationButton } from "src/components/Shared/OperationButton";
+import { useLabelCreate } from "src/core/StashService";
 import * as FormUtils from "src/utils/form";
 import { genderList, stringToGender } from "src/utils/gender";
 import { useConfigurationContext } from "src/hooks/Config";
@@ -35,6 +36,7 @@ import { useInitialState } from "src/hooks/state";
 import { getStashboxBase } from "src/utils/stashbox";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { compareScenesForSort } from "./utils";
+import { useToast } from "src/hooks/Toast";
 
 const getDurationIcon = (matchPercentage: number) => {
   if (matchPercentage > 65)
@@ -227,6 +229,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   isActive,
 }) => {
   const intl = useIntl();
+  const Toast = useToast();
   const { configuration } = useConfigurationContext();
   const ui = configuration.ui as IUIConfig | undefined;
   const hideTags = ui?.hideTags ?? false;
@@ -292,6 +295,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }, [stashScene, scene]);
 
   const [loading, setLoading] = useState(false);
+  const [createLabel] = useLabelCreate();
   const [excludedFields, setExcludedFields] = useState<Record<string, boolean>>(
     (config.excludedSceneFields ?? []).reduce(
       (dict, field) => ({ ...dict, [field]: true }),
@@ -755,12 +759,47 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             label={scene.label}
             selectedID={labelID}
             setSelectedID={(id) => setLabelID(id)}
+            onCreate={() => {
+              void onCreateLabel(scene.label!);
+            }}
+            canCreate={!!studioID}
             studioID={studioID}
           />
         </div>
       );
     }
   };
+
+  async function onCreateLabel(label: GQL.ScrapedLabel) {
+    if (!studioID) {
+      Toast.error("Studio must be selected before creating a label");
+      return;
+    }
+
+    try {
+      const input: GQL.LabelCreateInput = {
+        name: label.name,
+        studio_id: studioID,
+        aliases:
+          label.aliases
+            ?.split(",")
+            .map((a) => a.trim())
+            .filter((a) => a) ?? [],
+        image: label.image ?? undefined,
+      };
+
+      const result = await createLabel({
+        variables: { input },
+      });
+
+      const createdID = result.data?.labelCreate?.id;
+      if (createdID) {
+        setLabelID(createdID);
+      }
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
 
 
   function setPerformerID(performerIndex: number, id: string | undefined) {

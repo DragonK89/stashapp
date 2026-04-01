@@ -182,6 +182,7 @@ fragment ConfigDefaultSettingsData on ConfigDefaultSettingsResult {
   }
 
   autoTag {
+    scenes
     performers
     studios
     tags

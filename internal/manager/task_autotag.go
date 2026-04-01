@@ -25,16 +25,21 @@ type autoTagJob struct {
 	cache match.Cache
 }
 
+func autoTagScenesEnabled(scenes *bool) bool {
+	return scenes == nil || *scenes
+}
+
 func (j *autoTagJob) Execute(ctx context.Context, progress *job.Progress) error {
 	begin := time.Now()
 
 	input := j.input
+	sceneEnabled := autoTagScenesEnabled(input.Scenes)
 	if j.isFileBasedAutoTag(input) {
 		// doing file-based auto-tag
-		j.autoTagFiles(ctx, progress, input.Paths, len(input.Performers) > 0, len(input.Studios) > 0, len(input.Tags) > 0)
+		j.autoTagFiles(ctx, progress, input.Paths, sceneEnabled, len(input.Performers) > 0, len(input.Studios) > 0, len(input.Tags) > 0)
 	} else {
 		// doing specific performer/studio/tag auto-tag
-		j.autoTagSpecific(ctx, progress)
+		j.autoTagSpecific(ctx, progress, sceneEnabled)
 	}
 
 	logger.Infof("Finished auto-tag after %s", time.Since(begin).String())
@@ -50,9 +55,10 @@ func (j *autoTagJob) isFileBasedAutoTag(input AutoTagMetadataInput) bool {
 	return (len(performerIds) == 0 || performerIds[0] == wildcard) && (len(studioIds) == 0 || studioIds[0] == wildcard) && (len(tagIds) == 0 || tagIds[0] == wildcard)
 }
 
-func (j *autoTagJob) autoTagFiles(ctx context.Context, progress *job.Progress, paths []string, performers, studios, tags bool) {
+func (j *autoTagJob) autoTagFiles(ctx context.Context, progress *job.Progress, paths []string, scenes, performers, studios, tags bool) {
 	t := autoTagFilesTask{
 		paths:      paths,
+		scenes:     scenes,
 		performers: performers,
 		studios:    studios,
 		tags:       tags,
@@ -64,7 +70,7 @@ func (j *autoTagJob) autoTagFiles(ctx context.Context, progress *job.Progress, p
 	t.process(ctx)
 }
 
-func (j *autoTagJob) autoTagSpecific(ctx context.Context, progress *job.Progress) {
+func (j *autoTagJob) autoTagSpecific(ctx context.Context, progress *job.Progress, scenes bool) {
 	input := j.input
 	performerIds := input.Performers
 	studioIds := input.Studios
@@ -112,14 +118,14 @@ func (j *autoTagJob) autoTagSpecific(ctx context.Context, progress *job.Progress
 	total := performerCount + studioCount + tagCount
 	progress.SetTotal(total)
 
-	logger.Infof("Starting auto-tag of %d performers, %d studios, %d tags", performerCount, studioCount, tagCount)
+	logger.Infof("Starting auto-tag of %d performers, %d studios, %d tags (scenes enabled: %t)", performerCount, studioCount, tagCount, scenes)
 
-	j.autoTagPerformers(ctx, progress, input.Paths, performerIds)
-	j.autoTagStudios(ctx, progress, input.Paths, studioIds)
-	j.autoTagTags(ctx, progress, input.Paths, tagIds)
+	j.autoTagPerformers(ctx, progress, input.Paths, performerIds, scenes)
+	j.autoTagStudios(ctx, progress, input.Paths, studioIds, scenes)
+	j.autoTagTags(ctx, progress, input.Paths, tagIds, scenes)
 }
 
-func (j *autoTagJob) autoTagPerformers(ctx context.Context, progress *job.Progress, paths []string, performerIds []string) {
+func (j *autoTagJob) autoTagPerformers(ctx context.Context, progress *job.Progress, paths []string, performerIds []string, scenes bool) {
 	if job.IsCancelled(ctx) {
 		return
 	}
@@ -180,8 +186,10 @@ func (j *autoTagJob) autoTagPerformers(ctx context.Context, progress *job.Progre
 				}
 
 				err := func() error {
-					if err := tagger.PerformerScenes(ctx, performer, paths, r.Scene); err != nil {
-						return fmt.Errorf("processing scenes: %w", err)
+					if scenes {
+						if err := tagger.PerformerScenes(ctx, performer, paths, r.Scene); err != nil {
+							return fmt.Errorf("processing scenes: %w", err)
+						}
 					}
 					if err := tagger.PerformerImages(ctx, performer, paths, r.Image); err != nil {
 						return fmt.Errorf("processing images: %w", err)
@@ -216,7 +224,7 @@ func (j *autoTagJob) autoTagPerformers(ctx context.Context, progress *job.Progre
 	}
 }
 
-func (j *autoTagJob) autoTagStudios(ctx context.Context, progress *job.Progress, paths []string, studioIds []string) {
+func (j *autoTagJob) autoTagStudios(ctx context.Context, progress *job.Progress, paths []string, studioIds []string, scenes bool) {
 	if job.IsCancelled(ctx) {
 		return
 	}
@@ -278,8 +286,10 @@ func (j *autoTagJob) autoTagStudios(ctx context.Context, progress *job.Progress,
 						return fmt.Errorf("getting studio aliases: %w", err)
 					}
 
-					if err := tagger.StudioScenes(ctx, studio, paths, aliases, r.Scene); err != nil {
-						return fmt.Errorf("processing scenes: %w", err)
+					if scenes {
+						if err := tagger.StudioScenes(ctx, studio, paths, aliases, r.Scene); err != nil {
+							return fmt.Errorf("processing scenes: %w", err)
+						}
 					}
 					if err := tagger.StudioImages(ctx, studio, paths, aliases, r.Image); err != nil {
 						return fmt.Errorf("processing images: %w", err)
@@ -314,7 +324,7 @@ func (j *autoTagJob) autoTagStudios(ctx context.Context, progress *job.Progress,
 	}
 }
 
-func (j *autoTagJob) autoTagTags(ctx context.Context, progress *job.Progress, paths []string, tagIds []string) {
+func (j *autoTagJob) autoTagTags(ctx context.Context, progress *job.Progress, paths []string, tagIds []string, scenes bool) {
 	if job.IsCancelled(ctx) {
 		return
 	}
@@ -375,8 +385,10 @@ func (j *autoTagJob) autoTagTags(ctx context.Context, progress *job.Progress, pa
 						return fmt.Errorf("getting tag aliases: %w", err)
 					}
 
-					if err := tagger.TagScenes(ctx, tag, paths, aliases, r.Scene); err != nil {
-						return fmt.Errorf("processing scenes: %w", err)
+					if scenes {
+						if err := tagger.TagScenes(ctx, tag, paths, aliases, r.Scene); err != nil {
+							return fmt.Errorf("processing scenes: %w", err)
+						}
 					}
 					if err := tagger.TagImages(ctx, tag, paths, aliases, r.Image); err != nil {
 						return fmt.Errorf("processing images: %w", err)
@@ -413,6 +425,7 @@ func (j *autoTagJob) autoTagTags(ctx context.Context, progress *job.Progress, pa
 
 type autoTagFilesTask struct {
 	paths      []string
+	scenes     bool
 	performers bool
 	studios    bool
 	tags       bool
@@ -506,18 +519,21 @@ func (t *autoTagFilesTask) getCount(ctx context.Context) (int, error) {
 		PerPage: &pp,
 	}
 
-	sceneResults, err := r.Scene.Query(ctx, models.SceneQueryOptions{
-		QueryOptions: models.QueryOptions{
-			FindFilter: findFilter,
-			Count:      true,
-		},
-		SceneFilter: t.makeSceneFilter(),
-	})
-	if err != nil {
-		return 0, fmt.Errorf("getting scene count: %w", err)
-	}
+	sceneCount := 0
+	if t.scenes {
+		sceneResults, err := r.Scene.Query(ctx, models.SceneQueryOptions{
+			QueryOptions: models.QueryOptions{
+				FindFilter: findFilter,
+				Count:      true,
+			},
+			SceneFilter: t.makeSceneFilter(),
+		})
+		if err != nil {
+			return 0, fmt.Errorf("getting scene count: %w", err)
+		}
 
-	sceneCount := sceneResults.Count
+		sceneCount = sceneResults.Count
+	}
 
 	imageResults, err := r.Image.Query(ctx, models.ImageQueryOptions{
 		QueryOptions: models.QueryOptions{
@@ -747,7 +763,9 @@ func (t *autoTagFilesTask) process(ctx context.Context) {
 		return
 	}
 
-	t.processScenes(ctx)
+	if t.scenes {
+		t.processScenes(ctx)
+	}
 	t.processImages(ctx)
 	t.processGalleries(ctx)
 }
