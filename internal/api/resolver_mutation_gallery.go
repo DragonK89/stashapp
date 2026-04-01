@@ -378,10 +378,12 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 
 			galleries = append(galleries, gallery)
 
-			imgsDestroyed, err = r.galleryService.Destroy(ctx, gallery, fileDeleter, deleteGenerated, deleteFile)
+			thisImgsDestroyed, err := r.galleryService.Destroy(ctx, gallery, fileDeleter, deleteGenerated, deleteFile)
 			if err != nil {
 				return err
 			}
+
+			imgsDestroyed = append(imgsDestroyed, thisImgsDestroyed...)
 		}
 
 		return nil

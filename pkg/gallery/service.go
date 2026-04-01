@@ -11,6 +11,7 @@ import (
 
 type ImageFinder interface {
 	FindByFolderID(ctx context.Context, folder models.FolderID) ([]*models.Image, error)
+	FindByGalleryID(ctx context.Context, galleryID int) ([]*models.Image, error)
 	FindByZipFileID(ctx context.Context, zipFileID models.FileID) ([]*models.Image, error)
 	models.GalleryIDLoader
 }
