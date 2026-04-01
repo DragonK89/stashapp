@@ -2,19 +2,28 @@ package api
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/stashapp/stash/internal/manager"
 	"github.com/stashapp/stash/pkg/file"
+	file_image "github.com/stashapp/stash/pkg/file/image"
+	"github.com/stashapp/stash/pkg/fsutil"
 	"github.com/stashapp/stash/pkg/gallery"
+	"github.com/stashapp/stash/pkg/hash/md5"
 	"github.com/stashapp/stash/pkg/image"
+	"github.com/stashapp/stash/pkg/logger"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/plugin"
 	"github.com/stashapp/stash/pkg/plugin/hook"
@@ -493,16 +502,22 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 			}
 
 			if len(foundIDs) == 0 {
-				newImage := models.NewImage()
-				newImage.URLs = models.NewRelatedStrings([]string{normalizedURL})
-				newImage.Title = imageTitleFromURL(normalizedURL)
-
-				if err := r.repository.Image.Create(ctx, &newImage, nil); err != nil {
-					return fmt.Errorf("creating image for url %q: %w", normalizedURL, err)
+				imageID, created, err := r.getOrCreateLocalImageByURL(ctx, normalizedURL)
+				if err != nil {
+					logger.Warnf("Failed to import gallery image from %q: %v", normalizedURL, err)
+					continue
 				}
 
-				foundIDs = []int{newImage.ID}
-				createdIDSet[newImage.ID] = struct{}{}
+				foundIDs = []int{imageID}
+				if created {
+					createdIDSet[imageID] = struct{}{}
+				}
+			} else {
+				for _, imageID := range foundIDs {
+					if err := r.ensureImageHasLocalFile(ctx, imageID, normalizedURL); err != nil {
+						logger.Warnf("Failed to localize existing image %d from %q: %v", imageID, normalizedURL, err)
+					}
+				}
 			}
 
 			for _, imageID := range foundIDs {
@@ -583,6 +598,360 @@ func imageTitleFromURL(rawURL string) string {
 	}
 
 	return strings.TrimSpace(base)
+}
+
+var galleryScrapedImageMimeExt = map[string]string{
+	"image/avif":      ".avif",
+	"image/bmp":       ".bmp",
+	"image/gif":       ".gif",
+	"image/jpeg":      ".jpg",
+	"image/png":       ".png",
+	"image/svg+xml":   ".svg",
+	"image/tiff":      ".tiff",
+	"image/webp":      ".webp",
+	"video/webm":      ".webm",
+	"video/mp4":       ".mp4",
+	"application/pdf": ".pdf",
+}
+
+var galleryScrapedAllowedExt = map[string]struct{}{
+	".avif": {},
+	".bmp":  {},
+	".gif":  {},
+	".jpeg": {},
+	".jpg":  {},
+	".mp4":  {},
+	".pdf":  {},
+	".png":  {},
+	".svg":  {},
+	".tif":  {},
+	".tiff": {},
+	".webm": {},
+	".webp": {},
+}
+
+func galleryScrapedImageStoreRoot() (string, error) {
+	stashes := manager.GetInstance().Config.GetStashPaths()
+
+	for _, stash := range stashes {
+		if stash == nil {
+			continue
+		}
+
+		stashPath := strings.TrimSpace(stash.Path)
+		if stashPath == "" {
+			continue
+		}
+
+		if !stash.ExcludeImage {
+			return filepath.Join(stashPath, ".stash-scraped", "gallery-images"), nil
+		}
+	}
+
+	for _, stash := range stashes {
+		if stash == nil {
+			continue
+		}
+
+		stashPath := strings.TrimSpace(stash.Path)
+		if stashPath == "" {
+			continue
+		}
+
+		return filepath.Join(stashPath, ".stash-scraped", "gallery-images"), nil
+	}
+
+	return "", errors.New("no stash paths configured to store scraped gallery images")
+}
+
+func galleryScrapedImageHash(imageURL string) string {
+	sum := sha1.Sum([]byte(imageURL))
+	return hex.EncodeToString(sum[:])
+}
+
+func findDownloadedGalleryScrapedImagePath(storeRoot string, hash string) (string, error) {
+	if len(hash) < 4 {
+		return "", fmt.Errorf("invalid image hash %q", hash)
+	}
+
+	pattern := filepath.Join(storeRoot, hash[:2], hash[2:4], hash+".*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", fmt.Errorf("invalid image glob pattern %q: %w", pattern, err)
+	}
+
+	if len(matches) == 0 {
+		return "", nil
+	}
+
+	sort.Strings(matches)
+	return matches[0], nil
+}
+
+func imageExtensionFromURL(rawURL string) string {
+	u, err := url.Parse(rawURL)
+	if err != nil {
+		return ""
+	}
+
+	ext := strings.ToLower(filepath.Ext(u.Path))
+	if _, ok := galleryScrapedAllowedExt[ext]; ok {
+		return ext
+	}
+
+	return ""
+}
+
+func inferGalleryScrapedImageExtension(imageURL string, data []byte) string {
+	if ext := imageExtensionFromURL(imageURL); ext != "" {
+		return ext
+	}
+
+	detectedMime := http.DetectContentType(data)
+	detectedMime = strings.TrimSpace(strings.ToLower(strings.SplitN(detectedMime, ";", 2)[0]))
+	if ext, ok := galleryScrapedImageMimeExt[detectedMime]; ok {
+		return ext
+	}
+
+	return ".jpg"
+}
+
+func (r *mutationResolver) ensureDownloadedGalleryScrapedImage(ctx context.Context, imageURL string) (string, error) {
+	storeRoot, err := galleryScrapedImageStoreRoot()
+	if err != nil {
+		return "", err
+	}
+
+	hash := galleryScrapedImageHash(imageURL)
+
+	existingPath, err := findDownloadedGalleryScrapedImagePath(storeRoot, hash)
+	if err != nil {
+		return "", err
+	}
+
+	if existingPath != "" {
+		return existingPath, nil
+	}
+
+	data, err := utils.ReadImageFromURL(ctx, imageURL)
+	if err != nil {
+		return "", fmt.Errorf("downloading image %q: %w", imageURL, err)
+	}
+
+	if len(data) == 0 {
+		return "", fmt.Errorf("downloading image %q: empty body", imageURL)
+	}
+
+	ext := inferGalleryScrapedImageExtension(imageURL, data)
+	localPath := filepath.Join(storeRoot, hash[:2], hash[2:4], hash+ext)
+
+	if exists, _ := fsutil.FileExists(localPath); exists {
+		return localPath, nil
+	}
+
+	if err := fsutil.WriteFile(localPath, data); err != nil {
+		return "", fmt.Errorf("writing downloaded image to %q: %w", localPath, err)
+	}
+
+	return localPath, nil
+}
+
+func (r *mutationResolver) getOrCreateImageFileForPath(ctx context.Context, localPath string) (models.FileID, error) {
+	const caseSensitive = true
+	existingFile, err := r.repository.File.FindByPath(ctx, localPath, caseSensitive)
+	if err != nil {
+		return 0, fmt.Errorf("finding file by path %q: %w", localPath, err)
+	}
+
+	if existingFile != nil {
+		return existingFile.Base().ID, nil
+	}
+
+	stat, err := os.Stat(localPath)
+	if err != nil {
+		return 0, fmt.Errorf("stat file %q: %w", localPath, err)
+	}
+
+	parentFolder, err := file.GetOrCreateFolderHierarchy(ctx, r.repository.Folder, filepath.Dir(localPath))
+	if err != nil {
+		return 0, fmt.Errorf("finding/creating folder hierarchy for %q: %w", localPath, err)
+	}
+
+	fileMD5, err := md5.FromFilePath(localPath)
+	if err != nil {
+		return 0, fmt.Errorf("calculating md5 for %q: %w", localPath, err)
+	}
+
+	now := time.Now()
+	baseFile := &models.BaseFile{
+		DirEntry: models.DirEntry{
+			ModTime: stat.ModTime().Truncate(time.Second),
+		},
+		Path:           localPath,
+		Basename:       filepath.Base(localPath),
+		ParentFolderID: parentFolder.ID,
+		Size:           stat.Size(),
+		CreatedAt:      now,
+		UpdatedAt:      now,
+		Fingerprints: models.Fingerprints{
+			{
+				Type:        models.FingerprintTypeMD5,
+				Fingerprint: fileMD5,
+			},
+		},
+	}
+
+	newFile := models.File(baseFile)
+	decorator := &file_image.Decorator{
+		FFProbe: manager.GetInstance().FFProbe,
+	}
+
+	decoratedFile, err := decorator.Decorate(ctx, &file.OsFS{}, baseFile)
+	if err != nil {
+		logger.Warnf("Could not read image metadata for %q: %v", localPath, err)
+	} else {
+		newFile = decoratedFile
+	}
+
+	if err := r.repository.File.Create(ctx, newFile); err != nil {
+		// Another operation may have created this path concurrently.
+		existingFile, findErr := r.repository.File.FindByPath(ctx, localPath, caseSensitive)
+		if findErr == nil && existingFile != nil {
+			return existingFile.Base().ID, nil
+		}
+
+		return 0, fmt.Errorf("creating file for %q: %w", localPath, err)
+	}
+
+	return newFile.Base().ID, nil
+}
+
+func (r *mutationResolver) addURLToImage(ctx context.Context, imageID int, imageURL string) error {
+	img, err := r.repository.Image.Find(ctx, imageID)
+	if err != nil {
+		return fmt.Errorf("finding image %d: %w", imageID, err)
+	}
+
+	if img == nil {
+		return fmt.Errorf("image with id %d not found", imageID)
+	}
+
+	if err := img.LoadURLs(ctx, r.repository.Image); err != nil {
+		return fmt.Errorf("loading image urls for %d: %w", imageID, err)
+	}
+
+	for _, existingURL := range img.URLs.List() {
+		if existingURL == imageURL {
+			return nil
+		}
+	}
+
+	partial := models.NewImagePartial()
+	partial.URLs = &models.UpdateStrings{
+		Values: []string{imageURL},
+		Mode:   models.RelationshipUpdateModeAdd,
+	}
+
+	if _, err := r.repository.Image.UpdatePartial(ctx, imageID, partial); err != nil {
+		return fmt.Errorf("adding url %q to image %d: %w", imageURL, imageID, err)
+	}
+
+	return nil
+}
+
+func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID int, imageURL string) error {
+	img, err := r.repository.Image.Find(ctx, imageID)
+	if err != nil {
+		return fmt.Errorf("finding image %d: %w", imageID, err)
+	}
+
+	if img == nil {
+		return fmt.Errorf("image with id %d not found", imageID)
+	}
+
+	if err := img.LoadFiles(ctx, r.repository.Image); err != nil {
+		return fmt.Errorf("loading files for image %d: %w", imageID, err)
+	}
+
+	if len(img.Files.List()) > 0 {
+		return r.addURLToImage(ctx, imageID, imageURL)
+	}
+
+	fileID, err := r.getOrCreateLocalImageFileIDFromURL(ctx, imageURL)
+	if err != nil {
+		return err
+	}
+
+	if err := r.repository.Image.AddFileID(ctx, imageID, fileID); err != nil {
+		return fmt.Errorf("adding file %d to image %d: %w", fileID, imageID, err)
+	}
+
+	partial := models.NewImagePartial()
+	partial.PrimaryFileID = &fileID
+	partial.URLs = &models.UpdateStrings{
+		Values: []string{imageURL},
+		Mode:   models.RelationshipUpdateModeAdd,
+	}
+
+	if _, err := r.repository.Image.UpdatePartial(ctx, imageID, partial); err != nil {
+		return fmt.Errorf("updating image %d after local file import: %w", imageID, err)
+	}
+
+	return nil
+}
+
+func (r *mutationResolver) getOrCreateLocalImageFileIDFromURL(ctx context.Context, imageURL string) (models.FileID, error) {
+	localPath, err := r.ensureDownloadedGalleryScrapedImage(ctx, imageURL)
+	if err != nil {
+		return 0, err
+	}
+
+	fileID, err := r.getOrCreateImageFileForPath(ctx, localPath)
+	if err != nil {
+		return 0, err
+	}
+
+	return fileID, nil
+}
+
+func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, imageURL string) (int, bool, error) {
+	fileID, err := r.getOrCreateLocalImageFileIDFromURL(ctx, imageURL)
+	if err != nil {
+		return 0, false, err
+	}
+
+	existingImages, err := r.repository.Image.FindByFileID(ctx, fileID)
+	if err != nil {
+		return 0, false, fmt.Errorf("finding image by file id %d: %w", fileID, err)
+	}
+
+	if len(existingImages) > 0 {
+		imageID := existingImages[0].ID
+		if err := r.addURLToImage(ctx, imageID, imageURL); err != nil {
+			return 0, false, err
+		}
+
+		return imageID, false, nil
+	}
+
+	newImage := models.NewImage()
+	newImage.URLs = models.NewRelatedStrings([]string{imageURL})
+	newImage.Title = imageTitleFromURL(imageURL)
+	if newImage.Title == "" {
+		newImage.Title = filepath.Base(strings.TrimSpace(imageURL))
+	}
+
+	if err := r.repository.Image.Create(ctx, &newImage, []models.FileID{fileID}); err != nil {
+		// Another operation may have created the image concurrently.
+		existingImages, findErr := r.repository.Image.FindByFileID(ctx, fileID)
+		if findErr == nil && len(existingImages) > 0 {
+			return existingImages[0].ID, false, nil
+		}
+
+		return 0, false, fmt.Errorf("creating image for url %q: %w", imageURL, err)
+	}
+
+	return newImage.ID, true, nil
 }
 
 func (r *mutationResolver) RemoveGalleryImages(ctx context.Context, input GalleryRemoveInput) (bool, error) {
