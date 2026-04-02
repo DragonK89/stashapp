@@ -34,6 +34,8 @@ export const initialConfig: ITaggerConfig = {
   tagOperation: "merge",
   fingerprintQueue: {},
   excludedPerformerFields: DEFAULT_EXCLUDED_PERFORMER_FIELDS,
+  performerAliasOperation: "overwrite",
+  performerURLsOperation: "overwrite",
   markSceneAsOrganizedOnSave: false,
   excludedStudioFields: DEFAULT_EXCLUDED_STUDIO_FIELDS,
   excludedSceneFields: DEFAULT_EXCLUDED_SCENE_FIELDS,
@@ -42,6 +44,7 @@ export const initialConfig: ITaggerConfig = {
 
 export type ParseMode = "auto" | "filename" | "dir" | "path" | "metadata" | "studiocode" | "title";
 export type TagOperation = "merge" | "overwrite";
+export type PerformerFieldOperation = "merge" | "overwrite";
 export interface ITaggerConfig {
   blacklist: string[];
   performerGenders?: GenderEnum[];
@@ -52,6 +55,8 @@ export interface ITaggerConfig {
   selectedEndpoint?: string;
   fingerprintQueue: Record<string, string[]>;
   excludedPerformerFields?: string[];
+  performerAliasOperation?: PerformerFieldOperation;
+  performerURLsOperation?: PerformerFieldOperation;
   markSceneAsOrganizedOnSave?: boolean;
   excludedStudioFields?: string[];
   excludedSceneFields?: string[];

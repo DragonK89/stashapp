@@ -281,7 +281,9 @@ export const TaggerContext: React.FC = ({ children }) => {
     } catch (err) {
       Toast.error(err);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -299,6 +301,10 @@ export const TaggerContext: React.FC = ({ children }) => {
   }
 
   function clearSearchResults(sceneID: string) {
+    if (!isMounted.current) {
+      return;
+    }
+
     setSearchResults((current) => {
       const newSearchResults = { ...current };
       delete newSearchResults[sceneID];
@@ -336,12 +342,16 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       }
 
-      setSearchResults((current) => ({ ...current, [sceneID]: newResult }));
+      if (isMounted.current) {
+        setSearchResults((current) => ({ ...current, [sceneID]: newResult }));
+      }
     } catch (err: unknown) {
-      setSearchResults((current) => ({
-        ...current,
-        [sceneID]: { error: errorToString(err) },
-      }));
+      if (isMounted.current) {
+        setSearchResults((current) => ({
+          ...current,
+          [sceneID]: { error: errorToString(err) },
+        }));
+      }
     }
   }
 
@@ -440,9 +450,11 @@ export const TaggerContext: React.FC = ({ children }) => {
       newResult = { error: errorToString(err) };
     }
 
-    setSearchResults((current) => {
-      return { ...current, [scene.id]: newResult };
-    });
+    if (isMounted.current) {
+      setSearchResults((current) => {
+        return { ...current, [scene.id]: newResult };
+      });
+    }
   }
 
   async function doSceneFragmentScrape(scene: GQL.SlimSceneDataFragment) {
@@ -458,7 +470,9 @@ export const TaggerContext: React.FC = ({ children }) => {
     } catch (err) {
       Toast.error(err);
     } finally {
-      setLoading(false);
+      if (isMounted.current) {
+        setLoading(false);
+      }
     }
   }
 
@@ -489,9 +503,13 @@ export const TaggerContext: React.FC = ({ children }) => {
         );
 
         if (results.error) {
-          setMultiError(results.error.message);
+          if (isMounted.current) {
+            setMultiError(results.error.message);
+          }
         } else if (results.errors) {
-          setMultiError(results.errors.toString());
+          if (isMounted.current) {
+            setMultiError(results.errors.toString());
+          }
         } else {
           const newSearchResults = { ...searchResults };
           scenes.forEach((scene, index) => {
@@ -507,7 +525,9 @@ export const TaggerContext: React.FC = ({ children }) => {
             };
           });
 
-          setSearchResults(newSearchResults);
+          if (isMounted.current) {
+            setSearchResults(newSearchResults);
+          }
         }
       } else {
         setLoadingMulti(true);
@@ -696,7 +716,11 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       });
 
-      setSearchResults(newSearchResults);
+      if (isMounted.current) {
+        if (isMounted.current) {
+          setSearchResults(newSearchResults);
+        }
+      }
 
       Toast.success(
         <span>
@@ -749,7 +773,11 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       });
 
-      setSearchResults(newSearchResults);
+      if (isMounted.current) {
+        if (isMounted.current) {
+          setSearchResults(newSearchResults);
+        }
+      }
 
       Toast.success(
         <span>
@@ -821,7 +849,9 @@ export const TaggerContext: React.FC = ({ children }) => {
           };
         });
 
-        setSearchResults(newSearchResults);
+        if (isMounted.current) {
+          setSearchResults(newSearchResults);
+        }
 
         Toast.success(<span>Added stash-id to performer</span>);
       }
@@ -874,7 +904,9 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       });
 
-      setSearchResults(newSearchResults);
+      if (isMounted.current) {
+        setSearchResults(newSearchResults);
+      }
 
       Toast.success(
         <span>
@@ -925,7 +957,9 @@ export const TaggerContext: React.FC = ({ children }) => {
           };
         });
 
-        setSearchResults(newSearchResults);
+        if (isMounted.current) {
+          setSearchResults(newSearchResults);
+        }
       }
 
       Toast.success(
@@ -990,7 +1024,9 @@ export const TaggerContext: React.FC = ({ children }) => {
           };
         });
 
-        setSearchResults(newSearchResults);
+        if (isMounted.current) {
+          setSearchResults(newSearchResults);
+        }
 
         Toast.success(<span>Added stash-id to studio</span>);
       }
@@ -1035,7 +1071,9 @@ export const TaggerContext: React.FC = ({ children }) => {
         };
       });
 
-      setSearchResults(newSearchResults);
+      if (isMounted.current) {
+        setSearchResults(newSearchResults);
+      }
 
       Toast.success(<span>Updated tag</span>);
     } catch (e) {

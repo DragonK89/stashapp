@@ -845,18 +845,22 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   const maybeRenderStudioCode = () => {
-    if (isActive && scene.code) {
+    if (!scene.code) return;
+
+    if (isActive) {
       return (
-        <h5>
+        <h4>
           <OptionalField
             exclude={excludedFields[fields.code]}
             setExclude={(v) => setExcludedField(fields.code, v)}
           >
             {scene.code}
           </OptionalField>
-        </h5>
+        </h4>
       );
     }
+
+    return <h4 className="scene-code">{scene.code}</h4>;
   };
 
   const maybeRenderDateField = () => {
@@ -1183,6 +1187,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
         <div className="row mx-0">
           {maybeRenderCoverImage()}
           <div className="d-flex flex-column justify-content-center scene-metadata">
+            {maybeRenderStudioCode()}
             {renderTitle()}
 
             {!isActive && (
@@ -1192,7 +1197,6 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               </>
             )}
 
-            {maybeRenderStudioCode()}
             {maybeRenderDateField()}
             {getDurationStatus(scene, stashSceneFile?.duration)}
             {getFingerprintStatus(scene, stashScene)}

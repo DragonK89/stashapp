@@ -6,6 +6,11 @@ import { useUpdatePerformer } from "../queries";
 import PerformerModal from "../PerformerModal";
 import { faTags } from "@fortawesome/free-solid-svg-icons";
 import { mergeStashIDs } from "src/utils/stashbox";
+import { PerformerFieldOperation } from "../constants";
+import {
+  mergeOrOverwriteAliases,
+  mergeOrOverwriteURLs,
+} from "./updateStrategy";
 
 interface IStashSearchResultProps {
   performer: GQL.SlimPerformerDataFragment;
@@ -16,21 +21,8 @@ interface IStashSearchResultProps {
       Partial<Omit<GQL.SlimPerformerDataFragment, "id">>
   ) => void;
   excludedPerformerFields: string[];
-}
-
-// #4596 - remove any duplicate aliases or aliases that are the same as the performer's name
-function cleanAliases(currentName: string, aliases: string[]) {
-  const ret: string[] = [];
-  aliases.forEach((alias) => {
-    if (
-      alias.toLowerCase() !== currentName.toLowerCase() &&
-      !ret.find((r) => r.toLowerCase() === alias.toLowerCase())
-    ) {
-      ret.push(alias);
-    }
-  });
-
-  return ret;
+  performerAliasOperation: PerformerFieldOperation;
+  performerURLsOperation: PerformerFieldOperation;
 }
 
 const StashSearchResult: React.FC<IStashSearchResultProps> = ({
@@ -39,6 +31,8 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   onPerformerTagged,
   excludedPerformerFields,
   endpoint,
+  performerAliasOperation,
+  performerURLsOperation,
 }) => {
   const [modalPerformer, setModalPerformer] =
     useState<GQL.ScrapedPerformerDataFragment>();
@@ -58,8 +52,22 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       input.stash_ids = mergeStashIDs(performer.stash_ids, input.stash_ids);
     }
 
+    const finalName = (input.name ?? performer.name ?? "").trim();
     if (input.alias_list) {
-      input.alias_list = cleanAliases(performer.name, input.alias_list);
+      input.alias_list = mergeOrOverwriteAliases({
+        existingAliases: performer.alias_list,
+        incomingAliases: input.alias_list,
+        finalName,
+        operation: performerAliasOperation,
+      });
+    }
+
+    if (input.urls) {
+      input.urls = mergeOrOverwriteURLs({
+        existingURLs: performer.urls,
+        incomingURLs: input.urls,
+        operation: performerURLsOperation,
+      });
     }
 
     const updateData: GQL.PerformerUpdateInput = {

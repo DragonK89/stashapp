@@ -19,6 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { useConfigurationContext } from "src/hooks/Config";
+import { useIsMounted } from "src/hooks/state";
 import { SceneQueue } from "src/models/sceneQueue";
 
 interface ITaggerSceneDetails {
@@ -159,6 +160,7 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
 
   const { configuration } = useConfigurationContext();
   const cont = configuration?.interface.continuePlaylistDefault ?? false;
+  const isMounted = useIsMounted();
 
   async function query() {
     if (!doSceneQuery) return;
@@ -167,7 +169,9 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
       setQueryLoading(true);
       await doSceneQuery(queryString || defaultQueryString);
     } finally {
-      setQueryLoading(false);
+      if (isMounted.current) {
+        setQueryLoading(false);
+      }
     }
   }
 

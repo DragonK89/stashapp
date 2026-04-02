@@ -390,6 +390,12 @@ func (c *postScraper) postScrapeScene(ctx context.Context, scene models.ScrapedS
 		return nil, err
 	}
 
+	if scene.Label != nil && c.repository.LabelFinder != nil {
+		if err := match.ScrapedLabel(ctx, c.repository.LabelFinder, scene.Label, ""); err != nil {
+			return nil, err
+		}
+	}
+
 	// post-process - set the image if applicable
 	if err := processImageField(ctx, scene.Image, c.client, c.globalConfig); err != nil {
 		logger.Warnf("Could not set image using URL %s: %v", *scene.Image, err)

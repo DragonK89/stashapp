@@ -22,6 +22,7 @@ interface IProps {
   onClearBackImage?: () => void;
   acceptSVG?: boolean;
   customButtons?: JSX.Element;
+  preAutoTagButtons?: JSX.Element;
   classNames?: string;
   children?: JSX.Element | JSX.Element[];
 }
@@ -172,6 +173,7 @@ export const DetailsEditNavbar: React.FC<IProps> = (props: IProps) => {
           </Button>
         </div>
       ) : null}
+      {props.preAutoTagButtons}
       {renderAutoTagButton()}
       {props.customButtons}
       {renderSaveButton()}

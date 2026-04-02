@@ -92,6 +92,7 @@ type Repository struct {
 	GalleryFinder   GalleryFinder
 	ImageFinder     ImageFinder
 	TagFinder       TagFinder
+	LabelFinder     models.LabelQueryer
 	PerformerFinder PerformerFinder
 	GroupFinder     match.GroupNamesFinder
 	StudioFinder    StudioFinder
@@ -104,6 +105,7 @@ func NewRepository(repo models.Repository) Repository {
 		GalleryFinder:   repo.Gallery,
 		ImageFinder:     repo.Image,
 		TagFinder:       repo.Tag,
+		LabelFinder:     repo.Label,
 		PerformerFinder: repo.Performer,
 		GroupFinder:     repo.Group,
 		StudioFinder:    repo.Studio,

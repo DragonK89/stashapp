@@ -28,6 +28,10 @@ import { mergeStashIDs } from "src/utils/stashbox";
 import { separateNamesAndStashIds } from "src/utils/stashIds";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { useTaggerConfig } from "../config";
+import {
+  mergeOrOverwriteAliases,
+  mergeOrOverwriteURLs,
+} from "./updateStrategy";
 
 type JobFragment = Pick<
   GQL.Job,
@@ -274,6 +278,8 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
   const [modalPerformer, setModalPerformer] = useState<
     GQL.ScrapedPerformerDataFragment | undefined
   >();
+  const performerAliasOperation = config.performerAliasOperation ?? "overwrite";
+  const performerURLsOperation = config.performerURLsOperation ?? "overwrite";
 
   const doBoxSearch = (performerID: string, searchVal: string) => {
     stashBoxPerformerQuery(searchVal, selectedEndpoint.endpoint)
@@ -378,6 +384,22 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
       // handle stash ids - we want to add, not set them
       if (input.stash_ids?.length) {
         input.stash_ids = mergeStashIDs(existing.stash_ids, input.stash_ids);
+      }
+      const finalName = (input.name ?? existing.name ?? "").trim();
+      if (input.alias_list) {
+        input.alias_list = mergeOrOverwriteAliases({
+          existingAliases: existing.alias_list,
+          incomingAliases: input.alias_list,
+          finalName,
+          operation: performerAliasOperation,
+        });
+      }
+      if (input.urls) {
+        input.urls = mergeOrOverwriteURLs({
+          existingURLs: existing.urls,
+          incomingURLs: input.urls,
+          operation: performerURLsOperation,
+        });
       }
 
       const updateData: GQL.PerformerUpdateInput = {
@@ -534,6 +556,8 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
             endpoint={selectedEndpoint.endpoint}
             onPerformerTagged={handleTaggedPerformer}
             excludedPerformerFields={config.excludedPerformerFields ?? []}
+            performerAliasOperation={performerAliasOperation}
+            performerURLsOperation={performerURLsOperation}
           />
         );
       }

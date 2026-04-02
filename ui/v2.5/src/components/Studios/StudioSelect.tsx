@@ -268,12 +268,20 @@ const _StudioIDSelect: React.FC<IFilterProps & IFilterIDProps<Studio>> = (
       return;
     }
 
+    let cancelled = false;
+
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (!cancelled) {
+        setValues(items);
+      }
     };
 
     load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ids, idsChanged, values]);
 
   return <StudioSelect {...props} values={values} onSelect={onSelect} />;

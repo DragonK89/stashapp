@@ -3,7 +3,9 @@ package match
 import (
 	"context"
 	"strconv"
+	"strings"
 
+	"github.com/stashapp/stash/pkg/label"
 	"github.com/stashapp/stash/pkg/models"
 	"github.com/stashapp/stash/pkg/performer"
 	"github.com/stashapp/stash/pkg/studio"
@@ -233,6 +235,41 @@ func ScrapedTag(ctx context.Context, qb models.TagQueryer, s *models.ScrapedTag,
 	}
 
 	id := strconv.Itoa(t.ID)
+	s.StoredID = &id
+	return nil
+}
+
+// ScrapedLabel matches the provided label with labels in the database
+// and sets the ID field if one is found.
+func ScrapedLabel(ctx context.Context, qb models.LabelQueryer, s *models.ScrapedLabel, _ string) error {
+	if s == nil || s.StoredID != nil {
+		return nil
+	}
+
+	name := strings.TrimSpace(s.Name)
+	if name == "" {
+		return nil
+	}
+
+	l, err := label.ByName(ctx, qb, name)
+	if err != nil {
+		return err
+	}
+
+	if l == nil {
+		// try matching by alias
+		l, err = label.ByAlias(ctx, qb, name)
+		if err != nil {
+			return err
+		}
+	}
+
+	if l == nil {
+		// ignore - cannot match
+		return nil
+	}
+
+	id := strconv.Itoa(l.ID)
 	s.StoredID = &id
 	return nil
 }
