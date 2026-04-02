@@ -403,6 +403,13 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 			// so swallow the error if present
 			_ = os.Remove(path)
 		}
+
+		if deleteFile {
+			// URL-imported gallery images are stored under:
+			// .stash-scraped/gallery-images/<gallery-code-or-title>/<hash>.<ext>
+			// Remove the per-gallery folder if it is now empty.
+			_ = removeEmptyGalleryScrapedImageFolder(gallery)
+		}
 	}
 
 	// call post hook after performing the other actionsa
@@ -504,7 +511,7 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 			}
 
 			if len(foundIDs) == 0 {
-				imageID, created, err := r.getOrCreateLocalImageByURL(ctx, normalizedURL)
+				imageID, created, err := r.getOrCreateLocalImageByURLForGallery(ctx, gallery, normalizedURL)
 				if err != nil {
 					logger.Warnf("Failed to import gallery image from %q: %v", normalizedURL, err)
 					continue
@@ -516,7 +523,7 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 				}
 			} else {
 				for _, imageID := range foundIDs {
-					if err := r.ensureImageHasLocalFile(ctx, imageID, normalizedURL); err != nil {
+					if err := r.ensureImageHasLocalFileForGallery(ctx, gallery, imageID, normalizedURL); err != nil {
 						logger.Warnf("Failed to localize existing image %d from %q: %v", imageID, normalizedURL, err)
 					}
 				}
@@ -666,6 +673,95 @@ func galleryScrapedImageStoreRoot() (string, error) {
 	return "", errors.New("no stash paths configured to store scraped gallery images")
 }
 
+func sanitizeGalleryScrapedFolderName(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+
+	name = strings.NewReplacer(
+		"<", "_",
+		">", "_",
+		":", "_",
+		"\"", "_",
+		"/", "_",
+		"\\", "_",
+		"|", "_",
+		"?", "_",
+		"*", "_",
+	).Replace(name)
+
+	name = strings.Map(func(r rune) rune {
+		if r < 32 || r == 127 {
+			return -1
+		}
+
+		return r
+	}, name)
+
+	name = strings.TrimSpace(name)
+	name = strings.Trim(name, ".")
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return ""
+	}
+
+	return name
+}
+
+func galleryScrapedImageFolderName(gallery *models.Gallery) string {
+	if gallery == nil {
+		return ""
+	}
+
+	if name := sanitizeGalleryScrapedFolderName(gallery.Code); name != "" {
+		return name
+	}
+
+	if name := sanitizeGalleryScrapedFolderName(gallery.Title); name != "" {
+		return name
+	}
+
+	return fmt.Sprintf("gallery-%d", gallery.ID)
+}
+
+func galleryScrapedImageStoreFolder(gallery *models.Gallery) (string, error) {
+	storeRoot, err := galleryScrapedImageStoreRoot()
+	if err != nil {
+		return "", err
+	}
+
+	folderName := galleryScrapedImageFolderName(gallery)
+	if folderName == "" {
+		return "", fmt.Errorf("cannot determine scraped gallery folder name")
+	}
+
+	return filepath.Join(storeRoot, folderName), nil
+}
+
+func removeEmptyGalleryScrapedImageFolder(gallery *models.Gallery) error {
+	storeFolder, err := galleryScrapedImageStoreFolder(gallery)
+	if err != nil {
+		return err
+	}
+
+	entries, err := os.ReadDir(storeFolder)
+	if err != nil {
+		// nothing to clean
+		if errors.Is(err, os.ErrNotExist) {
+			return nil
+		}
+
+		return err
+	}
+
+	if len(entries) > 0 {
+		return nil
+	}
+
+	return os.Remove(storeFolder)
+}
+
 func galleryScrapedImageHash(imageURL string) string {
 	sum := sha1.Sum([]byte(imageURL))
 	return hex.EncodeToString(sum[:])
@@ -746,6 +842,60 @@ func (r *mutationResolver) ensureDownloadedGalleryScrapedImage(ctx context.Conte
 
 	ext := inferGalleryScrapedImageExtension(imageURL, data)
 	localPath := filepath.Join(storeRoot, hash[:2], hash[2:4], hash+ext)
+
+	if exists, _ := fsutil.FileExists(localPath); exists {
+		return localPath, nil
+	}
+
+	if err := fsutil.WriteFile(localPath, data); err != nil {
+		return "", fmt.Errorf("writing downloaded image to %q: %w", localPath, err)
+	}
+
+	return localPath, nil
+}
+
+func findDownloadedGalleryScrapedImagePathInFolder(storeFolder string, hash string) (string, error) {
+	pattern := filepath.Join(storeFolder, hash+".*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return "", fmt.Errorf("invalid image glob pattern %q: %w", pattern, err)
+	}
+
+	if len(matches) == 0 {
+		return "", nil
+	}
+
+	sort.Strings(matches)
+	return matches[0], nil
+}
+
+func (r *mutationResolver) ensureDownloadedGalleryScrapedImageForGallery(ctx context.Context, gallery *models.Gallery, imageURL string) (string, error) {
+	storeFolder, err := galleryScrapedImageStoreFolder(gallery)
+	if err != nil {
+		return "", err
+	}
+
+	hash := galleryScrapedImageHash(imageURL)
+	existingPath, err := findDownloadedGalleryScrapedImagePathInFolder(storeFolder, hash)
+	if err != nil {
+		return "", err
+	}
+
+	if existingPath != "" {
+		return existingPath, nil
+	}
+
+	data, err := utils.ReadImageFromURL(ctx, imageURL)
+	if err != nil {
+		return "", fmt.Errorf("downloading image %q: %w", imageURL, err)
+	}
+
+	if len(data) == 0 {
+		return "", fmt.Errorf("downloading image %q: empty body", imageURL)
+	}
+
+	ext := inferGalleryScrapedImageExtension(imageURL, data)
+	localPath := filepath.Join(storeFolder, hash+ext)
 
 	if exists, _ := fsutil.FileExists(localPath); exists {
 		return localPath, nil
@@ -861,7 +1011,7 @@ func (r *mutationResolver) addURLToImage(ctx context.Context, imageID int, image
 	return nil
 }
 
-func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID int, imageURL string) error {
+func (r *mutationResolver) ensureImageHasLocalFileForGallery(ctx context.Context, gallery *models.Gallery, imageID int, imageURL string) error {
 	img, err := r.repository.Image.Find(ctx, imageID)
 	if err != nil {
 		return fmt.Errorf("finding image %d: %w", imageID, err)
@@ -879,7 +1029,7 @@ func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID 
 		return r.addURLToImage(ctx, imageID, imageURL)
 	}
 
-	fileID, err := r.getOrCreateLocalImageFileIDFromURL(ctx, imageURL)
+	fileID, err := r.getOrCreateLocalImageFileIDFromURLForGallery(ctx, gallery, imageURL)
 	if err != nil {
 		return err
 	}
@@ -902,8 +1052,18 @@ func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID 
 	return nil
 }
 
-func (r *mutationResolver) getOrCreateLocalImageFileIDFromURL(ctx context.Context, imageURL string) (models.FileID, error) {
-	localPath, err := r.ensureDownloadedGalleryScrapedImage(ctx, imageURL)
+func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID int, imageURL string) error {
+	return r.ensureImageHasLocalFileForGallery(ctx, nil, imageID, imageURL)
+}
+
+func (r *mutationResolver) getOrCreateLocalImageFileIDFromURLForGallery(ctx context.Context, gallery *models.Gallery, imageURL string) (models.FileID, error) {
+	var localPath string
+	var err error
+	if gallery != nil {
+		localPath, err = r.ensureDownloadedGalleryScrapedImageForGallery(ctx, gallery, imageURL)
+	} else {
+		localPath, err = r.ensureDownloadedGalleryScrapedImage(ctx, imageURL)
+	}
 	if err != nil {
 		return 0, err
 	}
@@ -916,8 +1076,12 @@ func (r *mutationResolver) getOrCreateLocalImageFileIDFromURL(ctx context.Contex
 	return fileID, nil
 }
 
-func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, imageURL string) (int, bool, error) {
-	fileID, err := r.getOrCreateLocalImageFileIDFromURL(ctx, imageURL)
+func (r *mutationResolver) getOrCreateLocalImageFileIDFromURL(ctx context.Context, imageURL string) (models.FileID, error) {
+	return r.getOrCreateLocalImageFileIDFromURLForGallery(ctx, nil, imageURL)
+}
+
+func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Context, gallery *models.Gallery, imageURL string) (int, bool, error) {
+	fileID, err := r.getOrCreateLocalImageFileIDFromURLForGallery(ctx, gallery, imageURL)
 	if err != nil {
 		return 0, false, err
 	}
@@ -954,6 +1118,10 @@ func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, image
 	}
 
 	return newImage.ID, true, nil
+}
+
+func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, imageURL string) (int, bool, error) {
+	return r.getOrCreateLocalImageByURLForGallery(ctx, nil, imageURL)
 }
 
 func (r *mutationResolver) RemoveGalleryImages(ctx context.Context, input GalleryRemoveInput) (bool, error) {
