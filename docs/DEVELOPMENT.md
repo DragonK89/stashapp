@@ -140,7 +140,10 @@ With `graphviz` installed and in the path, a call graph can be generated with:
 
 cd D:\Data\stash-0.30.1\stashapp
 mingw32-make pre-ui
+mingw32-make ui
 mingw32-make ui-start
+
+mingw32-make stash
 mingw32-make generate
 mingw32-make server-start
 

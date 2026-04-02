@@ -13,6 +13,23 @@ import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { Link } from "react-router-dom";
 import { LinkButton } from "../LinkButton";
 
+function getPerformerGenderSymbol(
+  performer: GQL.ScrapedPerformer | Performer
+): "♀" | "♂" | undefined {
+  const rawGender = (performer as { gender?: string | null }).gender;
+  const gender = rawGender?.toUpperCase();
+
+  if (gender === "FEMALE") {
+    return "♀";
+  }
+
+  if (gender === "MALE") {
+    return "♂";
+  }
+
+  return undefined;
+}
+
 const PerformerLink: React.FC<{
   performer: GQL.ScrapedPerformer | Performer;
   url: string | undefined;
@@ -30,9 +47,31 @@ const PerformerLink: React.FC<{
     );
   }, [url, performer.name, internal]);
 
+  const genderSymbol = useMemo(
+    () => getPerformerGenderSymbol(performer),
+    [performer]
+  );
+
+  const genderClass = useMemo(() => {
+    if (genderSymbol === "♀") {
+      return "performer-gender-female";
+    }
+
+    if (genderSymbol === "♂") {
+      return "performer-gender-male";
+    }
+
+    return "";
+  }, [genderSymbol]);
+
   return (
     <>
       <span>{name}</span>
+      {genderSymbol && (
+        <span className={`performer-gender-symbol ${genderClass}`}>
+          {genderSymbol}
+        </span>
+      )}
       {performer.disambiguation && (
         <span className="performer-disambiguation">
           {` (${performer.disambiguation})`}

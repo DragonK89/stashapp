@@ -199,6 +199,44 @@
   }
 }
 
+@include media-breakpoint-up(lg) {
+  .scrape-dialog.scene-scrape-dialog {
+    .row[data-field] > .col-form-label.col-lg-3 {
+      flex: 0 0 18%;
+      max-width: 18%;
+    }
+
+    .row[data-field] > .col-lg-9 {
+      flex: 0 0 82%;
+      max-width: 82%;
+    }
+
+    form > .row.px-3.pt-3:first-child > .offset-lg-3.col-lg-9 {
+      flex: 0 0 82%;
+      margin-left: 18%;
+      max-width: 82%;
+    }
+
+    .row[data-field] > .col-lg-9 > .row > .col-lg-6:first-of-type,
+    form > .row.px-3.pt-3:first-child > .offset-lg-3.col-lg-9 > .row >
+      .col-lg-6:first-of-type {
+      flex: 0 0 47%;
+      max-width: 47%;
+    }
+
+    .row[data-field] > .col-lg-9 > .row > .col-lg-6:last-of-type,
+    form > .row.px-3.pt-3:first-child > .offset-lg-3.col-lg-9 > .row >
+      .col-lg-6:last-of-type {
+      flex: 0 0 53%;
+      max-width: 53%;
+    }
+
+    .gallery-select .react-select__multi-value__label {
+      max-width: 20rem;
+    }
+  }
+}
+
 button.collapse-button.btn-primary:not(:disabled):not(.disabled):hover,
 button.collapse-button.btn-primary:not(:disabled):not(.disabled):focus,
 button.collapse-button.btn-primary:not(:disabled):not(.disabled):active {

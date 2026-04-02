@@ -48,7 +48,9 @@ export type Performer = Pick<
   | "image_path"
   | "birthdate"
   | "death_date"
->;
+> & {
+  gender?: GQL.Maybe<GQL.GenderEnum> | string;
+};
 type Option = SelectOption<Performer>;
 
 type FindPerformersResult = Awaited<
@@ -71,6 +73,36 @@ const performerSelectSort = PatchFunction(
   "PerformerSelect.sort",
   sortPerformersByRelevance
 );
+
+function performerGenderSymbolClass(
+  gender?: GQL.Maybe<GQL.GenderEnum> | string
+) {
+  const value = typeof gender === "string" ? gender.toUpperCase() : "";
+  if (value === "FEMALE") return "performer-gender-female";
+  if (value === "MALE") return "performer-gender-male";
+  return undefined;
+}
+
+function renderPerformerGenderSymbol(
+  gender?: GQL.Maybe<GQL.GenderEnum> | string
+) {
+  const value = typeof gender === "string" ? gender.toUpperCase() : "";
+  if (value !== "FEMALE" && value !== "MALE") {
+    return null;
+  }
+
+  return (
+    <span
+      className={`performer-gender-symbol ${performerGenderSymbolClass(gender)}`}
+      style={{
+        color: value === "FEMALE" ? "#ff5f7a" : "#57a6ff",
+        marginLeft: "0.35rem",
+      }}
+    >
+      {value === "FEMALE" ? "♀" : "♂"}
+    </span>
+  );
+}
 
 const _PerformerSelect: React.FC<
   IFilterProps &
@@ -167,6 +199,7 @@ const _PerformerSelect: React.FC<
                 text={
                   <span>
                     {name}
+                    {renderPerformerGenderSymbol(object.gender)}
                     {alias && (
                       <span className="performer-select-alias">
                         &nbsp;({alias})
@@ -214,6 +247,7 @@ const _PerformerSelect: React.FC<
         >
           <span className="performer-select-value">
             <span>{object.name}</span>
+            {renderPerformerGenderSymbol(object.gender)}
             {object.disambiguation && (
               <span className="performer-disambiguation">{` (${object.disambiguation})`}</span>
             )}
@@ -237,6 +271,7 @@ const _PerformerSelect: React.FC<
       children: (
         <span className="performer-select-value">
           {object.name}
+          {renderPerformerGenderSymbol(object.gender)}
           {object.disambiguation && (
             <span className="performer-disambiguation">{` (${object.disambiguation})`}</span>
           )}

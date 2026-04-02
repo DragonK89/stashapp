@@ -7,10 +7,10 @@ import * as yup from "yup";
 import {
   queryScrapeScene,
   queryScrapeSceneQuery,
+  queryScrapeSceneQueryFragment,
   queryScrapeSceneURL,
   useListSceneScrapers,
   mutateReloadScrapers,
-  queryScrapeSceneQueryFragment,
 } from "src/core/StashService";
 import { Icon } from "src/components/Shared/Icon";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
@@ -342,8 +342,62 @@ export const SceneEditPanel: React.FC<IProps> = ({
         return;
       }
       // assume one returned scene
-      setScrapedScene(result.data.scrapeSingleScene[0]);
-      setEndpoint(s.stash_box_endpoint ?? undefined);
+      let selectedScene = result.data.scrapeSingleScene[0];
+      try {
+        const sceneInput: GQL.ScrapedSceneInput = {
+          code: selectedScene.code,
+          date: selectedScene.date,
+          details: selectedScene.details,
+          remote_site_id: selectedScene.remote_site_id,
+          title: selectedScene.title,
+          urls: selectedScene.urls,
+        };
+
+        const resolvedResult = await queryScrapeSceneQueryFragment(
+          s,
+          sceneInput
+        );
+        if (resolvedResult.data.scrapeSingleScene.length > 0) {
+          const resolvedScene = resolvedResult.data.scrapeSingleScene[0];
+          selectedScene = {
+            ...selectedScene,
+            ...resolvedScene,
+            studio: resolvedScene.studio ?? selectedScene.studio,
+            label: resolvedScene.label ?? selectedScene.label,
+            tags:
+              resolvedScene.tags && resolvedScene.tags.length > 0
+                ? resolvedScene.tags
+                : selectedScene.tags,
+            performers:
+              resolvedScene.performers && resolvedScene.performers.length > 0
+                ? resolvedScene.performers
+                : selectedScene.performers,
+            groups:
+              resolvedScene.groups && resolvedScene.groups.length > 0
+                ? resolvedScene.groups
+                : selectedScene.groups,
+            movies:
+              resolvedScene.movies && resolvedScene.movies.length > 0
+                ? resolvedScene.movies
+                : selectedScene.movies,
+            galleries:
+              resolvedScene.galleries && resolvedScene.galleries.length > 0
+                ? resolvedScene.galleries
+                : selectedScene.galleries,
+            urls:
+              resolvedScene.urls && resolvedScene.urls.length > 0
+                ? resolvedScene.urls
+                : selectedScene.urls,
+          };
+        }
+      } catch {
+        // keep base query result if fragment resolve fails
+      }
+
+      if (isMounted.current) {
+        setScrapedScene(selectedScene);
+        setEndpoint(s.stash_box_endpoint ?? undefined);
+      }
     } catch (e) {
       Toast.error(e);
     } finally {
@@ -373,38 +427,6 @@ export const SceneEditPanel: React.FC<IProps> = ({
       (x) => x.id === scraperID
     );
     return scraper?.scene?.supported_scrapes.includes(scrapeType) ?? false;
-  }
-
-  async function scrapeFromQuery(
-    s: GQL.ScraperSourceInput,
-    fragment: GQL.ScrapedSceneDataFragment
-  ) {
-    setIsLoading(true);
-    try {
-      const input: GQL.ScrapedSceneInput = {
-        date: fragment.date,
-        code: fragment.code,
-        details: fragment.details,
-        director: fragment.director,
-        remote_site_id: fragment.remote_site_id,
-        title: fragment.title,
-        urls: fragment.urls,
-      };
-
-      const result = await queryScrapeSceneQueryFragment(s, input);
-      if (!result.data || !result.data.scrapeSingleScene?.length) {
-        Toast.success("No scenes found");
-        return;
-      }
-      // assume one returned scene
-      setScrapedScene(result.data.scrapeSingleScene[0]);
-    } catch (e) {
-      Toast.error(e);
-    } finally {
-      if (isMounted.current) {
-        setIsLoading(false);
-      }
-    }
   }
 
   function onScrapeQueryClicked(s: GQL.ScraperSourceInput) {
@@ -471,15 +493,9 @@ export const SceneEditPanel: React.FC<IProps> = ({
   }
 
   function onSceneSelected(s: GQL.ScrapedSceneDataFragment) {
-    if (!scraper) return;
-
-    if (scraper?.stash_box_endpoint !== undefined) {
-      // must be stash-box - assume full scene
-      setScrapedScene(s);
-    } else {
-      // must be scraper
-      scrapeFromQuery(scraper, s);
-    }
+    // Query modal results already come from scrapeSingleScene, so use the
+    // selected object directly to keep behavior consistent with "Scrape with...".
+    setScrapedScene(s);
   }
 
   const renderScrapeQueryModal = () => {

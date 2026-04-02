@@ -7,7 +7,10 @@ import { ModalComponent } from "src/components/Shared/Modal";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { Icon } from "src/components/Shared/Icon";
-import { queryScrapeSceneQuery } from "src/core/StashService";
+import {
+  queryScrapeSceneQuery,
+  queryScrapeSceneQueryFragment,
+} from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 
@@ -130,6 +133,63 @@ export const SceneQueryModal: React.FC<IProps> = ({
   const [scenes, setScenes] = useState<GQL.ScrapedScene[] | undefined>();
   const [error, setError] = useState<Error | undefined>();
 
+  async function resolveSelectedScene(
+    scene: GQL.ScrapedSceneDataFragment
+  ): Promise<GQL.ScrapedSceneDataFragment> {
+    const sceneInput: GQL.ScrapedSceneInput = {
+      code: scene.code,
+      date: scene.date,
+      details: scene.details,
+      remote_site_id: scene.remote_site_id,
+      title: scene.title,
+      urls: scene.urls,
+    };
+
+    const result = await queryScrapeSceneQueryFragment(scraper, sceneInput);
+    if (!result.data.scrapeSingleScene.length) {
+      return scene;
+    }
+
+    const resolved = result.data.scrapeSingleScene[0];
+    return {
+      ...scene,
+      ...resolved,
+      studio: resolved.studio ?? scene.studio,
+      label: resolved.label ?? scene.label,
+      tags:
+        resolved.tags && resolved.tags.length > 0 ? resolved.tags : scene.tags,
+      performers:
+        resolved.performers && resolved.performers.length > 0
+          ? resolved.performers
+          : scene.performers,
+      groups:
+        resolved.groups && resolved.groups.length > 0
+          ? resolved.groups
+          : scene.groups,
+      galleries:
+        resolved.galleries && resolved.galleries.length > 0
+          ? resolved.galleries
+          : scene.galleries,
+      urls:
+        resolved.urls && resolved.urls.length > 0 ? resolved.urls : scene.urls,
+    };
+  }
+
+  async function handleSelectScene(scene: GQL.ScrapedSceneDataFragment) {
+    setLoading(true);
+    try {
+      const resolved = await resolveSelectedScene(scene);
+      onSelectScene(resolved);
+    } catch (err) {
+      if (err instanceof Error) {
+        Toast.error(err);
+      }
+      onSelectScene(scene);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   const doQuery = useCallback(
     async (input: string) => {
       if (!input) return;
@@ -171,7 +231,7 @@ export const SceneQueryModal: React.FC<IProps> = ({
         <ul className={CLASSNAME_LIST}>
           {scenes.map((s, i) => (
             // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions, react/no-array-index-key
-            <li key={i} onClick={() => onSelectScene(s)}>
+            <li key={i} onClick={() => void handleSelectScene(s)}>
               <SceneSearchResult scene={s} />
             </li>
           ))}

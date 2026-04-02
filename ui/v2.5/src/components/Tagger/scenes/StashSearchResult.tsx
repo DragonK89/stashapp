@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import cx from "classnames";
-import { Badge, Button, Col, Form, Row } from "react-bootstrap";
+import { Badge, Button, ButtonGroup, Col, Form, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import uniq from "lodash-es/uniq";
 import { blobToBase64 } from "base64-blob";
@@ -21,11 +21,13 @@ import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { TagSelect } from "src/components/Shared/Select";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { OperationButton } from "src/components/Shared/OperationButton";
-import { useLabelCreate } from "src/core/StashService";
+import {
+  useBulkGalleryUpdate,
+  useGalleryCreate,
+  useLabelCreate,
+} from "src/core/StashService";
 import * as FormUtils from "src/utils/form";
 import { genderList, stringToGender } from "src/utils/gender";
-import { useConfigurationContext } from "src/hooks/Config";
-import { IUIConfig } from "src/core/config";
 import { IScrapedScene, TaggerStateContext } from "../context";
 import { OptionalField } from "../IncludeButton";
 import { SceneTaggerModalsState } from "./sceneTaggerModals";
@@ -37,6 +39,10 @@ import { getStashboxBase } from "src/utils/stashbox";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { compareScenesForSort } from "./utils";
 import { useToast } from "src/hooks/Toast";
+import {
+  Gallery,
+  GalleryIDSelect,
+} from "src/components/Galleries/GallerySelect";
 
 const getDurationIcon = (matchPercentage: number) => {
   if (matchPercentage > 65)
@@ -102,6 +108,27 @@ const getDurationStatus = (
     />
   );
 };
+
+function normalizeKey(value?: string | null) {
+  return (value ?? "").trim().toLowerCase();
+}
+
+function galleryMatchesScraped(existing: Gallery, scraped: GQL.ScrapedGallery) {
+  const existingTitle = normalizeKey(existing.title);
+  const existingCode = normalizeKey(existing.code);
+  const scrapedTitle = normalizeKey(scraped.title);
+  const scrapedCode = normalizeKey(scraped.code);
+
+  if (existingCode && scrapedCode && existingCode === scrapedCode) {
+    return true;
+  }
+
+  if (existingTitle && scrapedTitle && existingTitle === scrapedTitle) {
+    return true;
+  }
+
+  return false;
+}
 
 function matchPhashes(
   scenePhashes: Pick<GQL.Fingerprint, "type" | "value">[],
@@ -222,6 +249,14 @@ interface IStashSearchResultProps {
   isActive: boolean;
 }
 
+type GalleryActionMode = "auto" | "skip" | "existing";
+
+interface GalleryActionState {
+  mode: GalleryActionMode;
+  matchedID?: string;
+  selectedID?: string;
+}
+
 const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   scene,
   stashScene,
@@ -230,9 +265,6 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 }) => {
   const intl = useIntl();
   const Toast = useToast();
-  const { configuration } = useConfigurationContext();
-  const ui = configuration.ui as IUIConfig | undefined;
-  const hideTags = ui?.hideTags ?? false;
 
   const {
     config,
@@ -296,12 +328,61 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 
   const [loading, setLoading] = useState(false);
   const [createLabel] = useLabelCreate();
+  const [createGallery] = useGalleryCreate();
+  const [bulkGalleryUpdate] = useBulkGalleryUpdate();
   const [excludedFields, setExcludedFields] = useState<Record<string, boolean>>(
     (config.excludedSceneFields ?? []).reduce(
       (dict, field) => ({ ...dict, [field]: true }),
       {} as Record<string, boolean>
     )
   );
+
+  const sceneGalleries = useMemo<Gallery[]>(
+    () =>
+      stashScene.galleries.map((gallery) => ({
+        id: gallery.id,
+        title: gallery.title,
+        code: undefined,
+        files: gallery.files.map((file) => ({ path: file.path })),
+        folder: gallery.folder ? { path: gallery.folder.path } : null,
+      })),
+    [stashScene.galleries]
+  );
+  const matchedGalleryIDs = useMemo(
+    () =>
+      (scene.galleries ?? []).map(
+        (scrapedGallery) =>
+          sceneGalleries.find((g) => galleryMatchesScraped(g, scrapedGallery))
+            ?.id
+      ),
+    [scene.galleries, sceneGalleries]
+  );
+
+  const [galleryActions, setGalleryActions] = useState<GalleryActionState[]>(
+    () =>
+      (scene.galleries ?? []).map((scrapedGallery) => {
+        const matchedID = sceneGalleries.find((g) =>
+          galleryMatchesScraped(g, scrapedGallery)
+        )?.id;
+
+        return {
+          mode: "auto",
+          matchedID,
+          selectedID: matchedID,
+        };
+      })
+  );
+
+  useEffect(() => {
+    setGalleryActions((scene.galleries ?? []).map((_scrapedGallery, idx) => {
+      const matchedID = matchedGalleryIDs[idx];
+      return {
+        mode: "auto",
+        matchedID,
+        selectedID: matchedID,
+      };
+    }));
+  }, [scene.galleries, matchedGalleryIDs]);
   const [tagIDs, setTagIDs, setInitialTagIDs] = useInitialState<string[]>(
     getInitialTags()
   );
@@ -362,6 +443,61 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       [name]: value,
     });
 
+  function setGalleryAction(
+    galleryIndex: number,
+    nextAction: Partial<GalleryActionState>
+  ) {
+    setGalleryActions((current) => {
+      const next = [...current];
+      next[galleryIndex] = {
+        ...next[galleryIndex],
+        ...nextAction,
+      };
+      return next;
+    });
+  }
+
+  function getScrapedGalleryName(scrapedGallery: GQL.ScrapedGallery) {
+    return (
+      scrapedGallery.title ??
+      scrapedGallery.code ??
+      scrapedGallery.urls?.[0] ??
+      intl.formatMessage({ id: "gallery" })
+    );
+  }
+
+  async function createScrapedGallery(
+    scrapedGallery: GQL.ScrapedGallery
+  ): Promise<string | undefined> {
+    const title =
+      scrapedGallery.title ?? scrapedGallery.code ?? scrapedGallery.urls?.[0];
+    if (!title) {
+      return undefined;
+    }
+
+    const input: GQL.GalleryCreateInput = {
+      title,
+      code: scrapedGallery.code,
+      urls: scrapedGallery.urls,
+      date: scrapedGallery.date,
+      details: scrapedGallery.details,
+      photographer: scrapedGallery.photographer,
+      studio_id: scrapedGallery.studio?.stored_id ?? undefined,
+      tag_ids: (scrapedGallery.tags ?? [])
+        .filter((tag) => tag.stored_id)
+        .map((tag) => tag.stored_id!),
+      performer_ids: (scrapedGallery.performers ?? [])
+        .filter((performer) => performer.stored_id)
+        .map((performer) => performer.stored_id!),
+    };
+
+    const result = await createGallery({
+      variables: { input },
+    });
+
+    return result.data?.galleryCreate?.id;
+  }
+
   async function handleSave() {
     const excludedFieldList = Object.keys(excludedFields).filter(
       (f) => excludedFields[f]
@@ -397,6 +533,79 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     const filteredPerformerIDs = performerIDs.filter(
       (id) => id !== undefined
     ) as string[];
+    const includeGalleries = !excludedFieldList.includes("galleries");
+    let galleryIDs = stashScene.galleries.map((gallery) => gallery.id);
+
+    if (includeGalleries) {
+      try {
+        const galleryURLAdds: Record<string, string[]> = {};
+
+        for (let i = 0; i < (scene.galleries?.length ?? 0); i += 1) {
+          const scrapedGallery = scene.galleries![i];
+          const action = galleryActions[i] ?? {
+            mode: "auto" as GalleryActionMode,
+          };
+
+          if (action.mode === "skip") {
+            continue;
+          }
+
+          const scrapedURLs = uniq((scrapedGallery.urls ?? []).filter(Boolean));
+
+          if (action.mode === "existing") {
+            if (!action.selectedID) {
+              continue;
+            }
+
+            if (scrapedURLs.length > 0) {
+              galleryURLAdds[action.selectedID] = uniq([
+                ...(galleryURLAdds[action.selectedID] ?? []),
+                ...scrapedURLs,
+              ]);
+            }
+            galleryIDs = uniq(galleryIDs.concat(action.selectedID));
+            continue;
+          }
+
+          if (action.matchedID) {
+            if (scrapedURLs.length > 0) {
+              galleryURLAdds[action.matchedID] = uniq([
+                ...(galleryURLAdds[action.matchedID] ?? []),
+                ...scrapedURLs,
+              ]);
+            }
+            galleryIDs = uniq(galleryIDs.concat(action.matchedID));
+            continue;
+          }
+
+          const createdGalleryID = await createScrapedGallery(scrapedGallery);
+          if (createdGalleryID) {
+            galleryIDs = uniq(galleryIDs.concat(createdGalleryID));
+          }
+        }
+
+        for (const [galleryID, galleryURLs] of Object.entries(galleryURLAdds)) {
+          if (!galleryURLs.length) {
+            continue;
+          }
+
+          await bulkGalleryUpdate({
+            variables: {
+              input: {
+                ids: [galleryID],
+                urls: {
+                  mode: GQL.BulkUpdateIdMode.Add,
+                  values: galleryURLs,
+                },
+              },
+            },
+          });
+        }
+      } catch (e) {
+        Toast.error(e);
+        return;
+      }
+    }
 
     const sceneCreateInput: GQL.SceneUpdateInput = {
       id: stashScene.id ?? "",
@@ -409,10 +618,11 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       studio_id: studioID,
       label_id: labelID,
       cover_image: resolveField("cover_image", undefined, imgData),
-      tag_ids: !hideTags ? tagIDs : stashScene.tags.map((t) => t.id),
+      tag_ids: config.setTags ? tagIDs : stashScene.tags.map((t) => t.id),
       stash_ids: stashScene.stash_ids ?? [],
       code: resolveField("code", stashScene.code, scene.code),
       director: resolveField("director", stashScene.director, scene.director),
+      gallery_ids: galleryIDs,
     };
 
     const includeUrl = !excludedFieldList.includes("url");
@@ -770,6 +980,72 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
   };
 
+  const maybeRenderGalleryField = () => {
+    if (!scene.galleries || scene.galleries.length === 0) {
+      return;
+    }
+
+    return scene.galleries.map((scrapedGallery, galleryIndex) => {
+      const action = galleryActions[galleryIndex] ?? {
+        mode: "auto" as GalleryActionMode,
+      };
+      const mergeTargetID = action.matchedID ?? matchedGalleryIDs[galleryIndex];
+      const createOrMergeLabel = mergeTargetID
+        ? intl.formatMessage({ id: "actions.merge" })
+        : intl.formatMessage({ id: "actions.create" });
+      const selectedSource = action.mode === "auto" ? "auto" : action.mode;
+
+      return (
+        <div
+          className="row no-gutters align-items-center mt-2"
+          key={`gallery-${galleryIndex}`}
+        >
+          <div className="entity-name">
+            <FormattedMessage id="gallery" />:
+          </div>
+          <ButtonGroup>
+            <Button
+              variant={selectedSource === "auto" ? "primary" : "secondary"}
+              onClick={() =>
+                setGalleryAction(galleryIndex, {
+                  mode: "auto",
+                  matchedID: mergeTargetID,
+                  selectedID: mergeTargetID,
+                })
+              }
+            >
+              {createOrMergeLabel}
+            </Button>
+            <Button
+              variant={selectedSource === "skip" ? "primary" : "secondary"}
+              onClick={() =>
+                setGalleryAction(galleryIndex, { mode: "skip", selectedID: undefined })
+              }
+            >
+              <FormattedMessage id="actions.skip" />
+            </Button>
+            <GalleryIDSelect
+              ids={action.selectedID ? [action.selectedID] : []}
+              noSelectionString={getScrapedGalleryName(scrapedGallery)}
+              onSelect={(galleries) => {
+                const selectedID = galleries.length ? galleries[0].id : undefined;
+                setGalleryAction(galleryIndex, {
+                  mode: selectedID ? "existing" : "skip",
+                  selectedID,
+                  matchedID: mergeTargetID,
+                });
+              }}
+              className={cx("gallery-select", {
+                "gallery-select-active": selectedSource === "existing",
+              })}
+              isClearable={false}
+            />
+          </ButtonGroup>
+        </div>
+      );
+    });
+  };
+
   async function onCreateLabel(label: GQL.ScrapedLabel) {
     if (!studioID) {
       Toast.error("Studio must be selected before creating a label");
@@ -838,7 +1114,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   );
 
   function maybeRenderTagsField() {
-    if (!config.setTags || hideTags) return;
+    if (!config.setTags) return;
 
     const createTags = scene.tags?.filter((t) => !t.stored_id);
 
@@ -935,6 +1211,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
         <div className="col-lg-6">
           {maybeRenderStudioField()}
           {maybeRenderLabelField()}
+          {maybeRenderGalleryField()}
           {renderPerformerField()}
           {maybeRenderTagsField()}
 

@@ -561,9 +561,43 @@ export const TaggerContext: React.FC = ({ children }) => {
       if (result.data.scrapeSingleScene.length) {
         const resolvedScene = result.data.scrapeSingleScene[0];
 
+        // Keep already scraped relationship data if the follow-up resolve
+        // response is partial.
+        const mergedResolvedScene: IScrapedScene = {
+          ...scene,
+          ...resolvedScene,
+          studio: resolvedScene.studio ?? scene.studio,
+          label: resolvedScene.label ?? scene.label,
+          tags:
+            resolvedScene.tags && resolvedScene.tags.length > 0
+              ? resolvedScene.tags
+              : scene.tags,
+          performers:
+            resolvedScene.performers && resolvedScene.performers.length > 0
+              ? resolvedScene.performers
+              : scene.performers,
+          groups:
+            resolvedScene.groups && resolvedScene.groups.length > 0
+              ? resolvedScene.groups
+              : scene.groups,
+          movies:
+            resolvedScene.movies && resolvedScene.movies.length > 0
+              ? resolvedScene.movies
+              : scene.movies,
+          galleries:
+            resolvedScene.galleries && resolvedScene.galleries.length > 0
+              ? resolvedScene.galleries
+              : scene.galleries,
+          urls:
+            resolvedScene.urls && resolvedScene.urls.length > 0
+              ? resolvedScene.urls
+              : scene.urls,
+          resolved: true,
+        };
+
         // set the scene in the results and mark as resolved
         const newResult = [...searchResults[sceneID].results!];
-        newResult[index] = { ...resolvedScene, resolved: true };
+        newResult[index] = mergedResolvedScene;
         if (isMounted.current) {
           setSearchResults({
             ...searchResults,

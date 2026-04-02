@@ -25,7 +25,7 @@ interface INewScrapedObjects<T> {
   newValues: T[];
   onCreateNew: (value: T) => void;
   onLinkExisting?: (value: T) => void;
-  getName: (value: T) => string;
+  getName: (value: T) => React.ReactNode;
 }
 
 export const NewScrapedObjects = <T,>(props: INewScrapedObjects<T>) => {
@@ -37,14 +37,19 @@ export const NewScrapedObjects = <T,>(props: INewScrapedObjects<T>) => {
 
   const ret = (
     <>
-      {props.newValues.map((t) => (
+      {props.newValues.map((t, index) => {
+        const name = props.getName(t);
+        const keySuffix =
+          typeof name === "string" ? name : `idx-${index.toString()}`;
+
+        return (
         <Badge
           className="tag-item"
           variant="secondary"
-          key={props.getName(t)}
+          key={keySuffix}
           onClick={() => props.onCreateNew(t)}
         >
-          {props.getName(t)}
+          {name}
           <Button className="minimal ml-2">
             <Icon className="fa-fw" icon={faPlus} />
           </Button>
@@ -60,7 +65,8 @@ export const NewScrapedObjects = <T,>(props: INewScrapedObjects<T>) => {
             </Button>
           ) : null}
         </Badge>
-      ))}
+        );
+      })}
     </>
   );
 
@@ -274,6 +280,7 @@ interface IScrapedGalleriesRow {
   onChange: (value: ScrapeResult<Gallery[]>) => void;
   newObjects?: GQL.ScrapedGallery[];
   onCreateNew?: (value: GQL.ScrapedGallery) => void;
+  additionalNewValues?: React.ReactNode;
 }
 
 function getScrapedGalleryName(value: GQL.ScrapedGallery) {
@@ -287,6 +294,7 @@ export const ScrapedGalleriesRow: React.FC<IScrapedGalleriesRow> = ({
   onChange,
   newObjects,
   onCreateNew,
+  additionalNewValues,
 }) => {
   function renderScrapedGalleries(
     scrapeResult: ScrapeResult<Gallery[]>,
@@ -323,12 +331,17 @@ export const ScrapedGalleriesRow: React.FC<IScrapedGalleriesRow> = ({
       onChange={onChange}
       newValues={
         onCreateNew && newObjects && newObjects.length > 0 ? (
-          <NewScrapedObjects
-            newValues={newObjects}
-            onCreateNew={onCreateNew}
-            getName={getScrapedGalleryName}
-          />
-        ) : undefined
+          <>
+            <NewScrapedObjects
+              newValues={newObjects}
+              onCreateNew={onCreateNew}
+              getName={getScrapedGalleryName}
+            />
+            {additionalNewValues}
+          </>
+        ) : (
+          additionalNewValues
+        )
       }
     />
   );
@@ -347,7 +360,7 @@ interface IScrapedObjectsRow<T> {
     isNew?: boolean,
     onChange?: (value: T[]) => void
   ) => JSX.Element;
-  getName: (value: T) => string;
+  getName: (value: T) => React.ReactNode;
 }
 
 export const ScrapedObjectsRow = <T,>(props: IScrapedObjectsRow<T>) => {
@@ -413,6 +426,38 @@ export const ScrapedPerformersRow: React.FC<
     );
   }, [newObjects]);
 
+  function getPerformerName(value: GQL.ScrapedPerformer) {
+    const name = value.name ?? "";
+    const gender = (value.gender ?? "").toUpperCase();
+    if (gender === "FEMALE") {
+      return (
+        <>
+          {name}
+          <span
+            className="performer-gender-symbol performer-gender-female"
+            style={{ color: "#ff5f7a", marginLeft: "0.35rem" }}
+          >
+            ♀
+          </span>
+        </>
+      );
+    }
+    if (gender === "MALE") {
+      return (
+        <>
+          {name}
+          <span
+            className="performer-gender-symbol performer-gender-male"
+            style={{ color: "#57a6ff", marginLeft: "0.35rem" }}
+          >
+            ♂
+          </span>
+        </>
+      );
+    }
+    return name;
+  }
+
   function renderScrapedPerformers(
     scrapeResult: ScrapeResult<GQL.ScrapedPerformer[]>,
     isNew?: boolean,
@@ -429,6 +474,7 @@ export const ScrapedPerformersRow: React.FC<
         id: p.stored_id ?? "",
         name: p.name ?? "",
         alias_list,
+        gender: p.gender,
       };
     });
 
@@ -458,7 +504,7 @@ export const ScrapedPerformersRow: React.FC<
       onChange={onChange}
       newObjects={performersCopy}
       onCreateNew={onCreateNew}
-      getName={(value) => value.name ?? ""}
+      getName={getPerformerName}
       onLinkExisting={onLinkExisting}
     />
   );

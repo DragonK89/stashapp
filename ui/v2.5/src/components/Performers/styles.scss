@@ -254,6 +254,22 @@
   color: initial;
 }
 
+.performer-gender-symbol {
+  display: inline-block;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 0.35rem;
+}
+
+.performer-gender-female {
+  color: #ff5f7a !important;
+}
+
+.performer-gender-male {
+  color: #57a6ff !important;
+}
+
 .performer-select-option {
   .performer-select-row {
     align-items: center;

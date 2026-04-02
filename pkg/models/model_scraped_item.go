@@ -538,6 +538,8 @@ type ScrapedGroup struct {
 	Date     *string        `json:"date"`
 	Rating   *string        `json:"rating"`
 	Director *string        `json:"director"`
+	// Optional scraper-provided identifier.
+	RemoteSiteID *string        `json:"remote_site_id"`
 	URL      *string        `json:"url"` // included for backward compatibility
 	URLs     []string       `json:"urls"`
 	Synopsis *string        `json:"synopsis"`

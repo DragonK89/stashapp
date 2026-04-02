@@ -304,13 +304,19 @@ const _GalleryIDSelect: React.FC<
   }
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!idsChanged) {
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     if (!ids || ids?.length === 0) {
       setValues([]);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     // load the values if we have ids and they haven't been loaded yet
@@ -321,10 +327,16 @@ const _GalleryIDSelect: React.FC<
 
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (!cancelled) {
+        setValues(items);
+      }
     };
 
-    load();
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
   }, [ids, idsChanged, values]);
 
   return <GallerySelect {...props} values={values} onSelect={onSelect} />;

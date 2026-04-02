@@ -37,7 +37,6 @@ import { Group } from "src/components/Groups/GroupSelect";
 import { useScrapedTags } from "src/components/Shared/ScrapeDialog/scrapedTags";
 import { useToast } from "src/hooks/Toast";
 import { useBulkGalleryUpdate } from "src/core/StashService";
-import { Badge, Col, Form, Row } from "react-bootstrap";
 
 function normalizeKey(value?: string | null) {
   return (value ?? "").trim().toLowerCase();
@@ -174,26 +173,39 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
       ),
     [sceneGalleries, scraped.galleries]
   );
-  const matchedGalleryMergeHints = useMemo(
+  const hasMatchedGalleryURLAdds = useMemo(
     () =>
-      Object.entries(matchedGalleryURLAdds).map(([galleryID, galleryURLs]) => {
-        const existingGallery = sceneGalleries.find((g) => g.id === galleryID);
-        const galleryName =
-          existingGallery?.title ??
-          existingGallery?.code ??
-          intl.formatMessage({ id: "gallery" });
+      Object.values(matchedGalleryURLAdds).some(
+        (galleryURLs) => galleryURLs.length > 0
+      ),
+    [matchedGalleryURLAdds]
+  );
+  const galleriesWithMergeDisplay = useMemo(
+    () =>
+      sceneGalleries.map((gallery) => {
+        const urlCount = matchedGalleryURLAdds[gallery.id]?.length ?? 0;
+        if (!urlCount) {
+          return gallery;
+        }
 
+        const galleryName =
+          gallery.title ?? gallery.code ?? intl.formatMessage({ id: "gallery" });
         return {
-          galleryID,
-          galleryName,
-          urlCount: galleryURLs.length,
+          ...gallery,
+          title: `${galleryName} (+${urlCount} URL${
+            urlCount === 1 ? "" : "s"
+          })`,
         };
       }),
-    [matchedGalleryURLAdds, sceneGalleries, intl]
+    [sceneGalleries, matchedGalleryURLAdds, intl]
   );
 
   const [galleries, setGalleries] = useState<ScrapeResult<Gallery[]>>(
-    new ScrapeResult<Gallery[]>(sceneGalleries, undefined)
+    new ScrapeResult<Gallery[]>(
+      sceneGalleries,
+      hasMatchedGalleryURLAdds ? galleriesWithMergeDisplay : undefined,
+      hasMatchedGalleryURLAdds ? true : undefined
+    )
   );
   const [newGalleries, setNewGalleries] = useState<GQL.ScrapedGallery[]>(
     unmatchedScrapedGalleries
@@ -387,29 +399,6 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
           newObjects={newGalleries}
           onCreateNew={createNewGallery}
         />
-        {matchedGalleryMergeHints.length > 0 ? (
-          <Row className="px-3" data-field="gallery-url-merge-notice">
-            <Form.Label column lg="3"></Form.Label>
-            <Col lg="9">
-              <div className="small text-muted mt-2">
-                {intl.formatMessage({
-                  id: "dialogs.scrape_results_gallery_url_merge",
-                  defaultMessage:
-                    "On Apply, scraped gallery URLs will be added to existing galleries:",
-                })}
-              </div>
-              <div className="mt-2">
-                {matchedGalleryMergeHints.map((hint) => (
-                  <Badge className="tag-item" variant="secondary" key={hint.galleryID}>
-                    {`${hint.galleryName} (+${hint.urlCount} URL${
-                      hint.urlCount === 1 ? "" : "s"
-                    })`}
-                  </Badge>
-                ))}
-              </div>
-            </Col>
-          </Row>
-        ) : null}
         <ScrapedStudioRow
           field="studio"
           title={intl.formatMessage({ id: "studios" })}
@@ -509,7 +498,11 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
 
     onClose({
       scrapedScene: makeNewScrapedItem(),
-      galleries: galleries.getNewValue(),
+      galleries: galleries.getNewValue()?.map(
+        (gallery) =>
+          sceneGalleries.find((existingGallery) => existingGallery.id === gallery.id) ??
+          gallery
+      ),
     });
   }
 
@@ -519,6 +512,7 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
         { id: "dialogs.scrape_entity_title" },
         { entity_type: intl.formatMessage({ id: "scene" }) }
       )}
+      dialogClassName="scene-scrape-dialog"
       onClose={(apply) => {
         void handleClose(apply);
       }}

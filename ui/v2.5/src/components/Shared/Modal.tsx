@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useLayoutEffect } from "react";
 import { Button, Modal, Spinner, ModalProps } from "react-bootstrap";
 import { ButtonVariant } from "react-bootstrap/types";
 import { Icon } from "./Icon";
@@ -43,7 +43,7 @@ export const ModalComponent: React.FC<IModal> = ({
   footerButtons,
   leftFooterButtons,
 }) => {
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!show) {
       return;
     }

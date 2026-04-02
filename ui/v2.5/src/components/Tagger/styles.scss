@@ -60,7 +60,8 @@
 
   .performer-select,
   .studio-select,
-  .label-select {
+  .label-select,
+  .gallery-select {
     width: 18rem;
 
     // stylelint-disable-next-line selector-class-pattern
@@ -114,6 +115,22 @@
 .scene-link {
   color: $text-color;
   font-weight: 500;
+}
+
+.performer-gender-symbol {
+  display: inline-block;
+  font-size: 1.05em;
+  font-weight: 700;
+  line-height: 1;
+  margin-left: 0.35rem;
+}
+
+.performer-gender-female {
+  color: #ff5f7a;
+}
+
+.performer-gender-male {
+  color: #57a6ff;
 }
 
 .performer-create-modal {
