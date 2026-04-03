@@ -15,16 +15,21 @@ import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
 import { handleUnsavedChanges } from "src/utils/navigation";
 import { formikUtils } from "src/utils/form";
-import { yupFormikValidate, yupUniqueAliases } from "src/utils/yup";
+import { yupFormikValidate, yupRequiredStringArray } from "src/utils/yup";
 import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { Tag, TagSelect } from "../TagSelect";
 import { useIsMounted } from "src/hooks/state";
 import { Icon } from "src/components/Shared/Icon";
 import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
+import {
+  CustomFieldsInput,
+  formatCustomFieldInput,
+} from "src/components/Shared/CustomFields";
+import { cloneDeep } from "@apollo/client/utilities";
 
 interface ITagEditPanel {
   tag: Partial<GQL.TagDataFragment>;
-  onSubmit: (tag: GQL.TagCreateInput) => Promise<void>;
+  onSubmit: (tag: GQL.TagCreateInput, andNew?: boolean) => Promise<void>;
   onCancel: () => void;
   onDelete: () => void;
   setImage: (image?: string | null) => void;
@@ -58,13 +63,14 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
   const schema = yup.object({
     name: yup.string().required(),
     sort_name: yup.string().ensure(),
-    aliases: yupUniqueAliases(intl, "name"),
+    aliases: yupRequiredStringArray(intl).defined(),
     description: yup.string().ensure(),
     parent_ids: yup.array(yup.string().required()).defined(),
     child_ids: yup.array(yup.string().required()).defined(),
     ignore_auto_tag: yup.boolean().defined(),
     stash_ids: yup.mixed<GQL.StashIdInput[]>().defined(),
     image: yup.string().nullable().optional(),
+    custom_fields: yup.object().required().defined(),
   });
 
   const initialValues = {
@@ -76,15 +82,26 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
     child_ids: (tag?.children ?? []).map((t) => t.id),
     ignore_auto_tag: tag?.ignore_auto_tag ?? false,
     stash_ids: getStashIDs(tag?.stash_ids),
+    custom_fields: cloneDeep(tag?.custom_fields ?? {}),
   };
 
   type InputValues = yup.InferType<typeof schema>;
+
+  const [customFieldsError, setCustomFieldsError] = useState<string>();
+
+  function submit(values: InputValues) {
+    const input = {
+      ...schema.cast(values),
+      custom_fields: formatCustomFieldInput(isNew, values.custom_fields),
+    };
+    onSave(input);
+  }
 
   const formik = useFormik<InputValues>({
     initialValues,
     enableReinitialize: true,
     validate: yupFormikValidate(schema),
-    onSubmit: (values) => onSave(schema.cast(values)),
+    onSubmit: submit,
   });
 
   function onSetParentTags(items: Tag[]) {
@@ -124,7 +141,7 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
     };
   });
 
-  async function onSave(input: InputValues) {
+  async function onSave(input: InputValues, andNew?: boolean) {
     setIsLoading(true);
     try {
       await onSubmit(input);
@@ -137,6 +154,14 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
     if (isMounted.current) {
       setIsLoading(false);
     }
+  }
+
+  async function onSaveAndNewClick() {
+    const input = {
+      ...schema.cast(formik.values),
+      custom_fields: formatCustomFieldInput(isNew, formik.values.custom_fields),
+    };
+    onSave(input, true);
   }
 
   const encodingImage = ImageUtils.usePasteImage(onImageLoad);
@@ -219,6 +244,7 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
             onStashIDSelected(item);
             setIsStashIDSearchOpen(false);
           }}
+          initialQuery={tag?.name ?? ""}
         />
       )}
 
@@ -266,6 +292,14 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
               <Icon icon={faPlus} />
             </Button>
           )}
+
+          <CustomFieldsInput
+            values={formik.values.custom_fields}
+            onChange={(v) => formik.setFieldValue("custom_fields", v)}
+            error={customFieldsError}
+            setError={(e) => setCustomFieldsError(e)}
+          />
+
           <hr />
           {renderInputField("ignore_auto_tag", "checkbox")}
         </Form>
@@ -277,8 +311,11 @@ export const TagEditPanel: React.FC<ITagEditPanel> = ({
           isEditing
           onToggleEdit={onCancel}
           onSave={formik.handleSubmit}
+          onSaveAndNew={isNew ? onSaveAndNewClick : undefined}
           saveDisabled={
-            (!isNew && !formik.dirty) || !isEqual(formik.errors, {})
+            (!isNew && !formik.dirty) ||
+            !isEqual(formik.errors, {}) ||
+            customFieldsError !== undefined
           }
           onImageChange={onImageChange}
           onImageChangeURL={onImageLoad}

@@ -118,6 +118,7 @@ export const SceneMarkersPanel: React.FC<ISceneMarkersPanelProps> = ({
         <PrimaryTags
           sceneMarkers={sceneMarkers}
           onClickMarker={onClickMarker}
+          onLoopMarker={onLoopMarker}
           onEdit={onOpenEditor}
         />
       </div>

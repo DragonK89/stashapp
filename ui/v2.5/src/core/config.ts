@@ -38,6 +38,7 @@ export type DefaultFilters = {
 export type FrontPageContent = ISavedFilterRow | ICustomFilter;
 
 export const defaultMaxOptionsShown = 200;
+export const defaultPreviewVolume = 25;
 export const defaultSceneScrapeWithSource = "scene_id";
 export type SceneScrapeWithSource = "scene_id" | "studio_code" | "title";
 
@@ -49,6 +50,10 @@ export interface IUIConfig {
   showChildStudioContent?: boolean;
   showLinksOnPerformerCard?: boolean;
   showTagCardOnHover?: boolean;
+
+  showStudioText?: boolean;
+
+  previewVolume?: number;
 
   abbreviateCounters?: boolean;
 

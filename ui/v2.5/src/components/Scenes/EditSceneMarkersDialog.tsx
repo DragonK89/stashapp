@@ -13,7 +13,7 @@ import {
   getAggregateState,
   getAggregateStateObject,
 } from "src/utils/bulkUpdate";
-import { BulkUpdateTextInput } from "../Shared/BulkUpdateTextInput";
+import { BulkUpdateFormGroup, BulkUpdateTextInput } from "../Shared/BulkUpdate";
 import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
 import { TagSelect } from "../Shared/Select";
 
@@ -45,6 +45,8 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
     mode: GQL.BulkUpdateIdMode.Add,
   });
   const isMounted = useIsMounted();
+
+  const unsetDisabled = props.selected.length < 2;
 
   const [updateSceneMarkers] = useBulkSceneMarkerUpdate();
 
@@ -128,27 +130,6 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
     }
   }
 
-  function renderTextField(
-    name: string,
-    value: string | undefined | null,
-    setter: (newValue: string | undefined) => void,
-    area: boolean = false
-  ) {
-    return (
-      <Form.Group controlId={name}>
-        <Form.Label>
-          <FormattedMessage id={name} />
-        </Form.Label>
-        <BulkUpdateTextInput
-          value={value === null ? "" : value ?? undefined}
-          valueChanged={(newValue) => setter(newValue)}
-          unsetDisabled={props.selected.length < 2}
-          as={area ? "textarea" : undefined}
-        />
-      </Form.Group>
-    );
-  }
-
   function render() {
     return (
       <ModalComponent
@@ -156,8 +137,12 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
         show
         icon={faPencilAlt}
         header={intl.formatMessage(
-          { id: "actions.edit_entity" },
-          { entityType: intl.formatMessage({ id: "markers" }) }
+          { id: "dialogs.edit_entity_count_title" },
+          {
+            count: props?.selected?.length ?? 1,
+            singularEntity: intl.formatMessage({ id: "marker" }),
+            pluralEntity: intl.formatMessage({ id: "markers" }),
+          }
         )}
         accept={{
           onClick: onSave,
@@ -171,9 +156,13 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
         isRunning={isUpdating}
       >
         <Form>
-          {renderTextField("title", updateInput.title, (newValue) =>
-            setUpdateField({ title: newValue })
-          )}
+          <BulkUpdateFormGroup name="title">
+            <BulkUpdateTextInput
+              value={updateInput.title}
+              valueChanged={(newValue) => setUpdateField({ title: newValue })}
+              unsetDisabled={unsetDisabled}
+            />
+          </BulkUpdateFormGroup>
 
           {!hideTags && (
             <>

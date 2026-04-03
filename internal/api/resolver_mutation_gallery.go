@@ -54,7 +54,10 @@ func (r *mutationResolver) GalleryCreate(ctx context.Context, input GalleryCreat
 	}
 
 	// Populate a new gallery from the input
-	newGallery := models.NewGallery()
+	newGallery := models.CreateGalleryInput{
+		Gallery: &models.Gallery{},
+	}
+	*newGallery.Gallery = models.NewGallery()
 
 	newGallery.Title = strings.TrimSpace(input.Title)
 	newGallery.Code = translator.string(input.Code)
@@ -93,10 +96,12 @@ func (r *mutationResolver) GalleryCreate(ctx context.Context, input GalleryCreat
 		newGallery.URLs = models.NewRelatedStrings([]string{strings.TrimSpace(*input.URL)})
 	}
 
+	newGallery.CustomFields = convertMapJSONNumbers(input.CustomFields)
+
 	// Start the transaction and save the gallery
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
 		qb := r.repository.Gallery
-		if err := qb.Create(ctx, &newGallery, nil); err != nil {
+		if err := qb.Create(ctx, &newGallery); err != nil {
 			return err
 		}
 
@@ -253,6 +258,10 @@ func (r *mutationResolver) galleryUpdate(ctx context.Context, input models.Galle
 		return nil, fmt.Errorf("converting scene ids: %w", err)
 	}
 
+	if input.CustomFields != nil {
+		updatedGallery.CustomFields = handleUpdateCustomFields(*input.CustomFields)
+	}
+
 	// gallery scene is set from the scene only
 
 	gallery, err := qb.UpdatePartial(ctx, galleryID, updatedGallery)
@@ -303,6 +312,10 @@ func (r *mutationResolver) BulkGalleryUpdate(ctx context.Context, input BulkGall
 	updatedGallery.SceneIDs, err = translator.updateIdsBulk(input.SceneIds, "scene_ids")
 	if err != nil {
 		return nil, fmt.Errorf("converting scene ids: %w", err)
+	}
+
+	if input.CustomFields != nil {
+		updatedGallery.CustomFields = handleUpdateCustomFields(*input.CustomFields)
 	}
 
 	ret := []*models.Gallery{}
@@ -358,6 +371,7 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 
 	deleteGenerated := utils.IsTrue(input.DeleteGenerated)
 	deleteFile := utils.IsTrue(input.DeleteFile)
+	destroyFileEntry := utils.IsTrue(input.DestroyFileEntry)
 
 	if err := r.withTxn(ctx, func(ctx context.Context) error {
 		qb := r.repository.Gallery
@@ -378,7 +392,7 @@ func (r *mutationResolver) GalleryDestroy(ctx context.Context, input models.Gall
 
 			galleries = append(galleries, gallery)
 
-			thisImgsDestroyed, err := r.galleryService.Destroy(ctx, gallery, fileDeleter, deleteGenerated, deleteFile)
+			thisImgsDestroyed, err := r.galleryService.Destroy(ctx, gallery, fileDeleter, deleteGenerated, deleteFile, destroyFileEntry)
 			if err != nil {
 				return err
 			}
@@ -924,7 +938,7 @@ func (r *mutationResolver) getOrCreateImageFileForPath(ctx context.Context, loca
 		return 0, fmt.Errorf("stat file %q: %w", localPath, err)
 	}
 
-	parentFolder, err := file.GetOrCreateFolderHierarchy(ctx, r.repository.Folder, filepath.Dir(localPath))
+	parentFolder, err := file.GetOrCreateFolderHierarchy(ctx, r.repository.Folder, filepath.Dir(localPath), manager.GetInstance().Config.GetStashPaths().Paths())
 	if err != nil {
 		return 0, fmt.Errorf("finding/creating folder hierarchy for %q: %w", localPath, err)
 	}
@@ -1107,7 +1121,10 @@ func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Cont
 		newImage.Title = filepath.Base(strings.TrimSpace(imageURL))
 	}
 
-	if err := r.repository.Image.Create(ctx, &newImage, []models.FileID{fileID}); err != nil {
+	if err := r.repository.Image.Create(ctx, &models.CreateImageInput{
+		Image:   &newImage,
+		FileIDs: []models.FileID{fileID},
+	}); err != nil {
 		// Another operation may have created the image concurrently.
 		existingImages, findErr := r.repository.Image.FindByFileID(ctx, fileID)
 		if findErr == nil && len(existingImages) > 0 {

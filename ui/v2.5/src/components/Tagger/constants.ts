@@ -40,6 +40,7 @@ export const initialConfig: ITaggerConfig = {
   excludedStudioFields: DEFAULT_EXCLUDED_STUDIO_FIELDS,
   excludedSceneFields: DEFAULT_EXCLUDED_SCENE_FIELDS,
   createParentStudios: true,
+  createParentTags: true,
 };
 
 export type ParseMode = "auto" | "filename" | "dir" | "path" | "metadata" | "studiocode" | "title";
@@ -61,6 +62,7 @@ export interface ITaggerConfig {
   excludedStudioFields?: string[];
   excludedSceneFields?: string[];
   createParentStudios: boolean;
+  createParentTags: boolean;
 }
 
 export const SCENE_FIELDS = [
@@ -97,9 +99,11 @@ export const PERFORMER_FIELDS = [
   "fake_tits",
   "tattoos",
   "piercings",
-  "career_length",
+  "career_start",
+  "career_end",
   "urls",
   "details",
 ];
 
 export const STUDIO_FIELDS = ["name", "image", "url", "parent_studio"];
+export const TAG_FIELDS = ["name", "description", "aliases", "parent_tags"];

@@ -922,9 +922,13 @@ func (r labelImporterReaderWriter) FindTagByName(ctx context.Context, name strin
 }
 
 func (r labelImporterReaderWriter) CreateStudio(ctx context.Context, studio *models.Studio) error {
-	return r.repository.Studio.Create(ctx, studio)
+	return r.repository.Studio.Create(ctx, &models.CreateStudioInput{
+		Studio: studio,
+	})
 }
 
 func (r labelImporterReaderWriter) CreateTag(ctx context.Context, tag *models.Tag) error {
-	return r.repository.Tag.Create(ctx, tag)
+	return r.repository.Tag.Create(ctx, &models.CreateTagInput{
+		Tag: tag,
+	})
 }

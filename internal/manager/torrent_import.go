@@ -130,7 +130,10 @@ func (s *Manager) ImportTorrentScenesFromFile(ctx context.Context, input ImportT
 				}
 			}
 
-			_, err := s.SceneService.Create(ctx, &newScene, nil, coverImage)
+			_, err := s.SceneService.Create(ctx, models.CreateSceneInput{
+				Scene:      &newScene,
+				CoverImage: coverImage,
+			})
 			return err
 		})
 
@@ -361,4 +364,3 @@ func marshalScrapedScenes(content []scraper.ScrapedContent) ([]*models.ScrapedSc
 	}
 	return ret, nil
 }
-

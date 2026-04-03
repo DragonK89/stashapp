@@ -1,11 +1,3 @@
-import React, {
-  PropsWithChildren,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
-import * as GQL from "src/core/generated-graphql";
 import { QueryResult } from "@apollo/client";
 import {
   Criterion,
@@ -13,25 +5,12 @@ import {
   ILabeledIdCriterion,
 } from "src/models/list-filter/criteria/criterion";
 import { ListFilterModel } from "src/models/list-filter/filter";
-import {
-  EditFilterDialog,
-  useShowEditFilter,
-} from "src/components/List/EditFilterDialog";
-import { FilterTags } from "./FilterTags";
-import { View } from "./views";
+import { useShowEditFilter } from "src/components/List/EditFilterDialog";
 import { IHasID } from "src/utils/data";
-import {
-  ListContext,
-  QueryResultContext,
-  useListContext,
-  useQueryResultContext,
-} from "./ListProvider";
-import { FilterContext, SetFilterURL, useFilter } from "./FilterProvider";
 import { useModal } from "src/hooks/modal";
 import {
   IFilterStateHook,
   IQueryResultHook,
-  useDefaultFilter,
   useEnsureValidPage,
   useFilterOperations,
   useFilterState,
@@ -40,26 +19,23 @@ import {
   useQueryResult,
   useScrollToTopOnPageChange,
 } from "./util";
-import {
-  FilteredListToolbar,
-  IFilteredListToolbar,
-  IItemListOperation,
-} from "./FilteredListToolbar";
-import { PagedList } from "./PagedList";
 import { useConfigurationContext } from "src/hooks/Config";
-import { useZoomKeybinds } from "./ZoomSlider";
-import { DisplayMode } from "src/models/list-filter/types";
 
-interface IFilteredItemList<T extends QueryResult, E extends IHasID = IHasID> {
+interface IFilteredItemList<
+  T extends QueryResult,
+  E extends IHasID = IHasID,
+  M = unknown
+> {
   filterStateProps: IFilterStateHook;
-  queryResultProps: IQueryResultHook<T, E>;
+  queryResultProps: IQueryResultHook<T, E, M>;
 }
 
 // Provides the common state and behaviour for filtered item list components
 export function useFilteredItemList<
   T extends QueryResult,
-  E extends IHasID = IHasID
->(props: IFilteredItemList<T, E>) {
+  E extends IHasID = IHasID,
+  M = unknown
+>(props: IFilteredItemList<T, E, M>) {
   const { configuration: config } = useConfigurationContext();
 
   // States
@@ -74,10 +50,10 @@ export function useFilteredItemList<
     filter,
     ...props.queryResultProps,
   });
-  const { result, items, totalCount, pages } = queryResult;
+  const { result, items, totalCount, pages, metadataInfo } = queryResult;
 
   const listSelect = useListSelect(items);
-  const { onSelectAll, onSelectNone } = listSelect;
+  const { onSelectAll, onSelectNone, onInvertSelection } = listSelect;
 
   const modalState = useModal();
   const { showModal, closeModal } = modalState;
@@ -103,6 +79,7 @@ export function useFilteredItemList<
     onChangePage: setPage,
     onSelectAll,
     onSelectNone,
+    onInvertSelection,
     pages,
     showEditFilter,
   });
@@ -110,6 +87,7 @@ export function useFilteredItemList<
   return {
     filterState,
     queryResult,
+    metadataInfo,
     listSelect,
     modalState,
     showEditFilter,

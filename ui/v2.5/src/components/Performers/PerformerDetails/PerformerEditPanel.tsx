@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Form, Dropdown } from "react-bootstrap";
+import { Button, Form, Dropdown, SplitButton } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import Mousetrap from "mousetrap";
 import * as GQL from "src/core/generated-graphql";
@@ -44,7 +44,7 @@ import {
   yupInputNumber,
   yupInputEnum,
   yupDateString,
-  yupUniqueAliases,
+  yupRequiredStringArray,
   yupUniqueStringList,
 } from "src/utils/yup";
 import { useTagsEdit } from "src/hooks/tagsEdit";
@@ -59,20 +59,13 @@ const isScraper = (
 interface IPerformerDetails {
   performer: Partial<GQL.PerformerDataFragment>;
   isVisible: boolean;
-  onSubmit: (performer: GQL.PerformerCreateInput) => Promise<void>;
+  onSubmit: (
+    performer: GQL.PerformerCreateInput,
+    andNew?: boolean
+  ) => Promise<void>;
   onCancel?: () => void;
   setImage: (image?: string | null) => void;
   setEncodingImage: (loading: boolean) => void;
-}
-
-function customFieldInput(isNew: boolean, input: {}) {
-  if (isNew) {
-    return input;
-  } else {
-    return {
-      full: input,
-    };
-  }
 }
 
 export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
@@ -109,7 +102,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
   const schema = yup.object({
     name: yup.string().required(),
     disambiguation: yup.string().ensure(),
-    alias_list: yupUniqueAliases(intl, "name"),
+    alias_list: yupRequiredStringArray(intl).defined(),
     gender: yupInputEnum(GQL.GenderEnum).nullable().defined(),
     birthdate: yupDateString(intl),
     death_date: yupDateString(intl),
@@ -122,10 +115,11 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     measurements: yup.string().ensure(),
     fake_tits: yup.string().ensure(),
     penis_length: yupInputNumber().positive().nullable().defined(),
-    circumcised: yupInputEnum(GQL.CircumisedEnum).nullable().defined(),
+    circumcised: yupInputEnum(GQL.CircumcisedEnum).nullable().defined(),
     tattoos: yup.string().ensure(),
     piercings: yup.string().ensure(),
-    career_length: yup.string().ensure(),
+    career_start: yupDateString(intl),
+    career_end: yupDateString(intl),
     urls: yupUniqueStringList(intl),
     details: yup.string().ensure(),
     tag_ids: yup.array(yup.string().required()).defined(),
@@ -154,7 +148,8 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     circumcised: performer.circumcised ?? null,
     tattoos: performer.tattoos ?? "",
     piercings: performer.piercings ?? "",
-    career_length: performer.career_length ?? "",
+    career_start: performer.career_start ?? "",
+    career_end: performer.career_end ?? "",
     urls: performer.urls ?? [],
     details: performer.details ?? "",
     tag_ids: (performer.tags ?? []).map((t) => t.id),
@@ -170,7 +165,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
   function submit(values: InputValues) {
     const input = {
       ...schema.cast(values),
-      custom_fields: customFieldInput(isNew, values.custom_fields),
+      custom_fields: formatCustomFieldInput(isNew, values.custom_fields),
     };
     onSave(input);
   }
@@ -255,8 +250,11 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     if (state.fake_tits) {
       formik.setFieldValue("fake_tits", state.fake_tits);
     }
-    if (state.career_length) {
-      formik.setFieldValue("career_length", state.career_length);
+    if (state.career_start) {
+      formik.setFieldValue("career_start", state.career_start);
+    }
+    if (state.career_end) {
+      formik.setFieldValue("career_end", state.career_end);
     }
     if (state.tattoos) {
       formik.setFieldValue("tattoos", state.tattoos);
@@ -347,7 +345,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     ImageUtils.onImageChange(event, onImageLoad);
   }
 
-  async function onSave(input: InputValues) {
+  async function onSave(input: InputValues, andNew?: boolean) {
     setIsLoading(true);
     try {
       await onSubmit(input);
@@ -360,6 +358,15 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
     if (isMounted.current) {
       setIsLoading(false);
     }
+  }
+
+  async function onSaveAndNewClick() {
+    const { values } = formik;
+    const input = {
+      ...schema.cast(values),
+      custom_fields: formatCustomFieldInput(isNew, values.custom_fields),
+    };
+    onSave(input, true);
   }
 
   // set up hotkeys
@@ -609,17 +616,33 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
             <FormattedMessage id="actions.clear_image" />
           </Button>
         </div>
-        <Button
-          variant="success"
-          disabled={
-            (!isNew && !formik.dirty) ||
-            !isEqual(formik.errors, {}) ||
-            customFieldsError !== undefined
-          }
-          onClick={() => formik.submitForm()}
-        >
-          <FormattedMessage id="actions.save" />
-        </Button>
+        {isNew ? (
+          <SplitButton
+            id="save-split-button"
+            variant="success"
+            disabled={
+              !isEqual(formik.errors, {}) || customFieldsError !== undefined
+            }
+            title={intl.formatMessage({ id: "actions.save" })}
+            onClick={() => formik.submitForm()}
+          >
+            <Dropdown.Item onClick={() => onSaveAndNewClick()}>
+              <FormattedMessage id="actions.save_and_new" />
+            </Dropdown.Item>
+          </SplitButton>
+        ) : (
+          <Button
+            variant="success"
+            disabled={
+              (!isNew && !formik.dirty) ||
+              !isEqual(formik.errors, {}) ||
+              customFieldsError !== undefined
+            }
+            onClick={() => formik.submitForm()}
+          >
+            <FormattedMessage id="actions.save" />
+          </Button>
+        )}
       </div>
     );
   }
@@ -687,6 +710,7 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
             onStashIDSelected(item);
             setIsStashIDSearchOpen(false);
           }}
+          initialQuery={performer.name ?? ""}
         />
       )}
 
@@ -724,7 +748,8 @@ export const PerformerEditPanel: React.FC<IPerformerDetails> = ({
         {renderInputField("tattoos", "textarea")}
         {renderInputField("piercings", "textarea")}
 
-        {renderInputField("career_length")}
+        {renderDateField("career_start")}
+        {renderDateField("career_end")}
 
         {renderURLListField("urls", onScrapePerformerURL, urlScrapable)}
 

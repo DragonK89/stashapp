@@ -14,6 +14,7 @@ export const ScrapeDialogContext =
   React.createContext<IScrapeDialogContextState>({});
 
 interface IScrapeDialogProps {
+  className?: string;
   title: string;
   existingLabel?: React.ReactNode;
   scrapedLabel?: React.ReactNode;

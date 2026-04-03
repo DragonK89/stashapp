@@ -109,6 +109,7 @@ const allMenuItems: IMenuItem[] = [
     href: "/scenes",
     icon: faPlayCircle,
     hotkey: "g s",
+    userCreatable: true,
   },
   {
     name: "images",

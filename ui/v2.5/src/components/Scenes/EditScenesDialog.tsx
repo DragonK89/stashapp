@@ -1,34 +1,44 @@
-import React, { useEffect, useState } from "react";
-import { Form, Col, Row } from "react-bootstrap";
-import { FormattedMessage, useIntl } from "react-intl";
-import isEqual from "lodash-es/isEqual";
+import React, { useEffect, useMemo, useState } from "react";
+import { Form } from "react-bootstrap";
+import { useIntl } from "react-intl";
 import { useBulkSceneUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
 import { StudioSelect } from "../Shared/Select";
 import { ModalComponent } from "../Shared/Modal";
 import { MultiSet } from "../Shared/MultiSet";
 import { useToast } from "src/hooks/Toast";
-import * as FormUtils from "src/utils/form";
 import { RatingSystem } from "../Shared/Rating/RatingSystem";
 import { LabelIDSelect } from "src/components/Labels/LabelSelect";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIsMounted } from "src/hooks/state";
 import { IUIConfig } from "src/core/config";
 import {
-  getAggregateInputIDs,
   getAggregateInputValue,
   getAggregateGroupIds,
   getAggregatePerformerIds,
-  getAggregateRating,
-  getAggregateStudioId,
+  getAggregateStateObject,
   getAggregateTagIds,
+  getAggregateStudioId,
 } from "src/utils/bulkUpdate";
 import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
+import { IndeterminateCheckbox } from "../Shared/IndeterminateCheckbox";
+import { BulkUpdateFormGroup, BulkUpdateTextInput } from "../Shared/BulkUpdate";
+import { BulkUpdateDateInput } from "../Shared/DateInput";
+import { getDateError } from "src/utils/yup";
 
 interface IListOperationProps {
   selected: GQL.SlimSceneDataFragment[];
   onClose: (applied: boolean) => void;
 }
+
+const sceneFields = [
+  "code",
+  "rating100",
+  "details",
+  "organized",
+  "director",
+  "date",
+];
 
 export const EditScenesDialog: React.FC<IListOperationProps> = (
   props: IListOperationProps
@@ -61,12 +71,55 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
   const [organized, setOrganized] = useState<boolean | undefined>();
   const isMounted = useIsMounted();
 
-  const [updateScenes] = useBulkSceneUpdate(getSceneInput());
+  const [updateInput, setUpdateInput] = useState<GQL.BulkSceneUpdateInput>({
+    ids: props.selected.map((scene) => {
+      return scene.id;
+    }),
+  });
+
+  const [dateError, setDateError] = useState<string | undefined>();
+
+  const unsetDisabled = props.selected.length < 2;
+
+  const [updateScenes] = useBulkSceneUpdate();
 
   // Network state
   const [isUpdating, setIsUpdating] = useState(false);
 
-  const checkboxRef = React.createRef<HTMLInputElement>();
+  const aggregateState = useMemo(() => {
+    const updateState: Partial<GQL.BulkSceneUpdateInput> = {};
+    const state = props.selected;
+    updateState.studio_id = getAggregateStudioId(props.selected);
+    const updateTagIds = getAggregateTagIds(props.selected);
+    const updatePerformerIds = getAggregatePerformerIds(props.selected);
+    const updateGroupIds = getAggregateGroupIds(props.selected);
+    let first = true;
+
+    state.forEach((scene: GQL.SlimSceneDataFragment) => {
+      getAggregateStateObject(updateState, scene, sceneFields, first);
+      first = false;
+    });
+
+    return {
+      state: updateState,
+      tagIds: updateTagIds,
+      performerIds: updatePerformerIds,
+      groupIds: updateGroupIds,
+    };
+  }, [props.selected]);
+
+  // update initial state from aggregate
+  useEffect(() => {
+    setUpdateInput((current) => ({ ...current, ...aggregateState.state }));
+  }, [aggregateState]);
+
+  useEffect(() => {
+    setDateError(getDateError(updateInput.date ?? "", intl));
+  }, [updateInput.date, intl]);
+
+  function setUpdateField(input: Partial<GQL.BulkSceneUpdateInput>) {
+    setUpdateInput((current) => ({ ...current, ...input }));
+  }
 
   function getSceneInput(): GQL.BulkSceneUpdateInput {
     // need to determine what we are actually setting on each scene
@@ -91,9 +144,10 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
     const aggregateGroupIds = getAggregateGroupIds(props.selected);
 
     const sceneInput: GQL.BulkSceneUpdateInput = {
-      ids: props.selected.map((scene) => {
-        return scene.id;
-      }),
+      ...updateInput,
+      tag_ids: tagIds,
+      performer_ids: performerIds,
+      group_ids: groupIds,
     };
 
     sceneInput.rating100 = getAggregateInputValue(rating100, aggregateRating);
@@ -134,7 +188,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
   async function onSave() {
     setIsUpdating(true);
     try {
-      await updateScenes();
+      await updateScenes({ variables: { input: getSceneInput() } });
       Toast.success(
         intl.formatMessage(
           { id: "toast.updated_entity" },
@@ -295,7 +349,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
         show
         icon={faPencilAlt}
         header={intl.formatMessage(
-          { id: "dialogs.edit_entity_title" },
+          { id: "dialogs.edit_entity_count_title" },
           {
             count: props?.selected?.length ?? 1,
             singularEntity: intl.formatMessage({ id: "scene" }),
@@ -306,6 +360,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
           onClick: onSave,
           text: intl.formatMessage({ id: "actions.apply" }),
         }}
+        disabled={isUpdating || !!dateError}
         cancel={{
           onClick: () => props.onClose(false),
           text: intl.formatMessage({ id: "actions.cancel" }),
@@ -361,12 +416,13 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
             </Form.Group>
           )}
 
-          <Form.Group controlId="performers">
-            <Form.Label>
-              <FormattedMessage id="performers" />
-            </Form.Label>
-            {renderMultiSelect("performers", performerIds)}
-          </Form.Group>
+          <BulkUpdateFormGroup name="scene_code">
+            <BulkUpdateTextInput
+              value={updateInput.code}
+              valueChanged={(newValue) => setUpdateField({ code: newValue })}
+              unsetDisabled={unsetDisabled}
+            />
+          </BulkUpdateFormGroup>
 
           {!hideTags && (
             <Form.Group controlId="tags">
@@ -387,8 +443,7 @@ export const EditScenesDialog: React.FC<IListOperationProps> = (
           )}
 
           <Form.Group controlId="organized">
-            <Form.Check
-              type="checkbox"
+            <IndeterminateCheckbox
               label={intl.formatMessage({ id: "organized" })}
               checked={organized ?? false}
               ref={checkboxRef}

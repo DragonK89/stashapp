@@ -6,32 +6,32 @@ import { useIsMounted } from "src/hooks/state";
 import { IUIConfig } from "src/core/config";
 import { useBulkGroupUpdate } from "src/core/StashService";
 import * as GQL from "src/core/generated-graphql";
-import { ModalComponent } from "../Shared/Modal";
 import { StudioSelect } from "../Shared/Select";
+import { ModalComponent } from "../Shared/Modal";
+import { MultiSet } from "../Shared/MultiSet";
 import { useToast } from "src/hooks/Toast";
-import * as FormUtils from "src/utils/form";
 import { RatingSystem } from "../Shared/Rating/RatingSystem";
 import {
-  getAggregateIds,
-  getAggregateInputIDs,
   getAggregateInputValue,
-  getAggregateRating,
-  getAggregateStudioId,
+  getAggregateStateObject,
   getAggregateTagIds,
+  getAggregateStudioId,
+  getAggregateIds,
 } from "src/utils/bulkUpdate";
 import { faPencilAlt } from "@fortawesome/free-solid-svg-icons";
-import { isEqual } from "lodash-es";
-import { MultiSet } from "../Shared/MultiSet";
-import { ContainingGroupsMultiSet } from "./ContainingGroupsMultiSet";
+import { BulkUpdateFormGroup, BulkUpdateTextInput } from "../Shared/BulkUpdate";
+import { BulkUpdateDateInput } from "../Shared/DateInput";
 import { IRelatedGroupEntry } from "./GroupDetails/RelatedGroupTable";
+import { ContainingGroupsMultiSet } from "./ContainingGroupsMultiSet";
+import { getDateError } from "src/utils/yup";
 
 interface IListOperationProps {
-  selected: GQL.GroupDataFragment[];
+  selected: GQL.ListGroupDataFragment[];
   onClose: (applied: boolean) => void;
 }
 
 export function getAggregateContainingGroups(
-  state: Pick<GQL.GroupDataFragment, "containing_groups">[]
+  state: Pick<GQL.ListGroupDataFragment, "containing_groups">[]
 ) {
   const sortedLists: IRelatedGroupEntry[][] = state.map((o) =>
     o.containing_groups
@@ -70,6 +70,8 @@ function getAggregateContainingGroupInput(
   return undefined;
 }
 
+const groupFields = ["rating100", "synopsis", "director", "date"];
+
 export const EditGroupsDialog: React.FC<IListOperationProps> = (
   props: IListOperationProps
 ) => {
@@ -85,12 +87,15 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
   const [studioId, setStudioId] = useState<string | undefined>();
   const [director, setDirector] = useState<string | undefined>();
 
-  const [tagMode, setTagMode] = React.useState<GQL.BulkUpdateIdMode>(
-    GQL.BulkUpdateIdMode.Add
-  );
-  const [tagIds, setTagIds] = useState<string[]>();
-  const [existingTagIds, setExistingTagIds] = useState<string[]>();
+  const [updateInput, setUpdateInput] = useState<GQL.BulkGroupUpdateInput>({
+    ids: props.selected.map((group) => {
+      return group.id;
+    }),
+  });
 
+  const [tagIds, setTagIds] = useState<GQL.BulkUpdateIds>({
+    mode: GQL.BulkUpdateIdMode.Add,
+  });
   const [containingGroupsMode, setGroupMode] =
     React.useState<GQL.BulkUpdateIdMode>(GQL.BulkUpdateIdMode.Add);
   const [containingGroups, setGroups] = useState<IRelatedGroupEntry[]>();
@@ -98,19 +103,52 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
     useState<IRelatedGroupEntry[]>();
   const isMounted = useIsMounted();
 
-  const [updateGroups] = useBulkGroupUpdate(getGroupInput());
+  const unsetDisabled = props.selected.length < 2;
 
+  const [updateGroups] = useBulkGroupUpdate();
+
+  const [dateError, setDateError] = useState<string | undefined>();
+
+  // Network state
   const [isUpdating, setIsUpdating] = useState(false);
 
-  function getGroupInput(): GQL.BulkGroupUpdateInput {
-    const aggregateRating = getAggregateRating(props.selected);
-    const aggregateStudioId = getAggregateStudioId(props.selected);
-    const aggregateTagIds = getAggregateTagIds(props.selected);
+  const aggregateState = useMemo(() => {
+    const updateState: Partial<GQL.BulkGroupUpdateInput> = {};
+    const state = props.selected;
+    updateState.studio_id = getAggregateStudioId(props.selected);
+    const updateTagIds = getAggregateTagIds(props.selected);
     const aggregateGroups = getAggregateContainingGroups(props.selected);
+    let first = true;
 
+    state.forEach((group: GQL.ListGroupDataFragment) => {
+      getAggregateStateObject(updateState, group, groupFields, first);
+      first = false;
+    });
+
+    return {
+      state: updateState,
+      tagIds: updateTagIds,
+      containingGroups: aggregateGroups,
+    };
+  }, [props.selected]);
+
+  // update initial state from aggregate
+  useEffect(() => {
+    setUpdateInput((current) => ({ ...current, ...aggregateState.state }));
+  }, [aggregateState]);
+
+  useEffect(() => {
+    setDateError(getDateError(updateInput.date ?? "", intl));
+  }, [updateInput.date, intl]);
+
+  function setUpdateField(input: Partial<GQL.BulkGroupUpdateInput>) {
+    setUpdateInput((current) => ({ ...current, ...input }));
+  }
+
+  function getGroupInput(): GQL.BulkGroupUpdateInput {
     const groupInput: GQL.BulkGroupUpdateInput = {
-      ids: props.selected.map((group) => group.id),
-      director,
+      ...updateInput,
+      tag_ids: tagIds,
     };
 
     groupInput.rating100 = getAggregateInputValue(rating100, aggregateRating);
@@ -133,13 +171,11 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
   async function onSave() {
     setIsUpdating(true);
     try {
-      await updateGroups();
+      await updateGroups({ variables: { input: getGroupInput() } });
       Toast.success(
         intl.formatMessage(
           { id: "toast.updated_entity" },
-          {
-            entity: intl.formatMessage({ id: "groups" }).toLocaleLowerCase(),
-          }
+          { entity: intl.formatMessage({ id: "groups" }).toLocaleLowerCase() }
         )
       );
       props.onClose(true);
@@ -151,67 +187,24 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
     }
   }
 
-  useEffect(() => {
-    const state = props.selected;
-    let updateRating: number | undefined;
-    let updateStudioId: string | undefined;
-    let updateTagIds: string[] = [];
-    let updateContainingGroupIds: IRelatedGroupEntry[] = [];
-    let updateDirector: string | undefined;
-    let first = true;
-
-    state.forEach((group: GQL.GroupDataFragment) => {
-      const groupTagIDs = (group.tags ?? []).map((p) => p.id).sort();
-      const groupContainingGroupIDs = (group.containing_groups ?? []).sort(
-        (a, b) => a.group.id.localeCompare(b.group.id)
-      );
-
-      if (first) {
-        first = false;
-        updateRating = group.rating100 ?? undefined;
-        updateStudioId = group.studio?.id ?? undefined;
-        updateTagIds = groupTagIDs;
-        updateContainingGroupIds = groupContainingGroupIDs;
-        updateDirector = group.director ?? undefined;
-      } else {
-        if (group.rating100 !== updateRating) {
-          updateRating = undefined;
-        }
-        if (group.studio?.id !== updateStudioId) {
-          updateStudioId = undefined;
-        }
-        if (group.director !== updateDirector) {
-          updateDirector = undefined;
-        }
-        if (!isEqual(groupTagIDs, updateTagIds)) {
-          updateTagIds = [];
-        }
-        if (!isEqual(groupContainingGroupIDs, updateContainingGroupIds)) {
-          updateTagIds = [];
-        }
-      }
-    });
-
-    setRating(updateRating);
-    setStudioId(updateStudioId);
-    setExistingTagIds(updateTagIds);
-    setExistingContainingGroups(updateContainingGroupIds);
-    setDirector(updateDirector);
-  }, [props.selected]);
-
   function render() {
     return (
       <ModalComponent
         show
         icon={faPencilAlt}
         header={intl.formatMessage(
-          { id: "actions.edit_entity" },
-          { entityType: intl.formatMessage({ id: "groups" }) }
+          { id: "dialogs.edit_entity_count_title" },
+          {
+            count: props?.selected?.length ?? 1,
+            singularEntity: intl.formatMessage({ id: "group" }),
+            pluralEntity: intl.formatMessage({ id: "groups" }),
+          }
         )}
         accept={{
           onClick: onSave,
           text: intl.formatMessage({ id: "actions.apply" }),
         }}
+        disabled={isUpdating || !!dateError}
         cancel={{
           onClick: () => props.onClose(false),
           text: intl.formatMessage({ id: "actions.cancel" }),

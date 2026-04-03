@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import { Button, Form, Col, Row, ButtonGroup } from "react-bootstrap";
+import {
+  Button,
+  Dropdown,
+  Form,
+  Col,
+  Row,
+  ButtonGroup,
+  SplitButton,
+} from "react-bootstrap";
 import Mousetrap from "mousetrap";
 import * as GQL from "src/core/generated-graphql";
 import * as yup from "yup";
@@ -60,7 +68,7 @@ interface IProps {
   initialCoverImage?: string;
   isNew?: boolean;
   isVisible: boolean;
-  onSubmit: (input: GQL.SceneCreateInput) => Promise<void>;
+  onSubmit: (input: GQL.SceneCreateInput, andNew?: boolean) => Promise<void>;
   onDelete?: () => void;
 }
 
@@ -146,6 +154,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
     stash_ids: yup.mixed<GQL.StashIdInput[]>().defined(),
     details: yup.string().ensure(),
     cover_image: yup.string().nullable().optional(),
+    custom_fields: yup.object().required().defined(),
   });
 
   const initialValues = useMemo(
@@ -166,17 +175,28 @@ export const SceneEditPanel: React.FC<IProps> = ({
       stash_ids: getStashIDs(scene.stash_ids),
       details: scene.details ?? "",
       cover_image: initialCoverImage,
+      custom_fields: cloneDeep(scene.custom_fields ?? {}),
     }),
     [scene, initialCoverImage]
   );
 
   type InputValues = yup.InferType<typeof schema>;
 
+  const [customFieldsError, setCustomFieldsError] = useState<string>();
+
+  function submit(values: InputValues) {
+    const input = {
+      ...schema.cast(values),
+      custom_fields: formatCustomFieldInput(isNew, values.custom_fields),
+    };
+    onSave(input);
+  }
+
   const formik = useFormik<InputValues>({
     initialValues,
     enableReinitialize: true,
     validate: yupFormikValidate(schema),
-    onSubmit: (values) => onSave(schema.cast(values)),
+    onSubmit: submit,
   });
 
   const { tags, updateTagsStateFromScraper, tagsControl } = useTagsEdit(
@@ -287,7 +307,7 @@ export const SceneEditPanel: React.FC<IProps> = ({
     formik.setFieldValue("groups", newGroups);
   }
 
-  async function onSave(input: InputValues) {
+  async function onSave(input: InputValues, andNew?: boolean) {
     setIsLoading(true);
     try {
       await onSubmit(input);
@@ -302,6 +322,14 @@ export const SceneEditPanel: React.FC<IProps> = ({
     }
   }
 
+  async function onSaveAndNewClick() {
+    const input = {
+      ...schema.cast(formik.values),
+      custom_fields: formatCustomFieldInput(isNew, formik.values.custom_fields),
+    };
+    onSave(input, true);
+  }
+
   const encodingImage = ImageUtils.usePasteImage(onImageLoad);
 
   function onImageLoad(imageData: string) {
@@ -310,6 +338,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
 
   function onCoverImageChange(event: React.FormEvent<HTMLInputElement>) {
     ImageUtils.onImageChange(event, onImageLoad);
+  }
+
+  function onResetCover() {
+    formik.setFieldValue("cover_image", null);
   }
 
   async function onScrapeClicked(s: GQL.ScraperSourceInput) {
@@ -853,21 +885,41 @@ export const SceneEditPanel: React.FC<IProps> = ({
             onStashIDSelected(item);
             setIsStashIDSearchOpen(false);
           }}
+          initialQuery={scene.title ?? ""}
         />
       )}
       <Form noValidate onSubmit={formik.handleSubmit}>
         <Row className="form-container edit-buttons-container px-3 pt-3">
           <div className="edit-buttons mb-3 pl-0">
-            <Button
-              className="edit-button"
-              variant="primary"
-              disabled={
-                (!isNew && !formik.dirty) || !isEqual(formik.errors, {})
-              }
-              onClick={() => formik.submitForm()}
-            >
-              <FormattedMessage id="actions.save" />
-            </Button>
+            {isNew ? (
+              <SplitButton
+                id="scene-save-split-button"
+                className="edit-button"
+                variant="primary"
+                disabled={
+                  !isEqual(formik.errors, {}) || customFieldsError !== undefined
+                }
+                title={intl.formatMessage({ id: "actions.save" })}
+                onClick={() => formik.submitForm()}
+              >
+                <Dropdown.Item onClick={() => onSaveAndNewClick()}>
+                  <FormattedMessage id="actions.save_and_new" />
+                </Dropdown.Item>
+              </SplitButton>
+            ) : (
+              <Button
+                className="edit-button"
+                variant="primary"
+                disabled={
+                  (!isNew && !formik.dirty) ||
+                  !isEqual(formik.errors, {}) ||
+                  customFieldsError !== undefined
+                }
+                onClick={() => formik.submitForm()}
+              >
+                <FormattedMessage id="actions.save" />
+              </Button>
+            )}
             {onDelete && (
               <Button
                 className="edit-button"
@@ -950,8 +1002,16 @@ export const SceneEditPanel: React.FC<IProps> = ({
                 isEditing
                 onImageChange={onCoverImageChange}
                 onImageURL={onImageLoad}
+                onReset={scene.id ? onResetCover : undefined}
               />
             </Form.Group>
+
+            <CustomFieldsInput
+              values={formik.values.custom_fields}
+              onChange={(v) => formik.setFieldValue("custom_fields", v)}
+              error={customFieldsError}
+              setError={(e) => setCustomFieldsError(e)}
+            />
           </Col>
         </Row>
       </Form>

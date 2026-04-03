@@ -93,7 +93,7 @@ func (h *torrentSceneScanHandler) Handle(ctx context.Context, f models.File, old
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return fmt.Errorf("checking rename target: %w", err)
 		} else {
-			mover := file.NewMover(h.FileRepo, h.FolderRepo)
+			mover := file.NewMover(h.FileRepo, h.FolderRepo, nil)
 			mover.RegisterHooks(ctx)
 			if err := mover.Move(ctx, vf, parent, targetBasename); err != nil {
 				// if move failed due to existence, treat like conflict
@@ -147,4 +147,3 @@ func (h *torrentSceneScanHandler) Handle(ctx context.Context, f models.File, old
 	h.PluginCache.RegisterPostHooks(ctx, newScene.ID, hook.SceneCreatePost, nil, nil)
 	return nil
 }
-
