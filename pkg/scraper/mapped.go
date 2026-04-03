@@ -703,6 +703,12 @@ func (p *postProcessJavascript) Apply(ctx context.Context, value string, q mappe
 		ProgressChan: make(chan float64),
 	}
 
+	// Drain the ProgressChan in a separate goroutine to avoid deadlocking if the JS code calls log.Progress
+	go func() {
+		for range log.ProgressChan {
+		}
+	}()
+
 	if err := log.AddToVM("log", vm); err != nil {
 		logger.Logger.Errorf("error adding log API: %w", err)
 	}

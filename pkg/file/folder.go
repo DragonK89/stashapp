@@ -24,16 +24,20 @@ func GetOrCreateFolderHierarchy(ctx context.Context, fc models.FolderFinderCreat
 
 	if folder == nil {
 		parentPath := filepath.Dir(path)
-		parent, err := GetOrCreateFolderHierarchy(ctx, fc, parentPath)
-		if err != nil {
-			return nil, err
+		var parentID *models.FolderID
+
+		if parentPath != path {
+			parent, err := GetOrCreateFolderHierarchy(ctx, fc, parentPath)
+			if err != nil {
+				return nil, err
+			}
+			parentID = &parent.ID
 		}
 
 		now := time.Now()
-
 		folder = &models.Folder{
 			Path:           path,
-			ParentFolderID: &parent.ID,
+			ParentFolderID: parentID,
 			DirEntry:       models.DirEntry{
 				// leave mod time empty for now - it will be updated when the folder is scanned
 			},
