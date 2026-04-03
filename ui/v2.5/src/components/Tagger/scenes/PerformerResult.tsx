@@ -12,6 +12,8 @@ import { getStashboxBase } from "src/utils/stashbox";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { Link } from "react-router-dom";
 import { LinkButton } from "../LinkButton";
+import { Icon } from "src/components/Shared/Icon";
+import { faVenus, faMars } from "@fortawesome/free-solid-svg-icons";
 
 function getPerformerGenderSymbol(
   performer: GQL.ScrapedPerformer | Performer
@@ -69,7 +71,7 @@ const PerformerLink: React.FC<{
       <span>{name}</span>
       {genderSymbol && (
         <span className={`performer-gender-symbol ${genderClass}`}>
-          {genderSymbol}
+          {genderSymbol === "♀" ? <Icon icon={faVenus} /> : <Icon icon={faMars} />}
         </span>
       )}
       {performer.disambiguation && (

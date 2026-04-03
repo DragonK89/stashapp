@@ -1,4 +1,4 @@
-import { Tabs, Tab, Form } from "react-bootstrap";
+import { Tabs, Tab, Form, Button } from "react-bootstrap";
 import React, { useEffect, useMemo, useState } from "react";
 import { useHistory, Redirect, RouteComponentProps } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -11,7 +11,9 @@ import {
   useFindStudio,
   useStudioUpdate,
   useStudioDestroy,
+  useLabelCreate,
   mutateMetadataAutoTag,
+  queryFindStudiosForSelect,
 } from "src/core/StashService";
 import { DetailsEditNavbar } from "src/components/Shared/DetailsEditNavbar";
 import { ModalComponent } from "src/components/Shared/Modal";
@@ -19,6 +21,7 @@ import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
+import { faSyncAlt } from "@fortawesome/free-solid-svg-icons";
 import { StudioScenesPanel } from "./StudioScenesPanel";
 import { StudioGalleriesPanel } from "./StudioGalleriesPanel";
 import { StudioImagesPanel } from "./StudioImagesPanel";
@@ -31,13 +34,17 @@ import {
   StudioDetailsPanel,
 } from "./StudioDetailsPanel";
 import { StudioGroupsPanel } from "./StudioGroupsPanel";
-import { faTrashAlt } from "@fortawesome/free-solid-svg-icons";
+import { faSearch, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
 import { DetailImage } from "src/components/Shared/DetailImage";
 import { useRatingKeybinds } from "src/hooks/keybinds";
 import { useLoadStickyHeader } from "src/hooks/detailsPanel";
 import { useScrollToTopOnMount } from "src/hooks/scrollToTop";
 import { BackgroundImage } from "src/components/Shared/DetailsPage/BackgroundImage";
+import { Icon } from "src/components/Shared/Icon";
+import { ClearableInput } from "src/components/Shared/ClearableInput";
+import { Dropdown, DropdownButton } from "react-bootstrap";
+import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   TabTitleCounter,
   useTabKey,
@@ -283,6 +290,74 @@ const StudioTabs: React.FC<{
   );
 };
 
+import { OverlayTrigger, Popover, Dropdown as DropdownType } from "react-bootstrap";
+
+const ConvertToLabelDropdown: React.FC<{
+  currentStudioId: string;
+  onSelectStudio: (studio: { id: string; name?: string } | null) => void;
+}> = ({ currentStudioId, onSelectStudio }) => {
+  const intl = useIntl();
+  const [filter, setFilter] = useState("");
+  const [studios, setStudios] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadStudios = async () => {
+      const filterModel = new ListFilterModel(GQL.FilterMode.Studios);
+      filterModel.searchTerm = filter;
+      filterModel.currentPage = 1;
+      filterModel.itemsPerPage = 40;
+      filterModel.sortBy = "name";
+      filterModel.sortDirection = GQL.SortDirectionEnum.Asc;
+      const query = await queryFindStudiosForSelect(filterModel);
+      if (!cancelled && query.data?.findStudios?.studios) {
+        setStudios(query.data.findStudios.studios);
+      }
+    };
+
+    loadStudios();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [filter]);
+
+  const popover = (
+    <Popover id="convert-to-label-popover" className="scraper-menu" style={{ minWidth: "16rem", maxWidth: "24rem" }}>
+      <Popover.Content className="p-0">
+        <div className="dropdown-menu show position-relative border-0 w-100 mt-0" style={{ maxHeight: "300px", overflowY: "auto" }}>
+          <div className="scraper-filter-container">
+            <div className="btn-group">
+              <ClearableInput
+                placeholder={`${intl.formatMessage({ id: "filter" })}...`}
+                value={filter}
+                setValue={setFilter}
+              />
+              <Button className="reload-button" onClick={() => setFilter("")}>
+                <Icon icon={faSyncAlt} />
+              </Button>
+            </div>
+          </div>
+          {studios.filter(s => s.id !== currentStudioId).map((s) => (
+            <div key={s.id} className="dropdown-item" onClick={() => { document.body.click(); onSelectStudio(s); }}>
+              {s.name}
+            </div>
+          ))}
+        </div>
+      </Popover.Content>
+    </Popover>
+  );
+
+  return (
+    <OverlayTrigger trigger="click" placement="bottom-start" rootClose overlay={popover}>
+      <Button variant="primary" className="mr-2">
+        <FormattedMessage id="actions.convert_to_label" defaultMessage="Convert To Label" />
+      </Button>
+    </OverlayTrigger>
+  );
+};
+
 const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
   const history = useHistory();
   const Toast = useToast();
@@ -309,8 +384,41 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
 
   const [updateStudio] = useStudioUpdate();
   const [deleteStudio] = useStudioDestroy({ id: studio.id });
+  const [createLabel] = useLabelCreate();
 
   const showAllCounts = uiConfig?.showChildStudioContent;
+
+  const [isConvertLoading, setIsConvertLoading] = useState<boolean>(false);
+
+  const onConvertToLabel = async (targetStudio: { id: string } | null) => {
+    setIsConvertLoading(true);
+    try {
+      const result = await createLabel({
+        variables: {
+          input: {
+            name: studio.name ?? "",
+            studio_id: targetStudio ? targetStudio.id : "",
+            aliases: studio.aliases,
+            details: studio.details,
+            image: studio.image_path ?? undefined,
+            rating100: studio.rating100,
+            urls: studio.urls,
+            ignore_auto_tag: studio.ignore_auto_tag,
+          },
+        },
+      });
+
+      if (result.data?.labelCreate?.id) {
+        await deleteStudio();
+        Toast.success(intl.formatMessage({ id: "toast.created_entity" }, { entity: intl.formatMessage({ id: "label" }).toLocaleLowerCase() }));
+        history.push(`/labels/${result.data.labelCreate.id}`);
+        return;
+      }
+    } catch (e) {
+      Toast.error(e);
+    }
+    setIsConvertLoading(false);
+  };
 
   const studioImage = useMemo(() => {
     const existingPath = studio.image_path;
@@ -537,6 +645,17 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
                   onAutoTag={onAutoTag}
                   autoTagDisabled={studio.ignore_auto_tag}
                   onDelete={onDelete}
+                  customButtons={
+                    (studio.label_count ?? 0) === 0 ? (
+                      isConvertLoading ? (
+                        <span className="ml-2 mt-2">
+                          <LoadingIndicator inline />
+                        </span>
+                      ) : (
+                        <ConvertToLabelDropdown currentStudioId={studio.id} onSelectStudio={onConvertToLabel} />
+                      )
+                    ) : undefined
+                  }
                 />
               )}
             </div>

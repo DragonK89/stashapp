@@ -39,6 +39,7 @@
     "created_entity": "Created {entity_type}: {entity_name}",
     "customise": "Customise",
     "delete": "Delete",
+    "convert_to_label": "Convert To Label",
     "delete_entity": "Delete {entityType}",
     "delete_file": "Delete file",
     "delete_file_and_funscript": "Delete file (and funscript)",

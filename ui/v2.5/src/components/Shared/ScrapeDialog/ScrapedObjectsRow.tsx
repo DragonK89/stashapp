@@ -18,7 +18,7 @@ import { uniq } from "lodash-es";
 import { CollapseButton } from "../CollapseButton";
 import { Badge, Button } from "react-bootstrap";
 import { Icon } from "../Icon";
-import { faLink, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faLink, faPlus, faVenus, faMars } from "@fortawesome/free-solid-svg-icons";
 import { useIntl } from "react-intl";
 
 interface INewScrapedObjects<T> {
@@ -437,7 +437,7 @@ export const ScrapedPerformersRow: React.FC<
             className="performer-gender-symbol performer-gender-female"
             style={{ color: "#ff5f7a", marginLeft: "0.35rem" }}
           >
-            ♀
+            <Icon icon={faVenus} />
           </span>
         </>
       );
@@ -450,7 +450,7 @@ export const ScrapedPerformersRow: React.FC<
             className="performer-gender-symbol performer-gender-male"
             style={{ color: "#57a6ff", marginLeft: "0.35rem" }}
           >
-            ♂
+            <Icon icon={faMars} />
           </span>
         </>
       );

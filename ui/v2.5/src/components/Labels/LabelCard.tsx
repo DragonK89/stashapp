@@ -10,7 +10,7 @@ import { PopoverCountButton } from "../Shared/PopoverCountButton";
 import { RatingBanner } from "../Shared/RatingBanner";
 import { FavoriteIcon } from "../Shared/FavoriteIcon";
 import { useLabelUpdate } from "src/core/StashService";
-import { faTag } from "@fortawesome/free-solid-svg-icons";
+import { faFlag } from "@fortawesome/free-solid-svg-icons";
 import { OCounterButton } from "../Shared/CountButton";
 import { FormattedMessage } from "react-intl";
 
@@ -88,7 +88,7 @@ export const LabelCard: React.FC<IProps> = ({
     return (
       <HoverPopover placement="bottom" content={popoverContent}>
         <Button className="minimal tag-count">
-          <Icon icon={faTag} />
+          <Icon icon={faFlag} />
           <span>{label.tags.length}</span>
         </Button>
       </HoverPopover>

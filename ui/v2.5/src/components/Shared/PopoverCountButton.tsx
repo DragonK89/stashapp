@@ -6,6 +6,7 @@ import {
   faUser,
   faVideo,
   faMapMarkerAlt,
+  faFlag,
 } from "@fortawesome/free-solid-svg-icons";
 import React from "react";
 import { Button, OverlayTrigger, Tooltip } from "react-bootstrap";
@@ -46,7 +47,8 @@ type PopoverLinkType =
   | "group"
   | "sub_group"
   | "performer"
-  | "studio";
+  | "studio"
+  | "label";
 
 interface IProps {
   className?: string;
@@ -87,6 +89,8 @@ export const PopoverCountButton: React.FC<IProps> = ({
         return faUser;
       case "studio":
         return faVideo;
+      case "label":
+        return faFlag;
     }
   }
 
@@ -131,6 +135,11 @@ export const PopoverCountButton: React.FC<IProps> = ({
         return {
           one: "studio",
           other: "studios",
+        };
+      case "label":
+        return {
+          one: "label",
+          other: "labels",
         };
     }
   }

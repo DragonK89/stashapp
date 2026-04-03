@@ -151,7 +151,7 @@ export const StringListInput: React.FC<IStringListInputProps> = (props) => {
           ))}
         </Form.Group>
       </div>
-      <div className="invalid-feedback mt-n2">{props.errors}</div>
+      <div className="invalid-feedback mt-1">{props.errors}</div>
     </>
   );
 };

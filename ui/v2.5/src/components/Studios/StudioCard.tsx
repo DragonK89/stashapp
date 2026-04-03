@@ -140,6 +140,19 @@ export const StudioCard: React.FC<IProps> = ({
     );
   }
 
+  function maybeRenderLabelsPopoverButton() {
+    if (!studio.label_count) return;
+
+    return (
+      <PopoverCountButton
+        className="label-count"
+        type="label"
+        count={studio.label_count}
+        url={`/studios/${studio.id}?tab=labels`}
+      />
+    );
+  }
+
   function maybeRenderGroupsPopoverButton() {
     if (!studio.group_count || hideGroups) return;
 
@@ -194,6 +207,7 @@ export const StudioCard: React.FC<IProps> = ({
       studio.scene_count ||
       studio.image_count ||
       studio.gallery_count ||
+      studio.label_count ||
       (studio.group_count && !hideGroups) ||
       studio.performer_count ||
       studio.o_counter ||
@@ -207,6 +221,7 @@ export const StudioCard: React.FC<IProps> = ({
             {maybeRenderGroupsPopoverButton()}
             {maybeRenderImagesPopoverButton()}
             {maybeRenderGalleriesPopoverButton()}
+            {maybeRenderLabelsPopoverButton()}
             {maybeRenderPerformersPopoverButton()}
             {maybeRenderTagPopoverButton()}
             {maybeRenderOCounter()}

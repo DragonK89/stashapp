@@ -3,7 +3,8 @@
         "anonymise": "Anonymize",
         "download_anonymised": "Download anonymized",
         "customise": "Customize",
-        "optimise_database": "Optimize Database"
+        "optimise_database": "Optimize Database",
+        "convert_to_label": "Convert To Label"
     },
     "donate": "Donate",
     "galleries": "Galleries",

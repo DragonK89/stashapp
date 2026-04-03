@@ -32,6 +32,8 @@ import { TruncatedText } from "../Shared/TruncatedText";
 import TextUtils from "src/utils/text";
 import { PerformerPopover } from "./PerformerPopover";
 import { Placement } from "react-bootstrap/esm/Overlay";
+import { Icon } from "src/components/Shared/Icon";
+import { faVenus, faMars } from "@fortawesome/free-solid-svg-icons";
 
 export type SelectObject = {
   id: string;
@@ -99,7 +101,7 @@ function renderPerformerGenderSymbol(
         marginLeft: "0.35rem",
       }}
     >
-      {value === "FEMALE" ? "♀" : "♂"}
+      <Icon icon={value === "FEMALE" ? faVenus : faMars} />
     </span>
   );
 }
