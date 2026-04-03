@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -61,9 +62,16 @@ func (r *mutationResolver) LabelCreate(ctx context.Context, input models.LabelCr
 	var imageData []byte
 	if input.Image != nil {
 		var err error
-		imageData, err = utils.ProcessImageInput(ctx, *input.Image)
+		imageData, err = r.getImageFromInternalURL(ctx, *input.Image)
 		if err != nil {
-			return nil, fmt.Errorf("processing image: %w", err)
+			return nil, fmt.Errorf("processing internal image: %w", err)
+		}
+
+		if len(imageData) == 0 {
+			imageData, err = utils.ProcessImageInput(ctx, *input.Image)
+			if err != nil {
+				return nil, fmt.Errorf("processing image: %w", err)
+			}
 		}
 	}
 
@@ -129,9 +137,16 @@ func (r *mutationResolver) LabelUpdate(ctx context.Context, input models.LabelUp
 	imageIncluded := translator.hasField("image")
 	if input.Image != nil {
 		var err error
-		imageData, err = utils.ProcessImageInput(ctx, *input.Image)
+		imageData, err = r.getImageFromInternalURL(ctx, *input.Image)
 		if err != nil {
-			return nil, fmt.Errorf("processing image: %w", err)
+			return nil, fmt.Errorf("processing internal image: %w", err)
+		}
+
+		if len(imageData) == 0 {
+			imageData, err = utils.ProcessImageInput(ctx, *input.Image)
+			if err != nil {
+				return nil, fmt.Errorf("processing image: %w", err)
+			}
 		}
 	}
 
@@ -158,6 +173,64 @@ func (r *mutationResolver) LabelUpdate(ctx context.Context, input models.LabelUp
 
 	r.hookExecutor.ExecutePostHooks(ctx, labelID, hook.LabelUpdatePost, input, translator.getFields())
 	return r.getLabel(ctx, labelID)
+}
+
+func (r *mutationResolver) getImageFromInternalURL(ctx context.Context, urlStr string) ([]byte, error) {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return nil, nil // not a valid URL
+	}
+
+	path := u.Path
+	parts := strings.Split(strings.Trim(path, "/"), "/")
+	// Supported formats:
+	// /studio/{id}/image
+	// /performer/{id}/image
+	// /tag/{id}/image
+	// /label/{id}/image
+	// /scene/{id}/screenshot
+	if len(parts) < 3 {
+		return nil, nil
+	}
+
+	id, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return nil, nil
+	}
+
+	var imageData []byte
+	err = r.withReadTxn(ctx, func(ctx context.Context) error {
+		var err error
+		switch parts[0] {
+		case "studio":
+			if parts[2] == "image" {
+				imageData, err = r.repository.Studio.GetImage(ctx, id)
+			}
+		case "performer":
+			if parts[2] == "image" {
+				imageData, err = r.repository.Performer.GetImage(ctx, id)
+			}
+		case "tag":
+			if parts[2] == "image" {
+				imageData, err = r.repository.Tag.GetImage(ctx, id)
+			}
+		case "label":
+			if parts[2] == "image" {
+				imageData, err = r.repository.Label.GetImage(ctx, id)
+			}
+		case "scene":
+			if parts[2] == "screenshot" || parts[2] == "preview" || parts[2] == "webp" {
+				imageData, err = r.repository.Scene.GetCover(ctx, id)
+			}
+		}
+		return err
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return imageData, nil
 }
 
 func (r *mutationResolver) LabelDestroy(ctx context.Context, input LabelDestroyInput) (bool, error) {

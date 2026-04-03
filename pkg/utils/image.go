@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"regexp"
+	"strings"
 	"time"
 )
 
@@ -36,6 +37,11 @@ func ProcessImageInput(ctx context.Context, imageInput string) ([]byte, error) {
 
 // ReadImageFromURL returns image data from a URL
 func ReadImageFromURL(ctx context.Context, url string) ([]byte, error) {
+	// replace localhost with 127.0.0.1 to avoid DNS lookup issues
+	if strings.Contains(url, "://localhost:") || strings.HasSuffix(url, "://localhost") {
+		url = strings.Replace(url, "://localhost", "://127.0.0.1", 1)
+	}
+
 	client := &http.Client{
 		Transport: &http.Transport{ // ignore insecure certificates
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},

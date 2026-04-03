@@ -154,4 +154,4 @@ mingw32-make server-clean
 
 
 mingw32-make pre-ui generate ui
-mingw32-make flags-static-windows flags-release build
+mingw32-make flags-static flags-release stash
