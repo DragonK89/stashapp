@@ -411,7 +411,7 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
       if (result.data?.labelCreate?.id) {
         await deleteStudio();
         Toast.success(intl.formatMessage({ id: "toast.created_entity" }, { entity: intl.formatMessage({ id: "label" }).toLocaleLowerCase() }));
-        history.push(`/labels/${result.data.labelCreate.id}`);
+        history.replace(`/labels/${result.data.labelCreate.id}`);
         return;
       }
     } catch (e) {
@@ -639,9 +639,9 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
                   isNew={false}
                   isEditing={isEditing}
                   onToggleEdit={() => toggleEditing()}
-                  onSave={() => {}}
-                  onImageChange={() => {}}
-                  onClearImage={() => {}}
+                  onSave={() => { }}
+                  onImageChange={() => { }}
+                  onClearImage={() => { }}
                   onAutoTag={onAutoTag}
                   autoTagDisabled={studio.ignore_auto_tag}
                   onDelete={onDelete}

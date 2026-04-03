@@ -31,7 +31,7 @@ const LabelCreate: React.FC = () => {
       variables: { input },
     });
     if (result.data?.labelCreate?.id) {
-      history.push(`/labels/${result.data.labelCreate.id}`);
+      history.replace(`/labels/${result.data.labelCreate.id}`);
       Toast.success(
         intl.formatMessage(
           { id: "toast.created_entity" },
@@ -69,7 +69,7 @@ const LabelCreate: React.FC = () => {
           label={label}
           onSubmit={onSave}
           onCancel={() => history.push("/labels")}
-          onDelete={() => {}}
+          onDelete={() => { }}
           setImage={setImage}
           setEncodingImage={setEncodingImage}
         />

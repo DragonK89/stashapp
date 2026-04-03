@@ -350,9 +350,9 @@ const LabelPage: React.FC<IProps> = ({ label, tabKey }) => {
                   isNew={false}
                   isEditing={isEditing}
                   onToggleEdit={() => toggleEditing()}
-                  onSave={() => {}}
-                  onImageChange={() => {}}
-                  onClearImage={() => {}}
+                  onSave={() => { }}
+                  onImageChange={() => { }}
+                  onClearImage={() => { }}
                   onAutoTag={onAutoTag}
                   autoTagDisabled={label.ignore_auto_tag}
                   onDelete={onDelete}
