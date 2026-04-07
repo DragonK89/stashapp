@@ -24,7 +24,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { Placement } from "react-bootstrap/esm/Overlay";
 import { sortByRelevance } from "src/utils/query";
 import { PatchComponent, PatchFunction } from "src/patch";
@@ -276,6 +276,7 @@ const _GroupIDSelect: React.FC<IFilterProps & IFilterIDProps<Group>> = (
 
   const [values, setValues] = useState<Group[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Group[]) {
     setValues(items);
@@ -299,15 +300,11 @@ const _GroupIDSelect: React.FC<IFilterProps & IFilterIDProps<Group>> = (
       return;
     }
 
-    // load the values if we have ids and they haven't been loaded yet
-    const filteredValues = values.filter((v) => ids.includes(v.id.toString()));
-    if (filteredValues.length === ids.length) {
-      return;
-    }
-
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (isMounted.current) {
+        setValues(items);
+      }
     };
 
     load();

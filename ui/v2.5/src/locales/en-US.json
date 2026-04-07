@@ -4,7 +4,8 @@
         "download_anonymised": "Download anonymized",
         "customise": "Customize",
         "optimise_database": "Optimize Database",
-        "convert_to_label": "Convert To Label"
+        "convert_to_label": "Convert To Label",
+        "tagger": "Tagger"
     },
     "donate": "Donate",
     "galleries": "Galleries",

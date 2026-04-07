@@ -24,7 +24,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { Placement } from "react-bootstrap/esm/Overlay";
 import { sortByRelevance } from "src/utils/query";
 import { galleryTitle } from "src/core/galleries";
@@ -290,6 +290,7 @@ const _GalleryIDSelect: React.FC<
 
   const [values, setValues] = useState<Gallery[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Gallery[]) {
     setValues(items);
@@ -304,39 +305,18 @@ const _GalleryIDSelect: React.FC<
   }
 
   useEffect(() => {
-    let cancelled = false;
-
-    if (!idsChanged) {
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (!ids || ids?.length === 0) {
-      setValues([]);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    // load the values if we have ids and they haven't been loaded yet
-    const filteredValues = values.filter((v) => ids.includes(v.id.toString()));
-    if (filteredValues.length === ids.length) {
-      return;
-    }
-
     const load = async () => {
+      if (!ids || ids.length === 0) {
+        setValues([]);
+        return;
+      }
       const items = await loadObjectsByID(ids);
-      if (!cancelled) {
+      if (isMounted.current) {
         setValues(items);
       }
     };
 
     void load();
-
-    return () => {
-      cancelled = true;
-    };
   }, [ids, idsChanged, values]);
 
   return <GallerySelect {...props} values={values} onSelect={onSelect} />;

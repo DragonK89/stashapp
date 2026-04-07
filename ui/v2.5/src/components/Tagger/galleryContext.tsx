@@ -39,6 +39,8 @@ export interface ITaggerContextState {
   doMultiGalleryQueryScrape: (
     queries: { galleryID: string; searchVal: string }[]
   ) => Promise<void>;
+  searchAllQueue: string[];
+  setSearchAllQueue: (ids: string[]) => void;
   stopMultiScrape: () => void;
   createNewTag: (
     tag: GQL.ScrapedTag,
@@ -89,6 +91,8 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   setCurrentSource: () => { },
   doGalleryQuery: dummyFn,
   doMultiGalleryQueryScrape: dummyFn,
+  searchAllQueue: [],
+  setSearchAllQueue: () => { },
   stopMultiScrape: () => { },
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
@@ -123,6 +127,7 @@ export const TaggerContext: React.FC = ({ children }) => {
   const [searchResults, setSearchResults] = useState<
     Record<string, IGalleryQueryResult>
   >({});
+  const [searchAllQueue, setSearchAllQueueInternal] = useState<string[]>([]);
 
   const stopping = useRef(false);
 
@@ -309,6 +314,11 @@ export const TaggerContext: React.FC = ({ children }) => {
 
   function stopMultiScrape() {
     stopping.current = true;
+    setSearchAllQueueInternal([]);
+  }
+
+  function setSearchAllQueue(ids: string[]) {
+    setSearchAllQueueInternal(ids);
   }
 
   async function resolveGallery(
@@ -718,6 +728,8 @@ export const TaggerContext: React.FC = ({ children }) => {
         setCurrentSource,
         doGalleryQuery,
         doMultiGalleryQueryScrape,
+        searchAllQueue,
+        setSearchAllQueue,
         stopMultiScrape,
         createNewTag,
         createNewPerformer,

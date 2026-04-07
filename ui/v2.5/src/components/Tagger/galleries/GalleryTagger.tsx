@@ -31,6 +31,11 @@ const GalleryItem: React.FC<{
 
   const errorMessage = useMemo(() => {
     if (searchResult?.error) {
+      if (searchResult.error.toLowerCase().includes("not implemented")) {
+        return intl.formatMessage({
+          id: "component_tagger.results.match_failed_no_result",
+        });
+      }
       return searchResult.error;
     } else if (searchResult && searchResult.results?.length === 0) {
       return intl.formatMessage({
@@ -71,14 +76,17 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
     sources,
     setCurrentSource,
     currentSource,
-    doMultiGalleryQueryScrape,
+    searchAllQueue,
+    setSearchAllQueue,
     stopMultiScrape,
     config,
     searchResults,
     loading,
+    loadingMulti: loadingMultiContext,
+    multiError: multiErrorContext,
   } = useContext(TaggerStateContext);
-  const loadingMulti = loading;
-  const multiError = "";
+  const loadingMulti = loadingMultiContext || searchAllQueue.length > 0;
+  const multiError = multiErrorContext ?? "";
   const [hideUnmatched, setHideUnmatched] = useState(false);
 
   const intl = useIntl();
@@ -187,20 +195,8 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
         <OperationButton
           disabled={loading || loadingMulti}
           operation={async () => {
-            const queries = galleries.map((s) => {
-              const { paths, file: basename } = parsePath(objectPath(s));
-              return {
-                galleryID: s.id,
-                searchVal: prepareQueryString(
-                  s,
-                  paths,
-                  basename,
-                  config.mode,
-                  config.blacklist
-                ),
-              };
-            });
-            await doMultiGalleryQueryScrape(queries);
+            const ids = galleries.map((s) => s.id);
+            setSearchAllQueue(ids);
           }}
         >
           {intl.formatMessage({ id: "component_tagger.verb_search_all" })}

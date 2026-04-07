@@ -24,7 +24,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { Link } from "react-router-dom";
 import { sortByRelevance } from "src/utils/query";
 import { PatchComponent, PatchFunction } from "src/patch";
@@ -372,6 +372,7 @@ const _PerformerIDSelect: React.FC<IFilterProps & IFilterIDProps<Performer>> = (
 
   const [values, setValues] = useState<Performer[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Performer[]) {
     setValues(items);
@@ -403,7 +404,9 @@ const _PerformerIDSelect: React.FC<IFilterProps & IFilterIDProps<Performer>> = (
 
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (isMounted.current) {
+        setValues(items);
+      }
     };
 
     load();

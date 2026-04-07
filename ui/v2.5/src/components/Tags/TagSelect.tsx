@@ -24,7 +24,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { TagPopover } from "./TagPopover";
 import { Placement } from "react-bootstrap/esm/Overlay";
 import { sortByRelevance } from "src/utils/query";
@@ -271,6 +271,7 @@ const _TagIDSelect: React.FC<IFilterProps & IFilterIDProps<Tag>> = (props) => {
 
   const [values, setValues] = useState<Tag[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Tag[]) {
     setValues(items);
@@ -315,7 +316,9 @@ const _TagIDSelect: React.FC<IFilterProps & IFilterIDProps<Tag>> = (props) => {
         return 0;
       });
 
-      setValues(sortedItems);
+      if (isMounted.current) {
+        setValues(sortedItems);
+      }
     };
 
     load();

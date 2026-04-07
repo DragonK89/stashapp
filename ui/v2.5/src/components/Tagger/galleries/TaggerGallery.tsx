@@ -1,4 +1,4 @@
-import React, { useState, useContext, PropsWithChildren, useMemo } from "react";
+import React, { useState, useEffect, useContext, PropsWithChildren, useMemo } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { Link } from "react-router-dom";
 import { Button, Collapse, Form, InputGroup } from "react-bootstrap";
@@ -108,7 +108,8 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
   showLightboxImage,
   index,
 }) => {
-  const { config, currentSource } = useContext(TaggerStateContext);
+  const { config, currentSource, searchAllQueue, setSearchAllQueue } =
+    useContext(TaggerStateContext);
   const [queryString, setQueryString] = useState<string>("");
   const [queryLoading, setQueryLoading] = useState(false);
 
@@ -136,6 +137,17 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
       }
     }
   }
+
+  useEffect(() => {
+    async function runSearch() {
+      if (searchAllQueue.length > 0 && searchAllQueue[0] === gallery.id) {
+        await query();
+        setSearchAllQueue(searchAllQueue.slice(1));
+      }
+    }
+    runSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchAllQueue]);
 
   function renderQueryForm() {
     if (!doGalleryQuery) return;

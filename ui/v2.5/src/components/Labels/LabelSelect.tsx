@@ -22,7 +22,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { StudiosCriterion } from "src/models/list-filter/criteria/studios";
 
 export type Label = Pick<
@@ -171,6 +171,7 @@ const _LabelIDSelect: React.FC<LabelIDSelectProps> = (props) => {
 
   const [values, setValues] = useState<Label[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Label[]) {
     setValues(items);
@@ -193,7 +194,9 @@ const _LabelIDSelect: React.FC<LabelIDSelectProps> = (props) => {
 
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (isMounted.current) {
+        setValues(items);
+      }
     };
 
     load();

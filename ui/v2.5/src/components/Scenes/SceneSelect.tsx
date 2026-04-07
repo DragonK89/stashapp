@@ -23,7 +23,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { Placement } from "react-bootstrap/esm/Overlay";
 import { sortByRelevance } from "src/utils/query";
 import { objectTitle } from "src/core/files";
@@ -232,6 +232,7 @@ const _SceneIDSelect: React.FC<
 
   const [values, setValues] = useState<Scene[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Scene[]) {
     setValues(items);
@@ -263,7 +264,9 @@ const _SceneIDSelect: React.FC<
 
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      setValues(items);
+      if (isMounted.current) {
+        setValues(items);
+      }
     };
 
     load();

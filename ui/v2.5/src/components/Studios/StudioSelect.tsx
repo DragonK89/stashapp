@@ -24,7 +24,7 @@ import {
   IFilterValueProps,
   Option as SelectOption,
 } from "../Shared/FilterSelect";
-import { useCompare } from "src/hooks/state";
+import { useCompare, useIsMounted } from "src/hooks/state";
 import { Placement } from "react-bootstrap/esm/Overlay";
 import { sortByRelevance } from "src/utils/query";
 import { PatchComponent, PatchFunction } from "src/patch";
@@ -239,6 +239,7 @@ const _StudioIDSelect: React.FC<IFilterProps & IFilterIDProps<Studio>> = (
 
   const [values, setValues] = useState<Studio[]>([]);
   const idsChanged = useCompare(ids);
+  const isMounted = useIsMounted();
 
   function onSelect(items: Studio[]) {
     setValues(items);
@@ -268,20 +269,14 @@ const _StudioIDSelect: React.FC<IFilterProps & IFilterIDProps<Studio>> = (
       return;
     }
 
-    let cancelled = false;
-
     const load = async () => {
       const items = await loadObjectsByID(ids);
-      if (!cancelled) {
+      if (isMounted.current) {
         setValues(items);
       }
     };
 
     load();
-
-    return () => {
-      cancelled = true;
-    };
   }, [ids, idsChanged, values]);
 
   return <StudioSelect {...props} values={values} onSelect={onSelect} />;
