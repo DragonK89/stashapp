@@ -54,8 +54,14 @@ func (rs galleryRoutes) Cover(w http.ResponseWriter, r *http.Request) {
 
 	var i *models.Image
 	_ = rs.withReadTxn(r, func(ctx context.Context) error {
+		if !g.URLs.Loaded() {
+			if err := g.LoadURLs(ctx, rs.imageFinder); err != nil {
+				return err
+			}
+		}
+
 		// Find cover image first
-		i, _ = image.FindGalleryCover(ctx, rs.imageFinder, g.ID, config.GetInstance().GetGalleryCoverRegex())
+		i, _ = image.FindGalleryCover(ctx, rs.imageFinder, g, config.GetInstance().GetGalleryCoverRegex())
 		if i == nil {
 			return nil
 		}

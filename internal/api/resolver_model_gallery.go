@@ -68,8 +68,14 @@ func (r *galleryResolver) Folder(ctx context.Context, obj *models.Gallery) (*mod
 
 func (r *galleryResolver) Cover(ctx context.Context, obj *models.Gallery) (ret *models.Image, err error) {
 	if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+		if !obj.URLs.Loaded() {
+			if err := obj.LoadURLs(ctx, r.repository.Gallery); err != nil {
+				return err
+			}
+		}
+
 		// Find cover image first
-		ret, err = image.FindGalleryCover(ctx, r.repository.Image, obj.ID, config.GetInstance().GetGalleryCoverRegex())
+		ret, err = image.FindGalleryCover(ctx, r.repository.Image, obj, config.GetInstance().GetGalleryCoverRegex())
 		return err
 	}); err != nil {
 		return nil, err

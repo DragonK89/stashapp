@@ -104,9 +104,9 @@ func FindByGalleryID(ctx context.Context, r Queryer, galleryID int, sortBy strin
 	}, &findFilter)
 }
 
-func FindGalleryCover(ctx context.Context, r CoverQueryer, galleryID int, galleryCoverRegex string) (*models.Image, error) {
+func FindGalleryCover(ctx context.Context, r CoverQueryer, g *models.Gallery, galleryCoverRegex string) (*models.Image, error) {
 	const useCoverJpg = true
-	img, err := findGalleryCover(ctx, r, galleryID, useCoverJpg, galleryCoverRegex)
+	img, err := findGalleryCover(ctx, r, g, useCoverJpg, galleryCoverRegex)
 	if err != nil {
 		return nil, err
 	}
@@ -116,11 +116,11 @@ func FindGalleryCover(ctx context.Context, r CoverQueryer, galleryID int, galler
 	}
 
 	// return the first image in the gallery
-	return findGalleryCover(ctx, r, galleryID, !useCoverJpg, galleryCoverRegex)
+	return findGalleryCover(ctx, r, g, !useCoverJpg, galleryCoverRegex)
 }
 
-func findGalleryCover(ctx context.Context, r CoverQueryer, galleryID int, useCoverJpg bool, galleryCoverRegex string) (*models.Image, error) {
-	img, err := r.CoverByGalleryID(ctx, galleryID)
+func findGalleryCover(ctx context.Context, r CoverQueryer, g *models.Gallery, useCoverJpg bool, galleryCoverRegex string) (*models.Image, error) {
+	img, err := r.CoverByGalleryID(ctx, g.ID)
 	if err != nil {
 		return nil, err
 	} else if img != nil {
@@ -130,6 +130,9 @@ func findGalleryCover(ctx context.Context, r CoverQueryer, galleryID int, useCov
 	// try to find cover.jpg in the gallery
 	perPage := 1
 	sortBy := "path"
+	if g.Code != "" || (g.URLs.Loaded() && len(g.URLs.List()) > 0) {
+		sortBy = "title"
+	}
 	sortDir := models.SortDirectionEnumAsc
 
 	findFilter := models.FindFilterType{
@@ -140,7 +143,7 @@ func findGalleryCover(ctx context.Context, r CoverQueryer, galleryID int, useCov
 
 	imageFilter := &models.ImageFilterType{
 		Galleries: &models.MultiCriterionInput{
-			Value:    []string{strconv.Itoa(galleryID)},
+			Value:    []string{strconv.Itoa(g.ID)},
 			Modifier: models.CriterionModifierIncludes,
 		},
 	}

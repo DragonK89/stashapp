@@ -6,12 +6,15 @@ import {
   RouteComponentProps,
   Redirect,
 } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
   mutateMetadataScan,
   mutateResetGalleryCover,
+  mutateSetGalleryCover,
+  queryFindImages,
   useFindGallery,
   useGalleryUpdate,
 } from "src/core/StashService";
@@ -45,6 +48,8 @@ import { useConfigurationContext } from "src/hooks/Config";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { goBackOrReplace } from "src/utils/history";
 import { FormattedDate } from "src/components/Shared/Date";
+import { ListFilterModel } from "src/models/list-filter/filter";
+import { GalleriesCriterion } from "src/models/list-filter/criteria/galleries";
 
 interface IProps {
   gallery: GQL.GalleryDataFragment;
@@ -58,6 +63,7 @@ interface IGalleryParams {
 
 export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
   const history = useHistory();
+  const location = useLocation();
   const Toast = useToast();
   const intl = useIntl();
   const { configuration } = useConfigurationContext();
@@ -160,6 +166,45 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
     }
   }
 
+  async function onSetCover() {
+    try {
+      const searchParams = new URLSearchParams(location.search);
+      const sortBy = searchParams.get("sortby") ?? "path";
+      const sortDirParam = searchParams.get("sortdir")?.toUpperCase();
+      const sortDir = sortDirParam === "DESC" ? GQL.SortDirectionEnum.Desc : GQL.SortDirectionEnum.Asc;
+
+      const filter = new ListFilterModel(GQL.FilterMode.Images);
+      const galleryCriterion = new GalleriesCriterion();
+      galleryCriterion.value = [{ id: gallery.id!, label: galleryTitle(gallery) }];
+      filter.criteria.push(galleryCriterion);
+      filter.sortBy = sortBy;
+      filter.sortDirection = sortDir;
+      filter.itemsPerPage = 1;
+
+      const result = await queryFindImages(filter);
+      const images = result.data?.findImages?.images;
+      if (images && images.length > 0) {
+        await mutateSetGalleryCover({
+          gallery_id: gallery.id!,
+          cover_image_id: images[0].id,
+        });
+
+        Toast.success(
+          intl.formatMessage(
+            { id: "toast.updated_entity" },
+            {
+              entity: intl.formatMessage({ id: "gallery" }).toLocaleLowerCase(),
+            }
+          )
+        );
+      } else {
+        Toast.error("No images found in gallery");
+      }
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
+
   async function onClickChapter(imageindex: number) {
     showLightbox(imageindex - 1);
   }
@@ -204,6 +249,12 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
               <FormattedMessage id="actions.rescan" />
             </Dropdown.Item>
           ) : undefined}
+          <Dropdown.Item
+            className="bg-secondary text-white"
+            onClick={() => onSetCover()}
+          >
+            <FormattedMessage id="actions.set_cover" />
+          </Dropdown.Item>
           <Dropdown.Item
             className="bg-secondary text-white"
             onClick={() => onResetCover()}
