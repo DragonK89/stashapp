@@ -1714,6 +1714,42 @@ export const mutateAddGalleryImages = (input: GQL.GalleryAddInput) =>
     },
   });
 
+export const useAddGalleryImagesByUrlMutation = () =>
+  GQL.useAddGalleryImagesByUrlMutation({
+    update(cache, result, { variables }) {
+      const added = result.data?.addGalleryImagesByURL;
+      if (!added || !variables) return;
+
+      const galleryCacheID = cache.identify({
+        __typename: "Gallery",
+        id: variables.gallery_id,
+      });
+
+      if (galleryCacheID) {
+        cache.evict({
+          id: galleryCacheID,
+          fieldName: "image_count",
+        });
+        cache.evict({
+          id: galleryCacheID,
+          fieldName: "images",
+        });
+      }
+
+      for (const id of added.linked_ids) {
+        cache.evict({
+          id: cache.identify({ __typename: "Image", id }),
+          fieldName: "galleries",
+        });
+      }
+
+      evictQueries(cache, [
+        GQL.FindGalleriesDocument, // filter by image count
+        GQL.FindImagesDocument, // filter by gallery
+      ]);
+    },
+  });
+
 export const mutateAddGalleryImagesByURL = (
   input: AddGalleryImagesByURLMutationVariables
 ) =>
@@ -2354,6 +2390,8 @@ export const mutateDeleteFiles = (ids: string[]) =>
 
 export const useListSceneScrapers = () => GQL.useListSceneScrapersQuery();
 
+
+
 export const queryScrapeScene = (
   source: GQL.ScraperSourceInput,
   sceneId: string
@@ -2406,7 +2444,9 @@ export const queryScrapeSceneQueryFragment = (
     fetchPolicy: "network-only",
   });
 
+
 export const stashBoxSceneBatchQuery = (
+
   sceneIds: string[],
   stashBoxEndpoint: string
 ) =>
@@ -2566,19 +2606,38 @@ export const useListGalleryScrapers = () => GQL.useListGalleryScrapersQuery();
 
 export const useListImageScrapers = () => GQL.useListImageScrapersQuery();
 
-export const queryScrapeGallery = (scraperId: string, galleryId: string) =>
+export const queryScrapeGallery = (
+  source: GQL.ScraperSourceInput,
+  galleryId: string
+) =>
   client.query<GQL.ScrapeSingleGalleryQuery>({
     query: GQL.ScrapeSingleGalleryDocument,
     variables: {
-      source: {
-        scraper_id: scraperId,
-      },
+      source,
       input: {
-        gallery_id: galleryId,
+        gallery_input: {
+          id: galleryId,
+        },
       },
     },
     fetchPolicy: "network-only",
   });
+
+export const queryScrapeGalleryQuery = (
+  source: GQL.ScraperSourceInput,
+  q: string
+) =>
+  client.query<GQL.ScrapeSingleGalleryQuery>({
+    query: GQL.ScrapeSingleGalleryDocument,
+    variables: {
+      source,
+      input: {
+        query: q,
+      },
+    },
+    fetchPolicy: "network-only",
+  });
+
 
 export const queryScrapeGalleryURL = (url: string) =>
   client.query<GQL.ScrapeGalleryUrlQuery>({

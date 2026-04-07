@@ -17,6 +17,10 @@ import { GalleryCardGrid } from "./GalleryGridCard";
 import { View } from "../List/views";
 import { PatchComponent } from "src/patch";
 import { IItemListOperation } from "../List/FilteredListToolbar";
+import { Tagger } from "../Tagger/galleries/GalleryTagger";
+import { TaggerContext } from "../Tagger/galleryContext";
+
+
 
 function getItems(result: GQL.FindGalleriesQueryResult) {
   return result?.data?.findGalleries?.galleries ?? [];
@@ -58,7 +62,18 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
         text: intl.formatMessage({ id: "actions.export_all" }),
         onClick: onExportAll,
       },
+      {
+        text: intl.formatMessage({ id: "actions.tagger" }),
+        onClick: async (
+          _result: GQL.FindGalleriesQueryResult,
+          filter: ListFilterModel
+        ) => {
+          filter.displayMode = DisplayMode.Tagger;
+        },
+      },
     ];
+
+
 
     function addKeybinds(
       result: GQL.FindGalleriesQueryResult,
@@ -159,7 +174,15 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
             </div>
           );
         }
+        if (filter.displayMode === DisplayMode.Tagger) {
+          return (
+            <TaggerContext>
+              <Tagger galleries={result.data.findGalleries.galleries} />
+            </TaggerContext>
+          );
+        }
       }
+
 
       return (
         <>

@@ -7,8 +7,9 @@ export interface ITaggerSource {
   id: string;
   sourceInput: ScraperSourceInput;
   displayName: string;
-  supportSceneQuery?: boolean;
   supportSceneFragment?: boolean;
+  supportGalleryQuery?: boolean;
+  supportedURLs?: string[];
 }
 
 export const DEFAULT_BLACKLIST = [
@@ -25,6 +26,7 @@ export const DEFAULT_BLACKLIST = [
 export const DEFAULT_EXCLUDED_PERFORMER_FIELDS = ["name"];
 export const DEFAULT_EXCLUDED_STUDIO_FIELDS = ["name"];
 export const DEFAULT_EXCLUDED_SCENE_FIELDS: string[] = [];
+export const DEFAULT_EXCLUDED_GALLERY_FIELDS: string[] = [];
 
 export const initialConfig: ITaggerConfig = {
   blacklist: DEFAULT_BLACKLIST,
@@ -39,6 +41,7 @@ export const initialConfig: ITaggerConfig = {
   markSceneAsOrganizedOnSave: false,
   excludedStudioFields: DEFAULT_EXCLUDED_STUDIO_FIELDS,
   excludedSceneFields: DEFAULT_EXCLUDED_SCENE_FIELDS,
+  excludedGalleryFields: DEFAULT_EXCLUDED_GALLERY_FIELDS,
   createParentStudios: true,
 };
 
@@ -60,6 +63,7 @@ export interface ITaggerConfig {
   markSceneAsOrganizedOnSave?: boolean;
   excludedStudioFields?: string[];
   excludedSceneFields?: string[];
+  excludedGalleryFields?: string[];
   createParentStudios: boolean;
 }
 

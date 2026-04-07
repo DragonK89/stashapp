@@ -23,11 +23,13 @@ import { PatchComponent } from "src/patch";
 interface IGalleryPreviewProps {
   gallery: GQL.SlimGalleryDataFragment;
   onScrubberClick?: (index: number) => void;
+  noScrubber?: boolean;
 }
 
 export const GalleryPreview: React.FC<IGalleryPreviewProps> = ({
   gallery,
   onScrubberClick,
+  noScrubber,
 }) => {
   const [imgSrc, setImgSrc] = useState<string | undefined>(
     gallery.paths.cover ?? undefined
@@ -43,7 +45,7 @@ export const GalleryPreview: React.FC<IGalleryPreviewProps> = ({
           src={imgSrc}
         />
       )}
-      {gallery.image_count > 0 && (
+      {gallery.image_count > 0 && !noScrubber && (
         <GalleryPreviewScrubber
           previewPath={gallery.paths.preview}
           defaultPath={gallery.paths.cover ?? ""}
