@@ -39,6 +39,7 @@ func (r *mutationResolver) LabelCreate(ctx context.Context, input models.LabelCr
 	newLabel.Details = translator.string(input.Details)
 	newLabel.IgnoreAutoTag = translator.bool(input.IgnoreAutoTag)
 	newLabel.Aliases = models.NewRelatedStrings(stringslice.TrimSpace(input.Aliases))
+	newLabel.StashIDs = models.NewRelatedStashIDs(models.StashIDInputs(input.StashIds).ToStashIDs())
 
 	var err error
 
@@ -67,7 +68,11 @@ func (r *mutationResolver) LabelCreate(ctx context.Context, input models.LabelCr
 			return nil, fmt.Errorf("processing internal image: %w", err)
 		}
 
-		if len(imageData) == 0 {
+		if len(imageData) > 0 {
+			// #3595 - hotfix for missing foreign keys in labels table.
+			// Duplicate the image to ensure it is not deleted when the source object is deleted.
+			imageData = append(imageData, 0)
+		} else {
 			imageData, err = utils.ProcessImageInput(ctx, *input.Image)
 			if err != nil {
 				return nil, fmt.Errorf("processing image: %w", err)
@@ -126,6 +131,7 @@ func (r *mutationResolver) LabelUpdate(ctx context.Context, input models.LabelUp
 
 	updatedLabel.Aliases = translator.updateStrings(input.Aliases, "aliases")
 	updatedLabel.URLs = translator.updateStrings(input.Urls, "urls")
+	updatedLabel.StashIDs = translator.updateStashIDs(models.StashIDInputs(input.StashIds), "stash_ids")
 
 	updatedLabel.TagIDs, err = translator.updateIds(input.TagIds, "tag_ids")
 	if err != nil {
@@ -183,43 +189,49 @@ func (r *mutationResolver) getImageFromInternalURL(ctx context.Context, urlStr s
 
 	path := u.Path
 	parts := strings.Split(strings.Trim(path, "/"), "/")
-	// Supported formats:
-	// /studio/{id}/image
-	// /performer/{id}/image
-	// /tag/{id}/image
-	// /label/{id}/image
-	// /scene/{id}/screenshot
-	if len(parts) < 3 {
-		return nil, nil
+	var entityType string
+	var id int
+	var subType string
+
+	for i := 0; i < len(parts)-2; i++ {
+		p := parts[i]
+		if p == "studio" || p == "performer" || p == "tag" || p == "label" || p == "scene" {
+			var err error
+			id, err = strconv.Atoi(parts[i+1])
+			if err == nil {
+				entityType = p
+				subType = parts[i+2]
+				break
+			}
+		}
 	}
 
-	id, err := strconv.Atoi(parts[1])
-	if err != nil {
+	if entityType == "" {
 		return nil, nil
 	}
 
 	var imageData []byte
 	err = r.withReadTxn(ctx, func(ctx context.Context) error {
 		var err error
-		switch parts[0] {
+		switch entityType {
 		case "studio":
-			if parts[2] == "image" {
+			if subType == "image" {
 				imageData, err = r.repository.Studio.GetImage(ctx, id)
 			}
 		case "performer":
-			if parts[2] == "image" {
+			if subType == "image" {
 				imageData, err = r.repository.Performer.GetImage(ctx, id)
 			}
 		case "tag":
-			if parts[2] == "image" {
+			if subType == "image" {
 				imageData, err = r.repository.Tag.GetImage(ctx, id)
 			}
 		case "label":
-			if parts[2] == "image" {
+			if subType == "image" {
 				imageData, err = r.repository.Label.GetImage(ctx, id)
 			}
 		case "scene":
-			if parts[2] == "screenshot" || parts[2] == "preview" || parts[2] == "webp" {
+			if subType == "screenshot" || subType == "preview" || subType == "webp" {
 				imageData, err = r.repository.Scene.GetCover(ctx, id)
 			}
 		}
@@ -299,6 +311,7 @@ func (r *mutationResolver) BulkLabelUpdate(ctx context.Context, input BulkLabelU
 	}
 
 	updatedLabel.URLs = translator.updateStringsBulk(input.Urls, "urls")
+	updatedLabel.StashIDs = translator.updateStashIDsBulk(translator.toStashIDInputs(input.StashIds), "stash_ids")
 
 	updatedLabel.TagIDs, err = translator.updateIdsBulk(input.TagIds, "tag_ids")
 	if err != nil {

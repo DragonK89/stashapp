@@ -20,6 +20,7 @@ import ImageUtils from "src/utils/image";
 import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { useFormik } from "formik";
 import { Prompt } from "react-router-dom";
+
 import { useConfigurationContext } from "src/hooks/Config";
 import {
   defaultSceneScrapeWithSource,
@@ -376,10 +377,6 @@ export const SceneEditPanel: React.FC<IProps> = ({
               resolvedScene.groups && resolvedScene.groups.length > 0
                 ? resolvedScene.groups
                 : selectedScene.groups,
-            movies:
-              resolvedScene.movies && resolvedScene.movies.length > 0
-                ? resolvedScene.movies
-                : selectedScene.movies,
             galleries:
               resolvedScene.galleries && resolvedScene.galleries.length > 0
                 ? resolvedScene.galleries
@@ -423,10 +420,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
     scraperID: string,
     scrapeType: GQL.ScrapeType
   ) {
-    const scraper = (Scrapers?.data?.listScrapers ?? []).find(
+    const foundScraper = (Scrapers?.data?.listScrapers ?? []).find(
       (x) => x.id === scraperID
     );
-    return scraper?.scene?.supported_scrapes.includes(scrapeType) ?? false;
+    return foundScraper?.scene?.supported_scrapes.includes(scrapeType) ?? false;
   }
 
   function onScrapeQueryClicked(s: GQL.ScraperSourceInput) {

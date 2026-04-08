@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import cx from "classnames";
-import { Badge, Button, ButtonGroup, Col, Form, Row } from "react-bootstrap";
+import { Badge, Button, Col, Form, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import uniq from "lodash-es/uniq";
-import { blobToBase64 } from "base64-blob";
+
 import { faLink, faPlus, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 
 import * as GQL from "src/core/generated-graphql";
@@ -24,9 +24,7 @@ import * as FormUtils from "src/utils/form";
 import { isLikelyImageURL, extractImageURLs, extractNonImageURLs } from "./utils";
 
 
-// Duration and Fingerprint status stubs for Gallery
-const getDurationStatus = () => "";
-const getFingerprintStatus = () => null;
+
 
 interface IStashSearchResultProps {
   scene: IScrapedScene;
@@ -47,7 +45,6 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     createNewTag,
     createNewPerformer,
     createNewStudio,
-    updateStudio,
     updateTag,
     resolveGallery: resolveScene,
     currentSource,
@@ -59,7 +56,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 
   const performers = useMemo(
     () =>
-      scene.performers?.filter((p) => {
+      scene.performers?.filter((p: GQL.ScrapedPerformer) => {
         const gender = p.gender ? stringToGender(p.gender, true) : undefined;
         return !gender || performerGenders.includes(gender);
       }) ?? [],
@@ -74,7 +71,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }, [stashScene]);
 
   const getInitialPerformers = useCallback(() => {
-    return performers.map((p) => p.stored_id ?? undefined);
+    return performers.map((p: GQL.ScrapedPerformer) => p.stored_id ?? undefined);
   }, [performers]);
 
   const getInitialStudio = useCallback(() => {
@@ -127,8 +124,8 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     : undefined;
 
   const stashBoxURL = useMemo(() => {
-    if (stashBoxBaseURL && (scene as any).remote_site_id) {
-      return `${stashBoxBaseURL}galleries/${(scene as any).remote_site_id}`;
+    if (stashBoxBaseURL && (scene as { remote_site_id?: string }).remote_site_id) {
+      return `${stashBoxBaseURL}galleries/${(scene as { remote_site_id?: string }).remote_site_id}`;
     }
   }, [scene, stashBoxBaseURL]);
 
@@ -159,8 +156,8 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       studio_id: studioID,
       tag_ids: config.setTags ? tagIDs : stashScene.tags.map((t) => t.id),
       // gallery-specific fields
-      code: (scene as any).code ? resolveField("code", (stashScene as any).code, (scene as any).code) : (stashScene as any).code,
-      photographer: (scene as any).photographer ? resolveField("photographer", (stashScene as any).photographer, (scene as any).photographer) : (stashScene as any).photographer,
+      code: (scene as { code?: string }).code ? resolveField("code", (stashScene as { code?: string }).code, (scene as { code?: string }).code) : (stashScene as { code?: string }).code,
+      photographer: (scene as { photographer?: string }).photographer ? resolveField("photographer", (stashScene as { photographer?: string }).photographer, (scene as { photographer?: string }).photographer) : (stashScene as { photographer?: string }).photographer,
     };
 
     if (!excludedFieldList.includes("url") && scene.urls) {
@@ -248,7 +245,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 
   const renderStudioDate = () => {
     const studio = scene.studio?.name;
-    const date = scene.date;
+    const { date } = scene;
 
     let text = studio || "";
 
@@ -266,7 +263,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       return (
         <div>
           <FormattedMessage id="performers" />
-          : {scene?.performers?.map((p) => p.name).join(", ")}
+          : {scene?.performers?.map((p: GQL.ScrapedPerformer) => p.name).join(", ")}
         </div>
       );
     }
@@ -307,7 +304,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   const maybeRenderPhotographer = () => {
-    const photographer = (scene as any).photographer;
+    const { photographer } = scene as { photographer?: string };
     if (photographer) {
       return (
         <h5>
@@ -323,7 +320,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   const maybeRenderDirector = () => {
-    const director = (scene as any).director;
+    const { director } = scene as { director?: string };
     if (director) {
       return (
         <h5>
@@ -339,7 +336,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   const maybeRenderImageCarousel = () => {
-    const urls = scene.urls;
+    const { urls } = scene;
     if (!urls || urls.length === 0) return;
 
     // Filter to only image URLs (jpg, jpeg, png, gif, webp)
@@ -353,7 +350,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             exclude={excludedFields[fields.url]}
             setExclude={(v) => setExcludedField(fields.url, v)}
           >
-            {urls.map((url) => (
+            {urls.map((url: string) => (
               <div key={url}>
                 <ExternalLink href={url}>{url}</ExternalLink>
               </div>
@@ -423,7 +420,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   const maybeRenderStashBoxID = () => {
-    if ((scene as any).remote_site_id && stashBoxURL) {
+    if ((scene as { remote_site_id?: string }).remote_site_id && stashBoxURL) {
       return (
         <div className="scene-details">
           <OptionalField
@@ -431,7 +428,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             setExclude={(v) => setExcludedField(fields.stash_ids, v)}
           >
             <ExternalLink href={stashBoxURL}>
-              {(scene as any).remote_site_id}
+              {(scene as { remote_site_id?: string }).remote_site_id}
             </ExternalLink>
           </OptionalField>
         </div>
@@ -463,11 +460,11 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     <div className="mt-2">
       <div>
         <Form.Group controlId="performers">
-          {performers.map((performer, performerIndex) => (
+          {performers.map((performer: GQL.ScrapedPerformer, performerIndex: number) => (
             <PerformerResult
               performer={performer}
               selectedID={performerIDs[performerIndex]}
-              setSelectedID={(id) => {
+              setSelectedID={(id: string | undefined) => {
                 const newIDs = [...performerIDs];
                 newIDs[performerIndex] = id;
                 setPerformerIDs(newIDs);
@@ -536,7 +533,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     if (!config.setTags) return;
 
     const scrapedTags = (scene.tags ?? []).filter(
-      (t) => !tagIDs.includes(t.stored_id ?? "")
+      (t: GQL.ScrapedTag) => !tagIDs.includes(t.stored_id ?? "")
     );
 
     return (
@@ -557,7 +554,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             </Col>
           </Form.Group>
         </div>
-        {scrapedTags.map((t) => (
+        {scrapedTags.map((t: GQL.ScrapedTag) => (
           <Badge
             className="tag-item"
             variant="secondary"

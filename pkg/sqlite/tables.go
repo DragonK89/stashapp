@@ -41,9 +41,10 @@ var (
 	studiosTagsJoinTable     = goqu.T(studiosTagsTable)
 	studiosStashIDsJoinTable = goqu.T("studio_stash_ids")
 
-	labelsAliasesJoinTable = goqu.T(labelAliasesTable)
-	labelsURLsJoinTable    = goqu.T(labelURLsTable)
-	labelsTagsJoinTable    = goqu.T(labelsTagsTable)
+	labelsAliasesJoinTable  = goqu.T(labelAliasesTable)
+	labelsURLsJoinTable     = goqu.T(labelURLsTable)
+	labelsTagsJoinTable     = goqu.T(labelsTagsTable)
+	labelsStashIDsJoinTable = goqu.T("label_stash_ids")
 
 	groupsURLsJoinTable     = goqu.T(groupURLsTable)
 	groupsTagsJoinTable     = goqu.T(groupsTagsTable)
@@ -381,6 +382,12 @@ var (
 		fkColumn:     labelsTagsJoinTable.Col(tagIDColumn),
 		foreignTable: tagTableMgr,
 		orderBy:      tagTableSort,
+	}
+	labelsStashIDsTableMgr = &stashIDTable{
+		table: table{
+			table:    labelsStashIDsJoinTable,
+			idColumn: labelsStashIDsJoinTable.Col(labelIDColumn),
+		},
 	}
 )
 

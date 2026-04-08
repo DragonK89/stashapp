@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { Button, ButtonGroup } from "react-bootstrap";
 import { FormattedMessage } from "react-intl";
 import cx from "classnames";

@@ -184,6 +184,12 @@ func (qb *LabelStore) Create(ctx context.Context, newObject *models.Label) error
 		return err
 	}
 
+	if newObject.StashIDs.Loaded() {
+		if err := labelsStashIDsTableMgr.insertJoins(ctx, id, newObject.StashIDs.List()); err != nil {
+			return err
+		}
+	}
+
 	updated, err := qb.find(ctx, id)
 	if err != nil {
 		return fmt.Errorf("finding after create: %w", err)
@@ -222,6 +228,12 @@ func (qb *LabelStore) UpdatePartial(ctx context.Context, input models.LabelParti
 
 	if err := qb.tagRelationshipStore.modifyRelationships(ctx, input.ID, input.TagIDs); err != nil {
 		return nil, err
+	}
+
+	if input.StashIDs != nil {
+		if err := labelsStashIDsTableMgr.modifyJoins(ctx, input.ID, input.StashIDs.StashIDs, input.StashIDs.Mode); err != nil {
+			return nil, err
+		}
 	}
 
 	return qb.Find(ctx, input.ID)
@@ -583,4 +595,8 @@ func (qb *LabelStore) GetAliases(ctx context.Context, labelID int) ([]string, er
 
 func (qb *LabelStore) GetURLs(ctx context.Context, labelID int) ([]string, error) {
 	return labelsURLsTableMgr.get(ctx, labelID)
+}
+
+func (qb *LabelStore) GetStashIDs(ctx context.Context, labelID int) ([]models.StashID, error) {
+	return labelsStashIDsTableMgr.get(ctx, labelID)
 }

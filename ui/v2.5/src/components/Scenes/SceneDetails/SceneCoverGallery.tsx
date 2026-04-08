@@ -5,7 +5,7 @@ import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
 import { Icon } from "src/components/Shared/Icon";
 import { faPlus, faMinus, faSync } from "@fortawesome/free-solid-svg-icons";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import cx from "classnames";
 
 interface IProps {
@@ -23,7 +23,7 @@ interface IGalleryImage {
 
 export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
   const [selectedImage, setSelectedImage] = useState<IGalleryImage | null>(null);
-  const transformRef = useRef<any>(null);
+  const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
   const { data, loading } = useFindImagesQuery({
     variables: {

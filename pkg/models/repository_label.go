@@ -76,6 +76,7 @@ type LabelReader interface {
 	AliasLoader
 	TagIDLoader
 	URLLoader
+	StashIDLoader
 
 	All(ctx context.Context) ([]*Label, error)
 	GetImage(ctx context.Context, labelID int) ([]byte, error)

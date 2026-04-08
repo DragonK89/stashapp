@@ -270,7 +270,7 @@ const _SceneIDSelect: React.FC<
     };
 
     load();
-  }, [ids, idsChanged, values]);
+  }, [ids, idsChanged, values, isMounted]);
 
   return <SceneSelect {...props} values={values} onSelect={onSelect} />;
 };

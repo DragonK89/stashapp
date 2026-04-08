@@ -5,6 +5,7 @@ import React, {
   useMemo,
   useRef,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
 import { Link, RouteComponentProps } from "react-router-dom";
@@ -55,6 +56,7 @@ import { PatchComponent, PatchContainerComponent } from "src/patch";
 import { goBackOrReplace } from "src/utils/history";
 import { FormattedDate } from "src/components/Shared/Date";
 import { useInterfaceLocalForage } from "src/hooks/LocalForage";
+import { IUIConfig } from "src/core/config";
 
 const SubmitStashBoxDraft = lazyComponent(
   () => import("src/components/Dialogs/SubmitDraft")
@@ -189,7 +191,6 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     sidebarWidth,
     onSidebarResize,
     onResizingChange,
-    isResizing,
   } = props;
 
   const Toast = useToast();
@@ -197,11 +198,11 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const [updateScene] = useSceneUpdate();
   const [generateScreenshot] = useSceneGenerateScreenshot();
   const { configuration } = useConfigurationContext();
-  const hideTags = Boolean((configuration?.ui as any)?.hideTags);
-  const hideGroups = Boolean((configuration?.ui as any)?.hideGroups);
-  const hideMarkers = Boolean((configuration?.ui as any)?.hideMarkers);
-  const hideQueue = Boolean((configuration?.ui as any)?.hideQueue);
-  const hideSceneFilters = Boolean((configuration?.ui as any)?.hideSceneFilters);
+  const ui = configuration?.ui as IUIConfig | undefined;
+  const hideGroups = Boolean(ui?.hideGroups);
+  const hideMarkers = Boolean(ui?.hideMarkers);
+  const hideQueue = Boolean(ui?.hideQueue);
+  const hideSceneFilters = Boolean(ui?.hideSceneFilters);
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const boxes = configuration?.general?.stashBoxes ?? [];
@@ -230,13 +231,13 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState<boolean>(false);
   const [isGenerateDialogOpen, setIsGenerateDialogOpen] = useState(false);
 
-  const onIncrementOClick = async () => {
+  const onIncrementOClick = useCallback(async () => {
     try {
       await incrementO();
     } catch (e) {
       Toast.error(e);
     }
-  };
+  }, [incrementO, Toast]);
 
   function setRating(v: number | null) {
     updateScene({
@@ -253,6 +254,19 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     true,
     configuration?.ui.ratingSystemOptions?.type,
     setRating
+  );
+
+  const onGenerateScreenshot = useCallback(
+    async (at?: number) => {
+      await generateScreenshot({
+        variables: {
+          id: scene.id,
+          at,
+        },
+      });
+      Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
+    },
+    [generateScreenshot, scene.id, intl, Toast]
   );
 
   // set up hotkeys
@@ -354,15 +368,7 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
     );
   }
 
-  async function onGenerateScreenshot(at?: number) {
-    await generateScreenshot({
-      variables: {
-        id: scene.id,
-        at,
-      },
-    });
-    Toast.success(intl.formatMessage({ id: "toast.generating_screenshot" }));
-  }
+
 
   function onDeleteDialogClosed(deleted: boolean) {
     setIsDeleteAlertOpen(false);
@@ -758,14 +764,17 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   const { data, loading, error } = useFindScene(id);
 
   const [interfaceConfig, setInterfaceConfig] = useInterfaceLocalForage();
-  const sidebarWidth = (interfaceConfig.data as any)?.sceneSidebarWidth ?? 450;
+  const interfaceConfigData = interfaceConfig.data as
+    | (typeof interfaceConfig.data & { sceneSidebarWidth?: number })
+    | undefined;
+  const sidebarWidth = interfaceConfigData?.sceneSidebarWidth ?? 450;
   const [isResizing, setIsResizing] = useState(false);
 
   function setSidebarWidth(width: number) {
-    setInterfaceConfig((prev: any) => ({
+    setInterfaceConfig((prev) => ({
       ...prev,
       sceneSidebarWidth: width,
-    }));
+    } as typeof prev));
   }
 
   const [scene, setScene] = useState<GQL.SceneDataFragment>();

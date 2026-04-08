@@ -4,7 +4,6 @@ import * as GQL from "src/core/generated-graphql";
 import {
   queryFindPerformer,
   queryFindStudio,
-  queryScrapeGallery,
   queryScrapeGalleryQuery,
   queryScrapeGalleryURL,
   useListGalleryScrapers,
@@ -19,9 +18,9 @@ import {
 } from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
-import { ITaggerSource, SCRAPER_PREFIX, STASH_BOX_PREFIX } from "./constants";
+import { ITaggerSource, SCRAPER_PREFIX } from "./constants";
 import { errorToString } from "src/utils";
-import { mergeStudioStashIDs } from "./utils";
+
 import { useTaggerConfig } from "./config";
 import { useIsMounted } from "src/hooks/state";
 
@@ -244,13 +243,13 @@ export const TaggerContext: React.FC = ({ children }) => {
       } else if (results.errors) {
         newResult = { error: results.errors.toString() };
       } else {
-        const data = results.data as any;
-        const scraperResults = data.scrapeGalleryURL
+        const data = results.data as Record<string, unknown>;
+        const scraperResults = (data.scrapeGalleryURL
           ? [data.scrapeGalleryURL]
-          : data.scrapeSingleGallery;
+          : data.scrapeSingleGallery) as GQL.ScrapedGallery[];
 
         newResult = {
-          results: scraperResults.map((r: any) => ({
+          results: scraperResults.map((r) => ({
             ...r,
             resolved,
           })),
@@ -590,7 +589,7 @@ export const TaggerContext: React.FC = ({ children }) => {
           return {
             ...r,
             studio: {
-              ...(r.studio as any),
+              ...(r.studio as GQL.ScrapedStudio),
               stored_id: studioID,
             },
           } as IScrapedGallery;
@@ -670,7 +669,7 @@ export const TaggerContext: React.FC = ({ children }) => {
           return {
             ...r,
             studio: {
-              ...(r.studio as any),
+              ...(r.studio as GQL.ScrapedStudio),
               stored_id: studioID,
             },
           } as IScrapedGallery;

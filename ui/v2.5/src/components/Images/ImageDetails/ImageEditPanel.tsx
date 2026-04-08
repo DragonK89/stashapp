@@ -35,7 +35,6 @@ import {
 } from "src/components/Galleries/GallerySelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
 import { useIsMounted } from "src/hooks/state";
-import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
 import { ScraperMenu } from "src/components/Shared/ScraperMenu";
 
 interface IProps {

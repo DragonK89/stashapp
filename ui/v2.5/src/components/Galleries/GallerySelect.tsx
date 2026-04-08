@@ -305,19 +305,24 @@ const _GalleryIDSelect: React.FC<
   }
 
   useEffect(() => {
+    if (!idsChanged) {
+      return;
+    }
+
+    if (!ids || ids?.length === 0) {
+      setValues([]);
+      return;
+    }
+
     const load = async () => {
-      if (!ids || ids.length === 0) {
-        setValues([]);
-        return;
-      }
       const items = await loadObjectsByID(ids);
       if (isMounted.current) {
         setValues(items);
       }
     };
 
-    void load();
-  }, [ids, idsChanged, values]);
+    load();
+  }, [ids, idsChanged, isMounted]);
 
   return <GallerySelect {...props} values={values} onSelect={onSelect} />;
 };

@@ -308,7 +308,7 @@ const _GroupIDSelect: React.FC<IFilterProps & IFilterIDProps<Group>> = (
     };
 
     load();
-  }, [ids, idsChanged, values]);
+  }, [ids, idsChanged, isMounted]);
 
   return <GroupSelect {...props} values={values} onSelect={onSelect} />;
 };

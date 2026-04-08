@@ -463,8 +463,8 @@ export type IListSelect<T extends IHasID = IHasID> = ReturnType<
 function totalCountImpacted(
   oldFilter: ListFilterModel,
   newFilter: ListFilterModel,
-  oldExtraCriteria?: Record<string, any>,
-  newExtraCriteria?: Record<string, any>
+  oldExtraCriteria?: Record<string, unknown>,
+  newExtraCriteria?: Record<string, unknown>
 ) {
   if (!isEqual(oldExtraCriteria, newExtraCriteria)) {
     return true;

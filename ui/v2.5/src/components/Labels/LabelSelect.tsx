@@ -13,7 +13,7 @@ import {
 } from "src/core/StashService";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIntl } from "react-intl";
-import { defaultMaxOptionsShown, IUIConfig } from "src/core/config";
+import { defaultMaxOptionsShown } from "src/core/config";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   FilterSelectComponent,
@@ -61,8 +61,6 @@ export type LabelSelectProps = IFilterProps &
 const _LabelSelect: React.FC<LabelSelectProps> = (props) => {
   const { configuration } = useConfigurationContext();
   const intl = useIntl();
-  const ui = configuration?.ui as IUIConfig | undefined;
-  const hideLabels = false; // no UI config toggle yet
 
   const maxOptionsShown =
     configuration?.ui?.maxOptionsShown ?? defaultMaxOptionsShown;
@@ -135,8 +133,6 @@ const _LabelSelect: React.FC<LabelSelectProps> = (props) => {
       }
     );
 
-  if (hideLabels) return null;
-
   return (
     <FilterSelectComponent<Label, boolean>
       key={props.studioId ?? "no-studio"}
@@ -159,14 +155,14 @@ const _LabelSelect: React.FC<LabelSelectProps> = (props) => {
 
 export const LabelSelect = _LabelSelect;
 
-export interface LabelIDSelectProps
+export interface ILabelIDSelectProps
   extends Omit<LabelSelectProps, "values">,
     IFilterIDProps<Label> {
   studioId?: string;
   studioName?: string;
 }
 
-const _LabelIDSelect: React.FC<LabelIDSelectProps> = (props) => {
+const _LabelIDSelect: React.FC<ILabelIDSelectProps> = (props) => {
   const { ids, onSelect: onSelectValues } = props;
 
   const [values, setValues] = useState<Label[]>([]);

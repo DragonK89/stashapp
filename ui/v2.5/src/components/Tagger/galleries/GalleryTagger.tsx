@@ -3,18 +3,13 @@ import * as GQL from "src/core/generated-graphql";
 import { Button, Form } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 
-import { Icon } from "src/components/Shared/Icon";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { OperationButton } from "src/components/Shared/OperationButton";
 import { IGalleryQueryResult, TaggerStateContext } from "../galleryContext";
 import { TaggerGallery } from "./TaggerGallery";
 import { GalleryTaggerModals } from "./galleryTaggerModals";
 import { GallerySearchResults } from "./StashSearchResult";
-import { useConfigurationContext } from "src/hooks/Config";
-import { objectPath } from "src/core/files";
 import { useLightbox } from "src/hooks/Lightbox/hooks";
-import { parsePath } from "../utils";
-import { prepareQueryString } from "./utils";
 
 const GalleryItem: React.FC<{
   gallery: GQL.SlimGalleryDataFragment;
@@ -25,7 +20,6 @@ const GalleryItem: React.FC<{
   const intl = useIntl();
   const { currentSource, doGalleryQuery, loading } =
     useContext(TaggerStateContext);
-  const { configuration } = useConfigurationContext();
 
   const galleryLink = `/galleries/${gallery.id}`;
 
@@ -79,14 +73,11 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
     searchAllQueue,
     setSearchAllQueue,
     stopMultiScrape,
-    config,
     searchResults,
     loading,
     loadingMulti: loadingMultiContext,
-    multiError: multiErrorContext,
   } = useContext(TaggerStateContext);
   const loadingMulti = loadingMultiContext || searchAllQueue.length > 0;
-  const multiError = multiErrorContext ?? "";
   const [hideUnmatched, setHideUnmatched] = useState(false);
 
   const intl = useIntl();

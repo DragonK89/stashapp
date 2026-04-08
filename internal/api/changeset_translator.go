@@ -363,6 +363,30 @@ func (t changesetTranslator) updateStashIDs(value models.StashIDInputs, field st
 	}
 }
 
+func (t changesetTranslator) updateStashIDsBulk(value models.StashIDInputs, field string) *models.UpdateStashIDs {
+	if !t.hasField(field) {
+		return nil
+	}
+
+	return &models.UpdateStashIDs{
+		StashIDs: value.ToStashIDs(),
+		Mode:     models.RelationshipUpdateModeSet,
+	}
+}
+
+func (t changesetTranslator) toStashIDInputs(input []*models.StashIDInput) models.StashIDInputs {
+	if input == nil {
+		return nil
+	}
+	ret := make(models.StashIDInputs, 0, len(input))
+	for _, v := range input {
+		if v != nil {
+			ret = append(ret, *v)
+		}
+	}
+	return ret
+}
+
 func (t changesetTranslator) relatedGroupsFromMovies(value []models.SceneMovieInput) (models.RelatedGroups, error) {
 	groupsScenes, err := models.GroupsScenesFromInput(value)
 	if err != nil {

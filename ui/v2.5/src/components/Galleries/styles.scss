@@ -117,9 +117,8 @@
 
 .gallery-tabs {
   max-height: calc(100vh - 4rem);
-
-  overflow-y: scroll;
   overflow-wrap: break-word;
+  overflow-y: scroll;
   word-wrap: break-word;
 }
 

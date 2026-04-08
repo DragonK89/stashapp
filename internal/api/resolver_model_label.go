@@ -103,3 +103,21 @@ func (r *labelResolver) SceneCount(ctx context.Context, obj *models.Label) (ret 
 func (r *labelResolver) Rating100(ctx context.Context, obj *models.Label) (*int, error) {
 	return obj.Rating, nil
 }
+
+func (r *labelResolver) StashIds(ctx context.Context, obj *models.Label) ([]*models.StashID, error) {
+	if !obj.StashIDs.Loaded() {
+		if err := r.withReadTxn(ctx, func(ctx context.Context) error {
+			return obj.LoadStashIDs(ctx, r.repository.Label)
+		}); err != nil {
+			return nil, err
+		}
+	}
+
+	list := obj.StashIDs.List()
+	ret := make([]*models.StashID, len(list))
+	for i := range list {
+		ret[i] = &list[i]
+	}
+
+	return ret, nil
+}

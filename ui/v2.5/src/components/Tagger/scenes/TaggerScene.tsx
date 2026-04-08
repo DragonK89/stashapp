@@ -130,7 +130,6 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
   scrapeSceneFragment,
   errorMessage,
   children,
-  showLightboxImage,
   queue,
   index,
 }) => {

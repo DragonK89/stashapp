@@ -410,7 +410,7 @@ const _PerformerIDSelect: React.FC<IFilterProps & IFilterIDProps<Performer>> = (
     };
 
     load();
-  }, [ids, idsChanged, values]);
+  }, [ids, idsChanged, values, isMounted]);
 
   return <PerformerSelect {...props} values={values} onSelect={onSelect} />;
 };

@@ -277,7 +277,7 @@ const _StudioIDSelect: React.FC<IFilterProps & IFilterIDProps<Studio>> = (
     };
 
     load();
-  }, [ids, idsChanged, values]);
+  }, [ids, idsChanged, values, isMounted]);
 
   return <StudioSelect {...props} values={values} onSelect={onSelect} />;
 };

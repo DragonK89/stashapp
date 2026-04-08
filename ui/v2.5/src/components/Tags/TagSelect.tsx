@@ -322,7 +322,7 @@ const _TagIDSelect: React.FC<IFilterProps & IFilterIDProps<Tag>> = (props) => {
     };
 
     load();
-  }, [ids, idsChanged, values]);
+  }, [ids, idsChanged, values, isMounted]);
 
   return <TagSelect {...props} values={values} onSelect={onSelect} />;
 };

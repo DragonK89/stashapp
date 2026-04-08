@@ -251,7 +251,7 @@ interface IStashSearchResultProps {
 
 type GalleryActionMode = "auto" | "skip" | "existing";
 
-interface GalleryActionState {
+interface IGalleryActionState {
   mode: GalleryActionMode;
   matchedID?: string;
   selectedID?: string;
@@ -358,7 +358,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     [scene.galleries, sceneGalleries]
   );
 
-  const [galleryActions, setGalleryActions] = useState<GalleryActionState[]>(
+  const [galleryActions, setGalleryActions] = useState<IGalleryActionState[]>(
     () =>
       (scene.galleries ?? []).map((scrapedGallery) => {
         const matchedID = sceneGalleries.find((g) =>
@@ -445,7 +445,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
 
   function setGalleryAction(
     galleryIndex: number,
-    nextAction: Partial<GalleryActionState>
+    nextAction: Partial<IGalleryActionState>
   ) {
     setGalleryActions((current) => {
       const next = [...current];
@@ -810,9 +810,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   };
 
   function renderStudioDate() {
+    const { date } = scene;
     const studio = scene.studio?.name;
     const label = scene.label?.name;
-    const date = scene.date;
 
     let text = "";
     if (studio && label) {

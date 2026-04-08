@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, PropsWithChildren, useMemo } from "react";
+import React, { useState, useEffect, useContext, PropsWithChildren } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { Link } from "react-router-dom";
 import { Button, Collapse, Form, InputGroup } from "react-bootstrap";
@@ -105,8 +105,6 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
   doGalleryQuery,
   errorMessage,
   children,
-  showLightboxImage,
-  index,
 }) => {
   const { config, currentSource, searchAllQueue, setSearchAllQueue } =
     useContext(TaggerStateContext);

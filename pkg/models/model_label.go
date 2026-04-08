@@ -17,9 +17,10 @@ type Label struct {
 	Details       string `json:"details"`
 	IgnoreAutoTag bool   `json:"ignore_auto_tag"`
 
-	Aliases RelatedStrings `json:"aliases"`
-	URLs    RelatedStrings `json:"urls"`
-	TagIDs  RelatedIDs     `json:"tag_ids"`
+	Aliases  RelatedStrings  `json:"aliases"`
+	URLs     RelatedStrings  `json:"urls"`
+	TagIDs   RelatedIDs      `json:"tag_ids"`
+	StashIDs RelatedStashIDs `json:"stash_ids"`
 }
 
 func NewLabel() Label {
@@ -43,9 +44,10 @@ type LabelPartial struct {
 	UpdatedAt     OptionalTime
 	IgnoreAutoTag OptionalBool
 
-	Aliases *UpdateStrings
-	URLs    *UpdateStrings
-	TagIDs  *UpdateIDs
+	Aliases       *UpdateStrings
+	URLs          *UpdateStrings
+	TagIDs        *UpdateIDs
+	StashIDs      *UpdateStashIDs
 }
 
 func NewLabelPartial() LabelPartial {
@@ -73,12 +75,22 @@ func (s *Label) LoadTagIDs(ctx context.Context, l TagIDLoader) error {
 	})
 }
 
+func (s *Label) LoadStashIDs(ctx context.Context, l StashIDLoader) error {
+	return s.StashIDs.load(func() ([]StashID, error) {
+		return l.GetStashIDs(ctx, s.ID)
+	})
+}
+
 func (s *Label) LoadRelationships(ctx context.Context, l LabelReader) error {
 	if err := s.LoadAliases(ctx, l); err != nil {
 		return err
 	}
 
 	if err := s.LoadTagIDs(ctx, l); err != nil {
+		return err
+	}
+
+	if err := s.LoadStashIDs(ctx, l); err != nil {
 		return err
 	}
 

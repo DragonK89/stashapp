@@ -16,6 +16,7 @@ type Label {
   details: String
   created_at: Time!
   updated_at: Time!
+  stash_ids: [StashID!]!
   o_counter: Int
 }
 
@@ -32,6 +33,7 @@ input LabelCreateInput {
   aliases: [String!]
   tag_ids: [ID!]
   ignore_auto_tag: Boolean
+  stash_ids: [StashIDInput!]
 }
 
 input LabelUpdateInput {
@@ -48,6 +50,7 @@ input LabelUpdateInput {
   aliases: [String!]
   tag_ids: [ID!]
   ignore_auto_tag: Boolean
+  stash_ids: [StashIDInput!]
 }
 
 input BulkLabelUpdateInput {
@@ -60,6 +63,7 @@ input BulkLabelUpdateInput {
   details: String
   tag_ids: BulkUpdateIds
   ignore_auto_tag: Boolean
+  stash_ids: [StashIDInput!]
 }
 
 input LabelDestroyInput {

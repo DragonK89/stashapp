@@ -1,7 +1,6 @@
 import * as GQL from "src/core/generated-graphql";
-import { IScrapedGallery } from "../galleryContext";
 import { ParseMode } from "../constants";
-import { uniq } from "lodash-es";
+
 
 export function prepareQueryString(
   gallery: Partial<GQL.SlimGalleryDataFragment>,
@@ -74,11 +73,7 @@ export function prepareQueryString(
   return s.replace(/\./g, " ").replace(/ +/g, " ");
 }
 
-export function compareGalleriesForSort(
-  _stashGallery: GQL.SlimGalleryDataFragment,
-  _galleryA: IScrapedGallery,
-  _galleryB: IScrapedGallery
-) {
+export function compareGalleriesForSort() {
   // Simple alphabetical sort for now to match interface
   return 0;
 }

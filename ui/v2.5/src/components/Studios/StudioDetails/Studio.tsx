@@ -1,4 +1,4 @@
-import { Tabs, Tab, Form, Button } from "react-bootstrap";
+import { Tabs, Tab, Form, Button, OverlayTrigger, Popover } from "react-bootstrap";
 import React, { useEffect, useMemo, useState } from "react";
 import { useHistory, Redirect, RouteComponentProps } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -21,7 +21,7 @@ import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { ErrorMessage } from "src/components/Shared/ErrorMessage";
 import { useToast } from "src/hooks/Toast";
 import { useConfigurationContext } from "src/hooks/Config";
-import { faSyncAlt } from "@fortawesome/free-solid-svg-icons";
+import { faSyncAlt, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { StudioScenesPanel } from "./StudioScenesPanel";
 import { StudioGalleriesPanel } from "./StudioGalleriesPanel";
 import { StudioImagesPanel } from "./StudioImagesPanel";
@@ -34,7 +34,6 @@ import {
   StudioDetailsPanel,
 } from "./StudioDetailsPanel";
 import { StudioGroupsPanel } from "./StudioGroupsPanel";
-import { faSearch, faTrashAlt } from "@fortawesome/free-solid-svg-icons";
 import { RatingSystem } from "src/components/Shared/Rating/RatingSystem";
 import { DetailImage } from "src/components/Shared/DetailImage";
 import { useRatingKeybinds } from "src/hooks/keybinds";
@@ -43,7 +42,6 @@ import { useScrollToTopOnMount } from "src/hooks/scrollToTop";
 import { BackgroundImage } from "src/components/Shared/DetailsPage/BackgroundImage";
 import { Icon } from "src/components/Shared/Icon";
 import { ClearableInput } from "src/components/Shared/ClearableInput";
-import { Dropdown, DropdownButton } from "react-bootstrap";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import {
   TabTitleCounter,
@@ -290,8 +288,6 @@ const StudioTabs: React.FC<{
   );
 };
 
-import { OverlayTrigger, Popover, Dropdown as DropdownType } from "react-bootstrap";
-
 const ConvertToLabelDropdown: React.FC<{
   currentStudioId: string;
   onSelectStudio: (studio: { id: string; name?: string } | null) => void;
@@ -403,7 +399,12 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
             image: studio.image_path ?? undefined,
             rating100: studio.rating100,
             urls: studio.urls,
+            tag_ids: (studio.tags ?? []).map((t) => t.id),
             ignore_auto_tag: studio.ignore_auto_tag,
+            stash_ids: (studio.stash_ids ?? []).map((s) => ({
+              endpoint: s.endpoint,
+              stash_id: s.stash_id,
+            })),
           },
         },
       });
