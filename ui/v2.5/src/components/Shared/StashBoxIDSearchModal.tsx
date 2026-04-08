@@ -26,7 +26,7 @@ type SearchResultItem =
   | GQL.ScrapedStudioDataFragment
   | GQL.ScrapedSceneTagDataFragment;
 
-export type StashBoxEntityType = "performer" | "scene" | "studio" | "tag";
+export type StashBoxEntityType = "performer" | "scene" | "studio" | "tag" | "label";
 
 interface IProps {
   entityType: StashBoxEntityType;
@@ -266,6 +266,8 @@ function getEntityTypeMessageId(entityType: StashBoxEntityType): string {
       return "studio";
     case "tag":
       return "tag";
+    case "label":
+      return "label";
   }
 }
 
@@ -280,6 +282,8 @@ function getFoundMessageId(entityType: StashBoxEntityType): string {
       return "dialogs.studios_found";
     case "tag":
       return "dialogs.tags_found";
+    case "label":
+      return "dialogs.studios_found"; // Reuse studios for labels for now
   }
 }
 
@@ -337,7 +341,8 @@ export const StashBoxIDSearchModal: React.FC<IProps> = ({
           setResults(queryData.data?.scrapeSingleScene ?? []);
           break;
         }
-        case "studio": {
+        case "studio":
+        case "label": {
           const queryData = await stashBoxStudioQuery(
             query,
             selectedStashBox.endpoint
@@ -389,6 +394,7 @@ export const StashBoxIDSearchModal: React.FC<IProps> = ({
           <SceneSearchResult scene={item as GQL.ScrapedSceneDataFragment} />
         );
       case "studio":
+      case "label":
         return (
           <StudioSearchResult studio={item as GQL.ScrapedStudioDataFragment} />
         );

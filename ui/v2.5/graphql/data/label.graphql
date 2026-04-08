@@ -19,6 +19,11 @@ fragment LabelData on Label {
     ...SlimTagData
   }
   o_counter
+  stash_ids {
+    stash_id
+    endpoint
+    updated_at
+  }
 }
 
 fragment SelectLabelData on Label {

@@ -5,18 +5,23 @@ import * as yup from "yup";
 import Mousetrap from "mousetrap";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { DetailsEditNavbar } from "src/components/Shared/DetailsEditNavbar";
-import { Form } from "react-bootstrap";
+import { Button, Form } from "react-bootstrap";
+import { faPlus } from "@fortawesome/free-solid-svg-icons";
 import ImageUtils from "src/utils/image";
+import { addUpdateStashID, getStashIDs } from "src/utils/stashIds";
 import { useFormik } from "formik";
 import { Prompt } from "react-router-dom";
 import isEqual from "lodash-es/isEqual";
 import { useToast } from "src/hooks/Toast";
+import { useConfigurationContext } from "src/hooks/Config";
 import { handleUnsavedChanges } from "src/utils/navigation";
 import { formikUtils } from "src/utils/form";
 import { yupFormikValidate, yupUniqueAliases } from "src/utils/yup";
 import { Studio, StudioSelect } from "../../Studios/StudioSelect";
 import { useTagsEdit } from "src/hooks/tagsEdit";
 import { useIsMounted } from "src/hooks/state";
+import { Icon } from "src/components/Shared/Icon";
+import StashBoxIDSearchModal from "src/components/Shared/StashBoxIDSearchModal";
 
 interface ILabelEditPanel {
   label: Partial<GQL.LabelDataFragment>;
@@ -37,8 +42,12 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
 }) => {
   const intl = useIntl();
   const Toast = useToast();
+  const { configuration: stashConfig } = useConfigurationContext();
 
   const isNew = label.id === undefined;
+
+  // Editing state
+  const [isStashIDSearchOpen, setIsStashIDSearchOpen] = useState(false);
 
   // Network state
   const [isLoading, setIsLoading] = useState(false);
@@ -54,6 +63,7 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
     aliases: yupUniqueAliases(intl, "name"),
     tag_ids: yup.array(yup.string().required()).defined(),
     ignore_auto_tag: yup.boolean().defined(),
+    stash_ids: yup.mixed<GQL.StashIdInput[]>().defined(),
     image: yup.string().nullable().optional(),
   });
 
@@ -66,6 +76,7 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
     aliases: label.aliases ?? [],
     tag_ids: (label.tags ?? []).map((t) => t.id),
     ignore_auto_tag: label.ignore_auto_tag ?? false,
+    stash_ids: getStashIDs(label.stash_ids),
   };
 
   type InputValues = yup.InferType<typeof schema>;
@@ -146,10 +157,19 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
     ImageUtils.onImageChange(event, onImageLoad);
   }
 
+  function onStashIDSelected(item?: GQL.StashIdInput) {
+    if (!item) return;
+    formik.setFieldValue(
+      "stash_ids",
+      addUpdateStashID(formik.values.stash_ids, item)
+    );
+  }
+
   const {
     renderField,
     renderInputField,
     renderStringListField,
+    renderStashIDsField,
   } = formikUtils(intl, formik);
 
   function renderStudioField() {
@@ -175,6 +195,19 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
 
   return (
     <>
+      {isStashIDSearchOpen && (
+        <StashBoxIDSearchModal
+          entityType="label"
+          stashBoxes={stashConfig?.general.stashBoxes ?? []}
+          excludedStashBoxEndpoints={formik.values.stash_ids.map(
+            (s) => s.endpoint
+          )}
+          onSelectItem={(item) => {
+            onStashIDSelected(item);
+            setIsStashIDSearchOpen(false);
+          }}
+        />
+      )}
       <Prompt
         when={formik.dirty}
         message={(location, action) => {
@@ -192,6 +225,21 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
         {renderInputField("details", "textarea")}
         {renderStudioField()}
         {renderTagsField()}
+        {renderStashIDsField(
+          "stash_ids",
+          "labels",
+          "stash_ids",
+          undefined,
+          <Button
+            variant="success"
+            className="mr-2 py-0"
+            onClick={() => setIsStashIDSearchOpen(true)}
+            disabled={!stashConfig?.general.stashBoxes?.length}
+            title={intl.formatMessage({ id: "actions.add_stash_id" })}
+          >
+            <Icon icon={faPlus} />
+          </Button>
+        )}
         <hr />
         {renderInputField("ignore_auto_tag", "checkbox")}
       </Form>

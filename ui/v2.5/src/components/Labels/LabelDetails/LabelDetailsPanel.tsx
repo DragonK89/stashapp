@@ -2,6 +2,7 @@ import React from "react";
 import { TagLink } from "src/components/Shared/TagLink";
 import * as GQL from "src/core/generated-graphql";
 import { DetailItem } from "src/components/Shared/DetailItem";
+import { StashIDPill } from "src/components/Shared/StashID";
 import { Link } from "react-router-dom";
 
 interface ILabelDetailsPanel {
@@ -23,6 +24,24 @@ export const LabelDetailsPanel: React.FC<ILabelDetailsPanel> = ({
         {(label.tags ?? []).map((tag) => (
           <TagLink key={tag.id} linkType="scene" tag={tag} />
         ))}
+      </ul>
+    );
+  }
+
+  function renderStashIDs() {
+    if (!label.stash_ids?.length) {
+      return;
+    }
+
+    return (
+      <ul className="pl-0">
+        {label.stash_ids.map((stashID) => {
+          return (
+            <li key={stashID.stash_id} className="row no-gutters">
+              <StashIDPill stashID={stashID} linkType="labels" />
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -63,6 +82,11 @@ export const LabelDetailsPanel: React.FC<ILabelDetailsPanel> = ({
         fullWidth={fullWidth}
       />
       <DetailItem id="tags" value={renderTagsField()} fullWidth={fullWidth} />
+      <DetailItem
+        id="stash_ids"
+        value={renderStashIDs()}
+        fullWidth={fullWidth}
+      />
     </div>
   );
 };

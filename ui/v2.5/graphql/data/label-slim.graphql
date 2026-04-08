@@ -10,4 +10,9 @@ fragment SlimLabelData on Label {
     name
   }
   o_counter
+  stash_ids {
+    stash_id
+    endpoint
+    updated_at
+  }
 }
