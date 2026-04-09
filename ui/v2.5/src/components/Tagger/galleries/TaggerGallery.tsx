@@ -1,4 +1,9 @@
-import React, { useState, useEffect, useContext, PropsWithChildren } from "react";
+import React, {
+  useState,
+  useEffect,
+  useContext,
+  PropsWithChildren,
+} from "react";
 import * as GQL from "src/core/generated-graphql";
 import { Link } from "react-router-dom";
 import { Button, Collapse, Form, InputGroup } from "react-bootstrap";
@@ -12,10 +17,7 @@ import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { parsePath } from "src/components/Tagger/utils";
 import { GalleryPreview } from "src/components/Galleries/GalleryCard";
 import { TaggerStateContext } from "../galleryContext";
-import {
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIsMounted } from "src/hooks/state";
@@ -184,13 +186,13 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
   return (
     <div key={gallery.id} className="mt-3 search-item">
       <div className="row">
-        <div className="col col-lg-6 overflow-hidden align-items-center d-flex flex-column flex-sm-row" style={{ marginBottom: "15px" }}>
+        <div
+          className="col col-lg-6 overflow-hidden align-items-center d-flex flex-column flex-sm-row"
+          style={{ marginBottom: "15px" }}
+        >
           <div className="scene-card" style={{ width: "400px" }}>
             <Link to={url}>
-              <GalleryPreview
-                gallery={gallery}
-                noScrubber
-              />
+              <GalleryPreview gallery={gallery} noScrubber />
             </Link>
           </div>
           {gallery.code && (
@@ -198,12 +200,9 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
               <h4 className="font-weight-bold">{gallery.code}</h4>
             </Link>
           )}
-
         </div>
         <div className="col-md-6 my-1">
-          <div>
-            {renderQueryForm()}
-          </div>
+          <div>{renderQueryForm()}</div>
           {errorMessage ? (
             <div className="text-danger font-weight-bold">{errorMessage}</div>
           ) : undefined}

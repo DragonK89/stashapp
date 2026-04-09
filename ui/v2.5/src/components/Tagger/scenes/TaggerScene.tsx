@@ -13,10 +13,7 @@ import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { parsePath, prepareQueryString } from "src/components/Tagger/utils";
 import { ScenePreview } from "src/components/Scenes/SceneCard";
 import { TaggerStateContext } from "../context";
-import {
-  faChevronDown,
-  faChevronUp,
-} from "@fortawesome/free-solid-svg-icons";
+import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { objectPath, objectTitle } from "src/core/files";
 import { useConfigurationContext } from "src/hooks/Config";
 import { useIsMounted } from "src/hooks/state";
@@ -207,8 +204,6 @@ export const TaggerScene: React.FC<PropsWithChildren<ITaggerScene>> = ({
       </InputGroup>
     );
   }
-
-
 
   function onScrubberClick(timestamp: number) {
     const link = queue

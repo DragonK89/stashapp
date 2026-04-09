@@ -754,7 +754,10 @@ export const SceneEditPanel: React.FC<IProps> = ({
         studioName={studio?.name ?? undefined}
         ids={formik.values.label_id ? [formik.values.label_id] : []}
         onSelect={(items) =>
-          formik.setFieldValue("label_id", items.length > 0 ? items[0].id : null)
+          formik.setFieldValue(
+            "label_id",
+            items.length > 0 ? items[0].id : null
+          )
         }
         isDisabled={!studio}
         menuPortalTarget={document.body}

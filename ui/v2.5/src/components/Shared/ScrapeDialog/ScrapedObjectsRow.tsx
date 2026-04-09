@@ -18,7 +18,12 @@ import { uniq } from "lodash-es";
 import { CollapseButton } from "../CollapseButton";
 import { Badge, Button } from "react-bootstrap";
 import { Icon } from "../Icon";
-import { faLink, faPlus, faVenus, faMars } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLink,
+  faPlus,
+  faVenus,
+  faMars,
+} from "@fortawesome/free-solid-svg-icons";
 import { useIntl } from "react-intl";
 
 interface INewScrapedObjects<T> {
@@ -43,28 +48,28 @@ export const NewScrapedObjects = <T,>(props: INewScrapedObjects<T>) => {
           typeof name === "string" ? name : `idx-${index.toString()}`;
 
         return (
-        <Badge
-          className="tag-item"
-          variant="secondary"
-          key={keySuffix}
-          onClick={() => props.onCreateNew(t)}
-        >
-          {name}
-          <Button className="minimal ml-2">
-            <Icon className="fa-fw" icon={faPlus} />
-          </Button>
-          {props.onLinkExisting ? (
-            <Button
-              className="minimal"
-              onClick={(e) => {
-                props.onLinkExisting?.(t);
-                e.stopPropagation();
-              }}
-            >
-              <Icon className="fa-fw" icon={faLink} />
+          <Badge
+            className="tag-item"
+            variant="secondary"
+            key={keySuffix}
+            onClick={() => props.onCreateNew(t)}
+          >
+            {name}
+            <Button className="minimal ml-2">
+              <Icon className="fa-fw" icon={faPlus} />
             </Button>
-          ) : null}
-        </Badge>
+            {props.onLinkExisting ? (
+              <Button
+                className="minimal"
+                onClick={(e) => {
+                  props.onLinkExisting?.(t);
+                  e.stopPropagation();
+                }}
+              >
+                <Icon className="fa-fw" icon={faLink} />
+              </Button>
+            ) : null}
+          </Badge>
         );
       })}
     </>

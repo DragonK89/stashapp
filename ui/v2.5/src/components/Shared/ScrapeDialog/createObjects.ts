@@ -194,9 +194,11 @@ interface IUseCreateNewGalleryProps {
 }
 
 function galleryKey(gallery: GQL.ScrapedGallery) {
-  return [gallery.title ?? "", gallery.code ?? "", gallery.urls?.[0] ?? ""].join(
-    "::"
-  );
+  return [
+    gallery.title ?? "",
+    gallery.code ?? "",
+    gallery.urls?.[0] ?? "",
+  ].join("::");
 }
 
 export function useCreateScrapedGallery(props: IUseCreateNewGalleryProps) {

@@ -69,7 +69,7 @@ const LabelCreate: React.FC = () => {
           label={label}
           onSubmit={onSave}
           onCancel={() => history.push("/labels")}
-          onDelete={() => { }}
+          onDelete={() => {}}
           setImage={setImage}
           setEncodingImage={setEncodingImage}
         />

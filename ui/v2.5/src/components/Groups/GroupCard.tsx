@@ -6,13 +6,18 @@ import * as GQL from "src/core/generated-graphql";
 import { GridCard } from "../Shared/GridCard/GridCard";
 import { HoverPopover } from "../Shared/HoverPopover";
 import { Icon } from "../Shared/Icon";
-import { SceneLink, TagLink } from "../Shared/TagLink";
+import { GalleryLink, SceneLink, TagLink } from "../Shared/TagLink";
 import { TruncatedText } from "../Shared/TruncatedText";
 import { FormattedMessage } from "react-intl";
 import { RatingBanner } from "../Shared/RatingBanner";
-import { faPlayCircle, faTag } from "@fortawesome/free-solid-svg-icons";
+import {
+  faImages,
+  faPlayCircle,
+  faTag,
+} from "@fortawesome/free-solid-svg-icons";
 import { RelatedGroupPopoverButton } from "./RelatedGroupPopover";
 import { OCounterButton } from "../Shared/CountButton";
+import { makeGroupGalleryFilter } from "src/core/groups";
 
 const Description: React.FC<{
   sceneNumber?: number;
@@ -63,6 +68,16 @@ export const GroupCard: React.FC<IProps> = ({
   const { configuration } = useConfigurationContext();
   const ui = configuration?.ui as IUIConfig | undefined;
   const hideTags = ui?.hideTags ?? false;
+  const { data: galleryData } = GQL.useFindGalleriesForSelectQuery({
+    variables: {
+      filter: {
+        per_page: -1,
+      },
+      gallery_filter: makeGroupGalleryFilter(group.id),
+    },
+  });
+  const galleryCount = galleryData?.findGalleries.count ?? 0;
+  const galleries = galleryData?.findGalleries.galleries ?? [];
 
   const groupDescription = useMemo(() => {
     if (!fromGroupId) {
@@ -114,6 +129,27 @@ export const GroupCard: React.FC<IProps> = ({
     );
   }
 
+  function maybeRenderGalleryPopoverButton() {
+    if (galleryCount === 0) return;
+
+    const popoverContent = galleries.map((gallery) => (
+      <GalleryLink key={gallery.id} gallery={gallery} />
+    ));
+
+    return (
+      <HoverPopover
+        className="gallery-count"
+        placement="bottom"
+        content={popoverContent}
+      >
+        <Button className="minimal">
+          <Icon icon={faImages} />
+          <span>{galleryCount}</span>
+        </Button>
+      </HoverPopover>
+    );
+  }
+
   function maybeRenderOCounter() {
     if (!group.o_counter) return;
 
@@ -125,6 +161,7 @@ export const GroupCard: React.FC<IProps> = ({
       sceneNumber ||
       groupDescription ||
       group.scenes.length > 0 ||
+      galleryCount > 0 ||
       (group.tags.length > 0 && !hideTags) ||
       group.containing_groups.length > 0 ||
       group.sub_group_count > 0
@@ -138,6 +175,7 @@ export const GroupCard: React.FC<IProps> = ({
           <hr />
           <ButtonGroup className="card-popovers">
             {maybeRenderScenesPopoverButton()}
+            {maybeRenderGalleryPopoverButton()}
             {maybeRenderTagPopoverButton()}
             {(group.sub_group_count > 0 ||
               group.containing_groups.length > 0) && (

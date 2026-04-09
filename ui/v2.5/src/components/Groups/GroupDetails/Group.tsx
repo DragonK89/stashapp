@@ -42,10 +42,18 @@ import {
 import { Button, Tab, Tabs } from "react-bootstrap";
 import { GroupSubGroupsPanel } from "./GroupSubGroupsPanel";
 import { GroupPerformersPanel } from "./GroupPerformersPanel";
+import { GroupGalleriesPanel } from "./GroupGalleriesPanel";
 import { Icon } from "src/components/Shared/Icon";
 import { goBackOrReplace } from "src/utils/history";
+import { makeGroupGalleryFilter } from "src/core/groups";
 
-const validTabs = ["default", "scenes", "performers", "subgroups"] as const;
+const validTabs = [
+  "default",
+  "scenes",
+  "galleries",
+  "performers",
+  "subgroups",
+] as const;
 type TabKey = (typeof validTabs)[number];
 
 function isTabKey(tab: string): tab is TabKey {
@@ -62,10 +70,21 @@ const GroupTabs: React.FC<{
     performer_count: performerCount,
     sub_group_count: groupCount,
   } = group;
+  const { data: galleryData } = GQL.useFindGalleriesQuery({
+    variables: {
+      filter: {
+        per_page: 1,
+      },
+      gallery_filter: makeGroupGalleryFilter(group.id),
+    },
+  });
+  const galleryCount = galleryData?.findGalleries.count ?? 0;
 
   const populatedDefaultTab = useMemo(() => {
     if (sceneCount == 0) {
-      if (performerCount != 0) {
+      if (galleryCount != 0) {
+        return "galleries";
+      } else if (performerCount != 0) {
         return "performers";
       } else if (groupCount !== 0) {
         return "subgroups";
@@ -73,7 +92,7 @@ const GroupTabs: React.FC<{
     }
 
     return "scenes";
-  }, [sceneCount, performerCount, groupCount]);
+  }, [sceneCount, galleryCount, performerCount, groupCount]);
 
   const { setTabKey } = useTabKey({
     tabKey,
@@ -101,6 +120,18 @@ const GroupTabs: React.FC<{
         }
       >
         <GroupScenesPanel active={tabKey === "scenes"} group={group} />
+      </Tab>
+      <Tab
+        eventKey="galleries"
+        title={
+          <TabTitleCounter
+            messageID="galleries"
+            count={galleryCount}
+            abbreviateCounter={abbreviateCounter}
+          />
+        }
+      >
+        <GroupGalleriesPanel active={tabKey === "galleries"} group={group} />
       </Tab>
       <Tab
         eventKey="performers"

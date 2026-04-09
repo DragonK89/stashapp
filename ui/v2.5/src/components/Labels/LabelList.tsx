@@ -38,7 +38,10 @@ interface ILabelList {
   view?: View;
   alterQuery?: boolean;
   extraOperations?: IItemListOperation<GQL.FindLabelsQueryResult>[];
-  extraCriteria?: Record<string, IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]>;
+  extraCriteria?: Record<
+    string,
+    IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]
+  >;
 }
 
 export const LabelList: React.FC<ILabelList> = PatchComponent(

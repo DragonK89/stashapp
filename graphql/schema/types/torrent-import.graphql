@@ -32,4 +32,3 @@ type ImportTorrentScenesResult {
   "Path to the generated fail import file"
   failFilePath: String!
 }
-

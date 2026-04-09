@@ -155,7 +155,8 @@ export const App: React.FC = () => {
 
   // use en-GB as default messages if any messages aren't found in the chosen language
   const [messages, setMessages] = useState<Record<string, string>>();
-  const [customMessages, setCustomMessages] = useState<Record<string, unknown>>();
+  const [customMessages, setCustomMessages] =
+    useState<Record<string, unknown>>();
   const groupsLabelOverride = (
     (config.data?.configuration.ui as IUIConfig | undefined)?.groupsLabel ?? ""
   ).trim();
@@ -196,9 +197,10 @@ export const App: React.FC = () => {
         }
       );
 
-      const newMessages = flattenMessages(
-        mergedMessages
-      ) as Record<string, string>;
+      const newMessages = flattenMessages(mergedMessages) as Record<
+        string,
+        string
+      >;
       if (groupsLabelOverride.length > 0) {
         newMessages.groups = groupsLabelOverride;
       }

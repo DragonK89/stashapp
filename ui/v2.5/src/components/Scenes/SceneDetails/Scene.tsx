@@ -308,7 +308,16 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       Mousetrap.unbind("c c");
       Mousetrap.unbind("c d");
     };
-  }, [collapsed, setCollapsed, hideMarkers, onGenerateScreenshot, onIncrementOClick, onQueueNext, onQueuePrevious, onQueueRandom]);
+  }, [
+    collapsed,
+    setCollapsed,
+    hideMarkers,
+    onGenerateScreenshot,
+    onIncrementOClick,
+    onQueueNext,
+    onQueuePrevious,
+    onQueueRandom,
+  ]);
 
   async function onSave(input: GQL.SceneCreateInput) {
     await updateScene({
@@ -367,8 +376,6 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       )
     );
   }
-
-
 
   function onDeleteDialogClosed(deleted: boolean) {
     setIsDeleteAlertOpen(false);
@@ -632,9 +639,14 @@ const ScenePage: React.FC<IProps> = PatchComponent("ScenePage", (props) => {
       {maybeRenderSceneGenerateDialog()}
       {maybeRenderDeleteDialog()}
       <div
-        className={`scene-tabs order-xl-first order-last ${collapsed ? "collapsed" : ""
-          }`}
-        style={!collapsed && sidebarWidth ? { flex: `0 0 ${sidebarWidth}px`, maxWidth: `${sidebarWidth}px` } : {}}
+        className={`scene-tabs order-xl-first order-last ${
+          collapsed ? "collapsed" : ""
+        }`}
+        style={
+          !collapsed && sidebarWidth
+            ? { flex: `0 0 ${sidebarWidth}px`, maxWidth: `${sidebarWidth}px` }
+            : {}
+        }
       >
         <div>
           <div className="scene-header-container">
@@ -771,10 +783,13 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
   const [isResizing, setIsResizing] = useState(false);
 
   function setSidebarWidth(width: number) {
-    setInterfaceConfig((prev) => ({
-      ...prev,
-      sceneSidebarWidth: width,
-    } as typeof prev));
+    setInterfaceConfig(
+      (prev) =>
+        ({
+          ...prev,
+          sceneSidebarWidth: width,
+        } as typeof prev)
+    );
   }
 
   const [scene, setScene] = useState<GQL.SceneDataFragment>();
@@ -1060,10 +1075,14 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
           "has-tabs": true,
           "no-pointer-events": isResizing,
         })}
-        style={!collapsed ? {
-          flex: `0 0 calc(100% - ${sidebarWidth}px - 10px)`,
-          maxWidth: `calc(100% - ${sidebarWidth}px - 10px)`
-        } : {}}
+        style={
+          !collapsed
+            ? {
+                flex: `0 0 calc(100% - ${sidebarWidth}px - 10px)`,
+                maxWidth: `calc(100% - ${sidebarWidth}px - 10px)`,
+              }
+            : {}
+        }
       >
         <Nav className="player-area-tabs">
           <Nav.Link
@@ -1089,7 +1108,10 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
               "d-none": activeTab !== "cover",
             })}
           >
-            <SceneCoverGallery scene={scene} galleryId={scene.galleries[0]?.id} />
+            <SceneCoverGallery
+              scene={scene}
+              galleryId={scene.galleries[0]?.id}
+            />
           </div>
 
           <div

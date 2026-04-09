@@ -44,7 +44,9 @@ const FIND_GALLERY_COVER = gql`
 `;
 
 export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
-  const [selectedImage, setSelectedImage] = useState<IGalleryImage | null>(null);
+  const [selectedImage, setSelectedImage] = useState<IGalleryImage | null>(
+    null
+  );
   const thumbnailsRef = useRef<HTMLDivElement | null>(null);
 
   const { data, loading } = useFindImagesQuery({
@@ -165,7 +167,8 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
     };
   }, []);
 
-  if (loading && galleryId && galleryImages.length === 0) return <LoadingIndicator />;
+  if (loading && galleryId && galleryImages.length === 0)
+    return <LoadingIndicator />;
   if (!currentImage) return null;
 
   return (

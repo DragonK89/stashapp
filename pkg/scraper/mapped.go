@@ -122,43 +122,6 @@ func (s mappedConfig) process(ctx context.Context, q mappedQuery, common commonM
 	return ret
 }
 
-func (s mappedConfig) postProcess(ctx context.Context, q mappedQuery, attrConfig mappedScraperAttrConfig, found []string) []string {
-	// check if we're concatenating the results into a single result
-	var ret []string
-	if attrConfig.hasConcat() {
-		result := attrConfig.concatenateResults(found)
-		result = attrConfig.postProcess(ctx, result, q)
-		if attrConfig.hasSplit() {
-			results := attrConfig.splitString(result)
-			// skip cleaning when the query is used for searching
-			if q.getType() == SearchQuery {
-				return results
-			}
-			results = attrConfig.cleanResults(results)
-			return results
-		}
-
-		ret = []string{result}
-	} else {
-		for _, text := range found {
-			text = attrConfig.postProcess(ctx, text, q)
-			if attrConfig.hasSplit() {
-				return attrConfig.splitString(text)
-			}
-
-			ret = append(ret, text)
-		}
-		// skip cleaning when the query is used for searching
-		if q.getType() == SearchQuery {
-			return ret
-		}
-		ret = attrConfig.cleanResults(ret)
-
-	}
-
-	return ret
-}
-
 type mappedSceneScraperConfig struct {
 	mappedConfig
 
@@ -663,22 +626,23 @@ func (p *postProcessJavascript) Apply(ctx context.Context, value string, q mappe
 	}
 
 	// always ensure root is defined in the VM to avoid reference errors
-	var root interface{} = nil
+	var root interface{}
 	doc := q.getDoc()
 	if doc != "" {
 		res := gjson.Parse(doc)
 		if res.Exists() {
-			if res.IsArray() {
+			switch {
+			case res.IsArray():
 				var slice []interface{}
 				if err := json.Unmarshal([]byte(doc), &slice); err == nil {
 					root = slice
 				}
-			} else if res.IsObject() {
+			case res.IsObject():
 				var m map[string]interface{}
 				if err := json.Unmarshal([]byte(doc), &m); err == nil {
 					root = m
 				}
-			} else {
+			default:
 				// simple value
 				root = res.Value()
 			}

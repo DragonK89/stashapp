@@ -150,7 +150,10 @@ const StudioDetails: React.FC<IStudioDetailsProps> = ({
           {maybeRenderField("details", studio.details)}
           {maybeRenderField("aliases", studio.aliases)}
           {!hideTags &&
-            maybeRenderField("tags", studio.tags?.map((t) => t.name).join(", "))}
+            maybeRenderField(
+              "tags",
+              studio.tags?.map((t) => t.name).join(", ")
+            )}
           {maybeRenderField("parent_studio", studio.parent?.name, false)}
           {maybeRenderStashBoxLink()}
         </div>

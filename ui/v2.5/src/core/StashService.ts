@@ -289,21 +289,45 @@ export const useFindGalleryImageID = (id: string, index: number) => {
   return GQL.useFindGalleryImageIdQuery({ variables: { id, index } });
 };
 
-export const useFindGalleries = (filter?: ListFilterModel) =>
+type GalleryFilterHook = (
+  galleryFilter: GQL.GalleryFilterType
+) => GQL.GalleryFilterType;
+
+function applyGalleryFilterHook(
+  filter: ListFilterModel | undefined,
+  galleryFilterHook?: GalleryFilterHook
+) {
+  const filterOutput = filter?.makeFilter() as
+    | GQL.GalleryFilterType
+    | undefined;
+  if (!galleryFilterHook) {
+    return filterOutput;
+  }
+
+  return galleryFilterHook(filterOutput ?? {});
+}
+
+export const useFindGalleries = (
+  filter?: ListFilterModel,
+  galleryFilterHook?: GalleryFilterHook
+) =>
   GQL.useFindGalleriesQuery({
     skip: filter === undefined,
     variables: {
       filter: filter?.makeFindFilter(),
-      gallery_filter: filter?.makeFilter(),
+      gallery_filter: applyGalleryFilterHook(filter, galleryFilterHook),
     },
   });
 
-export const queryFindGalleries = (filter: ListFilterModel) =>
+export const queryFindGalleries = (
+  filter: ListFilterModel,
+  galleryFilterHook?: GalleryFilterHook
+) =>
   client.query<GQL.FindGalleriesQuery>({
     query: GQL.FindGalleriesDocument,
     variables: {
       filter: filter.makeFindFilter(),
-      gallery_filter: filter.makeFilter(),
+      gallery_filter: applyGalleryFilterHook(filter, galleryFilterHook),
     },
   });
 
@@ -2403,8 +2427,6 @@ export const mutateDeleteFiles = (ids: string[]) =>
 
 export const useListSceneScrapers = () => GQL.useListSceneScrapersQuery();
 
-
-
 export const queryScrapeScene = (
   source: GQL.ScraperSourceInput,
   sceneId: string
@@ -2457,9 +2479,7 @@ export const queryScrapeSceneQueryFragment = (
     fetchPolicy: "network-only",
   });
 
-
 export const stashBoxSceneBatchQuery = (
-
   sceneIds: string[],
   stashBoxEndpoint: string
 ) =>
@@ -2650,7 +2670,6 @@ export const queryScrapeGalleryQuery = (
     },
     fetchPolicy: "network-only",
   });
-
 
 export const queryScrapeGalleryURL = (url: string) =>
   client.query<GQL.ScrapeGalleryUrlQuery>({

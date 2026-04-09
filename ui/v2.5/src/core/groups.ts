@@ -36,6 +36,29 @@ export const useGroupFilterHook = (
   };
 };
 
+export const makeGroupScenesFilter = (
+  groupID: string,
+  includeSubGroupContent: boolean = false
+): GQL.SceneFilterType => ({
+  groups: {
+    value: [groupID],
+    modifier: GQL.CriterionModifier.Includes,
+    depth: includeSubGroupContent ? -1 : 0,
+  },
+});
+
+export const makeGroupGalleryFilter = (
+  groupID: string,
+  galleryFilter: GQL.GalleryFilterType = {},
+  includeSubGroupContent: boolean = false
+): GQL.GalleryFilterType => ({
+  ...galleryFilter,
+  scenes_filter: {
+    ...galleryFilter.scenes_filter,
+    ...makeGroupScenesFilter(groupID, includeSubGroupContent),
+  },
+});
+
 export const scrapedGroupToCreateInput = (toCreate: GQL.ScrapedGroup) => {
   const input: GQL.GroupCreateInput = {
     name: toCreate.name ?? "",

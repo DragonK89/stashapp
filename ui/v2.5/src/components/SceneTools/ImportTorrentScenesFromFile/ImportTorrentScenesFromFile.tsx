@@ -24,20 +24,23 @@ type FieldOptionRow = {
   strategy: GQL.IdentifyFieldStrategy;
 };
 
-const allowedFields: Array<{ field: string; labelId: string; allowCreateMissing?: boolean }> =
-  [
-    { field: "title", labelId: "title" },
-    { field: "code", labelId: "scene_code" },
-    { field: "cover_image", labelId: "cover_image" },
-    { field: "date", labelId: "date" },
-    { field: "director", labelId: "director" },
-    { field: "url", labelId: "url" },
-    { field: "studio", labelId: "studio_and_parent", allowCreateMissing: true },
-    { field: "performers", labelId: "performers", allowCreateMissing: true },
-    { field: "groups", labelId: "groups" },
-    { field: "details", labelId: "details" },
-    { field: "stash_ids", labelId: "stash_ids" },
-  ];
+const allowedFields: Array<{
+  field: string;
+  labelId: string;
+  allowCreateMissing?: boolean;
+}> = [
+  { field: "title", labelId: "title" },
+  { field: "code", labelId: "scene_code" },
+  { field: "cover_image", labelId: "cover_image" },
+  { field: "date", labelId: "date" },
+  { field: "director", labelId: "director" },
+  { field: "url", labelId: "url" },
+  { field: "studio", labelId: "studio_and_parent", allowCreateMissing: true },
+  { field: "performers", labelId: "performers", allowCreateMissing: true },
+  { field: "groups", labelId: "groups" },
+  { field: "details", labelId: "details" },
+  { field: "stash_ids", labelId: "stash_ids" },
+];
 
 export const ImportTorrentScenesFromFile: React.FC = () => {
   const intl = useIntl();
@@ -83,7 +86,9 @@ export const ImportTorrentScenesFromFile: React.FC = () => {
           field: f.field,
           strategy: f.strategy,
           createMissing:
-            f.createMissing === undefined ? undefined : Boolean(f.createMissing),
+            f.createMissing === undefined
+              ? undefined
+              : Boolean(f.createMissing),
         }));
       }
 
@@ -102,7 +107,9 @@ export const ImportTorrentScenesFromFile: React.FC = () => {
         Toast.toast({
           variant: "warning",
           content: intl.formatMessage(
-            { id: "config.tools.import_torrent_scenes_from_file.toast_fail_path" },
+            {
+              id: "config.tools.import_torrent_scenes_from_file.toast_fail_path",
+            },
             { path: r.failFilePath }
           ),
         });
@@ -234,7 +241,9 @@ export const ImportTorrentScenesFromFile: React.FC = () => {
                                 {intl.formatMessage({ id: "actions.merge" })}
                               </option>
                               <option value="OVERWRITE">
-                                {intl.formatMessage({ id: "actions.overwrite" })}
+                                {intl.formatMessage({
+                                  id: "actions.overwrite",
+                                })}
                               </option>
                             </Form.Control>
                           </td>
@@ -275,4 +284,3 @@ export const ImportTorrentScenesFromFile: React.FC = () => {
 };
 
 export default ImportTorrentScenesFromFile;
-

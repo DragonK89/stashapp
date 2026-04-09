@@ -374,14 +374,16 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   );
 
   useEffect(() => {
-    setGalleryActions((scene.galleries ?? []).map((_scrapedGallery, idx) => {
-      const matchedID = matchedGalleryIDs[idx];
-      return {
-        mode: "auto",
-        matchedID,
-        selectedID: matchedID,
-      };
-    }));
+    setGalleryActions(
+      (scene.galleries ?? []).map((_scrapedGallery, idx) => {
+        const matchedID = matchedGalleryIDs[idx];
+        return {
+          mode: "auto",
+          matchedID,
+          selectedID: matchedID,
+        };
+      })
+    );
   }, [scene.galleries, matchedGalleryIDs]);
   const [tagIDs, setTagIDs, setInitialTagIDs] = useInitialState<string[]>(
     getInitialTags()
@@ -1023,7 +1025,10 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
             <Button
               variant={selectedSource === "skip" ? "primary" : "secondary"}
               onClick={() =>
-                setGalleryAction(galleryIndex, { mode: "skip", selectedID: undefined })
+                setGalleryAction(galleryIndex, {
+                  mode: "skip",
+                  selectedID: undefined,
+                })
               }
             >
               <FormattedMessage id="actions.skip" />
@@ -1032,7 +1037,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               ids={action.selectedID ? [action.selectedID] : []}
               noSelectionString={getScrapedGalleryName(scrapedGallery)}
               onSelect={(galleries) => {
-                const selectedID = galleries.length ? galleries[0].id : undefined;
+                const selectedID = galleries.length
+                  ? galleries[0].id
+                  : undefined;
                 setGalleryAction(galleryIndex, {
                   mode: selectedID ? "existing" : "skip",
                   selectedID,
@@ -1080,7 +1087,6 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
       Toast.error(e);
     }
   }
-
 
   function setPerformerID(performerIndex: number, id: string | undefined) {
     const newPerformerIDs = [...performerIDs];

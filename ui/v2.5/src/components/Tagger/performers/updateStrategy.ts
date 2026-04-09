@@ -54,4 +54,3 @@ export function mergeOrOverwriteURLs(options: {
 
   return cleanStringList(values);
 }
-

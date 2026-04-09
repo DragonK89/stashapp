@@ -77,7 +77,10 @@ export const useContainerDimensions = <T extends HTMLElement = HTMLDivElement>(
       setDimension({ width, height });
     }
   }, 50);
-  useEffect(() => () => debouncedSetDimension.cancel(), [debouncedSetDimension]);
+  useEffect(
+    () => () => debouncedSetDimension.cancel(),
+    [debouncedSetDimension]
+  );
 
   useResizeObserver(target, debouncedSetDimension);
 

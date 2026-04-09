@@ -452,8 +452,12 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
         }
       }
 
-      const finalName =
-        (input.name ?? existingStudio?.name ?? modalStudio?.name ?? "").trim();
+      const finalName = (
+        input.name ??
+        existingStudio?.name ??
+        modalStudio?.name ??
+        ""
+      ).trim();
       if (input.aliases) {
         input.aliases = mergeOrOverwriteAliases({
           existingAliases: existingStudio?.aliases,
@@ -840,7 +844,10 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+      <Form.Group
+        controlId="scraper"
+        className="d-flex align-items-center mb-0"
+      >
         <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
@@ -895,7 +902,10 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
                 >
                   <FormattedMessage id="studio_tagger.batch_update_studios" />
                 </Button>
-                <Button className="ml-1" onClick={() => setShowConfig(!showConfig)}>
+                <Button
+                  className="ml-1"
+                  onClick={() => setShowConfig(!showConfig)}
+                >
                   <Icon className="fa-fw" icon={faCog} />
                 </Button>
               </div>

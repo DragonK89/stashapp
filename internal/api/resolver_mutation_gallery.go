@@ -1086,10 +1086,6 @@ func (r *mutationResolver) ensureImageHasLocalFileForGallery(ctx context.Context
 	return nil
 }
 
-func (r *mutationResolver) ensureImageHasLocalFile(ctx context.Context, imageID int, imageURL string) error {
-	return r.ensureImageHasLocalFileForGallery(ctx, nil, imageID, imageURL)
-}
-
 func (r *mutationResolver) getOrCreateLocalImageFileIDFromURLForGallery(ctx context.Context, gallery *models.Gallery, imageURL string) (models.FileID, error) {
 	var localPath string
 	var err error
@@ -1108,10 +1104,6 @@ func (r *mutationResolver) getOrCreateLocalImageFileIDFromURLForGallery(ctx cont
 	}
 
 	return fileID, nil
-}
-
-func (r *mutationResolver) getOrCreateLocalImageFileIDFromURL(ctx context.Context, imageURL string) (models.FileID, error) {
-	return r.getOrCreateLocalImageFileIDFromURLForGallery(ctx, nil, imageURL)
 }
 
 func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Context, gallery *models.Gallery, imageURL string) (int, bool, error) {
@@ -1164,10 +1156,6 @@ func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Cont
 	}
 
 	return newImage.ID, true, nil
-}
-
-func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, imageURL string) (int, bool, error) {
-	return r.getOrCreateLocalImageByURLForGallery(ctx, nil, imageURL)
 }
 
 func (r *mutationResolver) findImageIDByFileChecksum(ctx context.Context, fileID models.FileID) (int, error) {

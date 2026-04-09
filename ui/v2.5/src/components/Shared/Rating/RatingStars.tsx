@@ -96,9 +96,7 @@ export const RatingStars = PatchComponent(
         return;
       }
 
-      props.onSetRating(
-        convertFromRatingFormat(newRating, ratingSystemType)
-      );
+      props.onSetRating(convertFromRatingFormat(newRating, ratingSystemType));
     }
 
     function onMouseOver(thisStar: number) {

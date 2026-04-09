@@ -95,7 +95,6 @@ const handleSpecialStrings = (input: string): string => {
 export function prepareQueryString(
   scene: Partial<GQL.SlimSceneDataFragment>,
 
-
   paths: string[],
   filename: string,
   mode: ParseMode,

@@ -55,7 +55,10 @@ const GalleryItem: React.FC<{
       index={index}
     >
       {searchResult && searchResult.results?.length ? (
-        <GallerySearchResults galleries={searchResult.results} target={gallery} />
+        <GallerySearchResults
+          galleries={searchResult.results}
+          target={gallery}
+        />
       ) : undefined}
     </TaggerGallery>
   );
@@ -88,7 +91,10 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+      <Form.Group
+        controlId="scraper"
+        className="d-flex align-items-center mb-0"
+      >
         <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
@@ -109,7 +115,6 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
       </Form.Group>
     );
   }
-
 
   const [spriteImage, setSpriteImage] = useState<string | null>(null);
   const lightboxImage = useMemo(

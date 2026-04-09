@@ -24,10 +24,7 @@ import { errorToString } from "src/utils";
 import { mergeStudioStashIDs } from "./utils";
 import { useTaggerConfig } from "./config";
 import { useIsMounted } from "src/hooks/state";
-import {
-  defaultSceneScrapeWithSource,
-  IUIConfig,
-} from "src/core/config";
+import { defaultSceneScrapeWithSource, IUIConfig } from "src/core/config";
 
 export interface ITaggerContextState {
   config: ITaggerConfig;
@@ -92,16 +89,16 @@ const dummyValFn = () => {
 
 export const TaggerStateContext = React.createContext<ITaggerContextState>({
   config: initialConfig,
-  setConfig: () => { },
+  setConfig: () => {},
   loading: false,
   sources: [],
   searchResults: {},
-  setCurrentSource: () => { },
+  setCurrentSource: () => {},
   doSceneQuery: dummyFn,
   doSceneFragmentScrape: dummyFn,
   doMultiSceneFragmentScrape: dummyFn,
   doMultiSceneQueryScrape: dummyFn,
-  stopMultiScrape: () => { },
+  stopMultiScrape: () => {},
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
   linkPerformer: dummyFn,
@@ -950,9 +947,9 @@ export const TaggerContext: React.FC = ({ children }) => {
             studio:
               r.remote_site_id === stashID
                 ? {
-                  ...r.studio,
-                  stored_id: studioID,
-                }
+                    ...r.studio,
+                    stored_id: studioID,
+                  }
                 : r.studio,
           };
         });
@@ -1017,9 +1014,9 @@ export const TaggerContext: React.FC = ({ children }) => {
             studio:
               r.studio.remote_site_id === studio.remote_site_id
                 ? {
-                  ...r.studio,
-                  stored_id: studioID,
-                }
+                    ...r.studio,
+                    stored_id: studioID,
+                  }
                 : r.studio,
           };
         });

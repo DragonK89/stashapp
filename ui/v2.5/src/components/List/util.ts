@@ -504,7 +504,9 @@ export function useCachedQueryResult<T extends QueryResult>(
     if (!result.loading) {
       setCachedResult(result);
     } else {
-      if (totalCountImpacted(lastFilter, filter, lastExtraCriteria, extraCriteria)) {
+      if (
+        totalCountImpacted(lastFilter, filter, lastExtraCriteria, extraCriteria)
+      ) {
         setCachedResult(result);
       }
     }

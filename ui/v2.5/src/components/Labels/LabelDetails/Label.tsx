@@ -289,11 +289,7 @@ const LabelPage: React.FC<IProps> = ({ label, tabKey }) => {
         <div className="detail-container">
           <HeaderImage encodingImage={encodingImage}>
             {labelImage && (
-              <DetailImage
-                className="logo"
-                alt={label.name}
-                src={labelImage}
-              />
+              <DetailImage className="logo" alt={label.name} src={labelImage} />
             )}
           </HeaderImage>
           <div className="row">
@@ -344,15 +340,13 @@ const LabelPage: React.FC<IProps> = ({ label, tabKey }) => {
                 />
               ) : (
                 <DetailsEditNavbar
-                  objectName={
-                    label.name ?? intl.formatMessage({ id: "label" })
-                  }
+                  objectName={label.name ?? intl.formatMessage({ id: "label" })}
                   isNew={false}
                   isEditing={isEditing}
                   onToggleEdit={() => toggleEditing()}
-                  onSave={() => { }}
-                  onImageChange={() => { }}
-                  onClearImage={() => { }}
+                  onSave={() => {}}
+                  onImageChange={() => {}}
+                  onClearImage={() => {}}
                   onAutoTag={onAutoTag}
                   autoTagDisabled={label.ignore_auto_tag}
                   onDelete={onDelete}

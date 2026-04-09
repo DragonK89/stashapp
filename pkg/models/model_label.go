@@ -44,10 +44,10 @@ type LabelPartial struct {
 	UpdatedAt     OptionalTime
 	IgnoreAutoTag OptionalBool
 
-	Aliases       *UpdateStrings
-	URLs          *UpdateStrings
-	TagIDs        *UpdateIDs
-	StashIDs      *UpdateStashIDs
+	Aliases  *UpdateStrings
+	URLs     *UpdateStrings
+	TagIDs   *UpdateIDs
+	StashIDs *UpdateStashIDs
 }
 
 func NewLabelPartial() LabelPartial {

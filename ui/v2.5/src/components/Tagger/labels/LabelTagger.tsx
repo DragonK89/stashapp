@@ -121,7 +121,11 @@ const LabelTaggerList: React.FC<ILabelTaggerListProps> = ({
 
   const [updateLabel] = useLabelUpdate();
 
-  function handleSaveError(labelID: string, labelName: string, message: string) {
+  function handleSaveError(
+    labelID: string,
+    labelName: string,
+    message: string
+  ) {
     setError({
       ...error,
       [labelID]: {
@@ -139,8 +143,12 @@ const LabelTaggerList: React.FC<ILabelTaggerListProps> = ({
     const labelID = modalStudio?.stored_id;
     if (labelID) {
       const existingLabel = labels.find((l) => l.id === labelID);
-      const finalName =
-        (input.name ?? existingLabel?.name ?? modalStudio?.name ?? "").trim();
+      const finalName = (
+        input.name ??
+        existingLabel?.name ??
+        modalStudio?.name ??
+        ""
+      ).trim();
       const updateData: GQL.LabelUpdateInput = {
         id: labelID,
         name: input.name,
@@ -223,10 +231,7 @@ const LabelTaggerList: React.FC<ILabelTaggerListProps> = ({
               <Button
                 disabled={loading}
                 onClick={() =>
-                  doBoxSearch(
-                    label.id,
-                    queries[label.id] ?? label.name ?? ""
-                  )
+                  doBoxSearch(label.id, queries[label.id] ?? label.name ?? "")
                 }
               >
                 <FormattedMessage id="actions.search" />
@@ -397,7 +402,10 @@ export const LabelTagger: React.FC<ITaggerProps> = ({ labels }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+      <Form.Group
+        controlId="scraper"
+        className="d-flex align-items-center mb-0"
+      >
         <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
@@ -408,9 +416,7 @@ export const LabelTagger: React.FC<ITaggerProps> = ({ labels }) => {
           disabled={!stashBoxes.length}
           onChange={handleSourceSelect}
         >
-          {!stashBoxes.length && (
-            <option>No instances found</option>
-          )}
+          {!stashBoxes.length && <option>No instances found</option>}
           {stashBoxes.map((i) => (
             <option value={i.endpoint} key={i.endpoint}>
               {formatEndpointLabel(i.endpoint)}

@@ -154,7 +154,9 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                       className="mb-0"
                       label={intl.formatMessage({ id: "urls" })}
                       checked={urlsIncluded}
-                      onChange={(e) => toggleField("urls", e.currentTarget.checked)}
+                      onChange={(e) =>
+                        toggleField("urls", e.currentTarget.checked)
+                      }
                     />
                   </div>
                   <div className="col-auto">

@@ -68,9 +68,7 @@ export interface ITaggerContextState {
     index: number,
     gallery: IScrapedGallery
   ) => Promise<void>;
-  saveGallery: (
-    galleryCreateInput: GQL.GalleryUpdateInput
-  ) => Promise<void>;
+  saveGallery: (galleryCreateInput: GQL.GalleryUpdateInput) => Promise<void>;
   addGalleryImagesByUrl: (galleryID: string, urls: string[]) => Promise<void>;
 }
 
@@ -83,16 +81,16 @@ const dummyValFn = () => {
 
 export const TaggerStateContext = React.createContext<ITaggerContextState>({
   config: initialConfig,
-  setConfig: () => { },
+  setConfig: () => {},
   loading: false,
   sources: [],
   searchResults: {},
-  setCurrentSource: () => { },
+  setCurrentSource: () => {},
   doGalleryQuery: dummyFn,
   doMultiGalleryQueryScrape: dummyFn,
   searchAllQueue: [],
-  setSearchAllQueue: () => { },
-  stopMultiScrape: () => { },
+  setSearchAllQueue: () => {},
+  stopMultiScrape: () => {},
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
   linkPerformer: dummyFn,
@@ -157,9 +155,7 @@ export const TaggerContext: React.FC = ({ children }) => {
 
     const scraperSources: ITaggerSource[] = scrapers
       .filter((s) =>
-        s.gallery?.supported_scrapes.some(
-          (t) => t === GQL.ScrapeType.Url
-        )
+        s.gallery?.supported_scrapes.some((t) => t === GQL.ScrapeType.Url)
       )
       .map((s) => ({
         id: `${SCRAPER_PREFIX}${s.id}`,
@@ -244,9 +240,11 @@ export const TaggerContext: React.FC = ({ children }) => {
         newResult = { error: results.errors.toString() };
       } else {
         const data = results.data as Record<string, unknown>;
-        const scraperResults = (data.scrapeGalleryURL
-          ? [data.scrapeGalleryURL]
-          : data.scrapeSingleGallery) as GQL.ScrapedGallery[];
+        const scraperResults = (
+          data.scrapeGalleryURL
+            ? [data.scrapeGalleryURL]
+            : data.scrapeSingleGallery
+        ) as GQL.ScrapedGallery[];
 
         newResult = {
           results: scraperResults.map((r) => ({
@@ -325,7 +323,11 @@ export const TaggerContext: React.FC = ({ children }) => {
     index: number,
     gallery: IScrapedGallery
   ) {
-    if (!currentSource || gallery.resolved || !searchResults[galleryID]?.results) {
+    if (
+      !currentSource ||
+      gallery.resolved ||
+      !searchResults[galleryID]?.results
+    ) {
       return Promise.resolve();
     }
 
@@ -343,9 +345,7 @@ export const TaggerContext: React.FC = ({ children }) => {
     }
   }
 
-  async function saveGallery(
-    galleryCreateInput: GQL.GalleryUpdateInput
-  ) {
+  async function saveGallery(galleryCreateInput: GQL.GalleryUpdateInput) {
     try {
       setLoading(true);
       await updateGalleryMutation({

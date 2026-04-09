@@ -36,16 +36,21 @@ type FindLabelsResult = Awaited<
   ReturnType<typeof queryFindLabelsForSelect>
 >["data"]["findLabels"]["labels"];
 
-const sortLabelsByRelevance = (
-  input: string,
-  labels: FindLabelsResult
-) => {
+const sortLabelsByRelevance = (input: string, labels: FindLabelsResult) => {
   const needle = input.toLowerCase();
   return [...labels].sort((a, b) => {
     const aName = (a.name ?? "").toLowerCase();
     const bName = (b.name ?? "").toLowerCase();
-    const aScore = aName.startsWith(needle) ? 2 : aName.includes(needle) ? 1 : 0;
-    const bScore = bName.startsWith(needle) ? 2 : bName.includes(needle) ? 1 : 0;
+    const aScore = aName.startsWith(needle)
+      ? 2
+      : aName.includes(needle)
+      ? 1
+      : 0;
+    const bScore = bName.startsWith(needle)
+      ? 2
+      : bName.includes(needle)
+      ? 1
+      : 0;
     if (aScore !== bScore) return bScore - aScore;
     return aName.localeCompare(bName);
   });
@@ -210,4 +215,3 @@ const _LabelIDSelect: React.FC<ILabelIDSelectProps> = (props) => {
 };
 
 export const LabelIDSelect = _LabelIDSelect;
-

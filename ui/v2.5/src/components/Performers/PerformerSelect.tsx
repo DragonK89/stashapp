@@ -95,7 +95,9 @@ function renderPerformerGenderSymbol(
 
   return (
     <span
-      className={`performer-gender-symbol ${performerGenderSymbolClass(gender)}`}
+      className={`performer-gender-symbol ${performerGenderSymbolClass(
+        gender
+      )}`}
       style={{
         color: value === "FEMALE" ? "#ff5f7a" : "#57a6ff",
         marginLeft: "0.35rem",

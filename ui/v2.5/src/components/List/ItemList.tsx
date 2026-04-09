@@ -386,7 +386,10 @@ interface IItemListContextProps<
   getCount: (data: T) => number;
   getItems: (data: T) => E[];
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
-  extraCriteria?: Record<string, IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]>;
+  extraCriteria?: Record<
+    string,
+    IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]
+  >;
   view?: View;
   alterQuery?: boolean;
   selectable?: boolean;

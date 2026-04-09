@@ -45,15 +45,13 @@ const LabelResult: React.FC<ILabelResultProps> = ({
       <div className="entity-name">
         <FormattedMessage id="label" />:
         <b className="ml-2">
-          <ExternalLink href={label.image ?? undefined}>{label.name}</ExternalLink>
+          <ExternalLink href={label.image ?? undefined}>
+            {label.name}
+          </ExternalLink>
         </b>
       </div>
       <ButtonGroup>
-        <Button
-          variant="secondary"
-          onClick={onCreate}
-          disabled={!canCreate}
-        >
+        <Button variant="secondary" onClick={onCreate} disabled={!canCreate}>
           <FormattedMessage id="actions.create" />
         </Button>
         <Button

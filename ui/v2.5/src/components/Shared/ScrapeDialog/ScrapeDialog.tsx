@@ -69,9 +69,9 @@ export const ScrapeDialog: React.FC<
       }}
       modalProps={{
         size: "lg",
-        dialogClassName: `scrape-dialog ${
-          sfwContentMode ? "sfw-mode" : ""
-        } ${props.dialogClassName ?? ""}`.trim(),
+        dialogClassName: `scrape-dialog ${sfwContentMode ? "sfw-mode" : ""} ${
+          props.dialogClassName ?? ""
+        }`.trim(),
       }}
     >
       <div className="dialog-container">

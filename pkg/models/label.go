@@ -37,13 +37,13 @@ type LabelCreateInput struct {
 	StudioID string   `json:"studio_id"`
 	Urls     []string `json:"urls"`
 	// This should be a URL or a base64 encoded data URL
-	Image         *string          `json:"image"`
-	Rating100     *int             `json:"rating100"`
-	Favorite      *bool            `json:"favorite"`
-	Details       *string          `json:"details"`
-	Aliases       []string         `json:"aliases"`
-	TagIds        []string         `json:"tag_ids"`
-	IgnoreAutoTag *bool            `json:"ignore_auto_tag"`
+	Image         *string        `json:"image"`
+	Rating100     *int           `json:"rating100"`
+	Favorite      *bool          `json:"favorite"`
+	Details       *string        `json:"details"`
+	Aliases       []string       `json:"aliases"`
+	TagIds        []string       `json:"tag_ids"`
+	IgnoreAutoTag *bool          `json:"ignore_auto_tag"`
 	StashIds      []StashIDInput `json:"stash_ids"`
 }
 
@@ -53,12 +53,12 @@ type LabelUpdateInput struct {
 	StudioID *string  `json:"studio_id"`
 	Urls     []string `json:"urls"`
 	// This should be a URL or a base64 encoded data URL
-	Image         *string          `json:"image"`
-	Rating100     *int             `json:"rating100"`
-	Favorite      *bool            `json:"favorite"`
-	Details       *string          `json:"details"`
-	Aliases       []string         `json:"aliases"`
-	TagIds        []string         `json:"tag_ids"`
-	IgnoreAutoTag *bool            `json:"ignore_auto_tag"`
+	Image         *string        `json:"image"`
+	Rating100     *int           `json:"rating100"`
+	Favorite      *bool          `json:"favorite"`
+	Details       *string        `json:"details"`
+	Aliases       []string       `json:"aliases"`
+	TagIds        []string       `json:"tag_ids"`
+	IgnoreAutoTag *bool          `json:"ignore_auto_tag"`
 	StashIds      []StashIDInput `json:"stash_ids"`
 }

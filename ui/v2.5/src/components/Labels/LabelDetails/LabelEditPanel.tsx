@@ -176,9 +176,7 @@ export const LabelEditPanel: React.FC<ILabelEditPanel> = ({
     const title = intl.formatMessage({ id: "studio" });
     const control = (
       <StudioSelect
-        onSelect={(items) =>
-          onSetStudio(items.length > 0 ? items[0] : null)
-        }
+        onSelect={(items) => onSetStudio(items.length > 0 ? items[0] : null)}
         values={parentStudio ? [parentStudio] : []}
       />
     );

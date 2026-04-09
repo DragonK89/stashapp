@@ -69,7 +69,7 @@ hr {
   margin: 5px 0;
 }
 
-:not(.show-carat)>.dropdown-toggle::after {
+:not(.show-carat) > .dropdown-toggle::after {
   content: none;
 }
 

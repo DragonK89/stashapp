@@ -26,7 +26,12 @@ type SearchResultItem =
   | GQL.ScrapedStudioDataFragment
   | GQL.ScrapedSceneTagDataFragment;
 
-export type StashBoxEntityType = "performer" | "scene" | "studio" | "tag" | "label";
+export type StashBoxEntityType =
+  | "performer"
+  | "scene"
+  | "studio"
+  | "tag"
+  | "label";
 
 interface IProps {
   entityType: StashBoxEntityType;

@@ -92,7 +92,10 @@ interface IQueryResultContextOptions<
   useMetadataInfo?: (filter: ListFilterModel) => M;
   getCount: (data: T) => number;
   getItems: (data: T) => E[];
-  extraCriteria?: Record<string, IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]>;
+  extraCriteria?: Record<
+    string,
+    IHierarchicalLabeledIdCriterion[] | ILabeledIdCriterion[]
+  >;
 }
 
 export interface IQueryResultContextState<

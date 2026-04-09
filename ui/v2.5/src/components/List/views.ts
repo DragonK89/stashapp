@@ -35,6 +35,7 @@ export enum View {
   LabelScenes = "label_scenes",
 
   GroupScenes = "group_scenes",
+  GroupGalleries = "group_galleries",
   GroupSubGroups = "group_sub_groups",
   GroupPerformers = "group_performers",
 }

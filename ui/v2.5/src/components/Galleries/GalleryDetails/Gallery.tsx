@@ -173,11 +173,16 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
       const searchParams = new URLSearchParams(location.search);
       const sortBy = searchParams.get("sortby") ?? "path";
       const sortDirParam = searchParams.get("sortdir")?.toUpperCase();
-      const sortDir = sortDirParam === "DESC" ? GQL.SortDirectionEnum.Desc : GQL.SortDirectionEnum.Asc;
+      const sortDir =
+        sortDirParam === "DESC"
+          ? GQL.SortDirectionEnum.Desc
+          : GQL.SortDirectionEnum.Asc;
 
       const filter = new ListFilterModel(GQL.FilterMode.Images);
       const galleryCriterion = new GalleriesCriterion();
-      galleryCriterion.value = [{ id: gallery.id!, label: galleryTitle(gallery) }];
+      galleryCriterion.value = [
+        { id: gallery.id!, label: galleryTitle(gallery) },
+      ];
       filter.criteria.push(galleryCriterion);
       filter.sortBy = sortBy;
       filter.sortDirection = sortDir;
@@ -249,7 +254,11 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
         cover_image_id: linkedIDs[0],
       });
 
-      const titleBase = ((gallery.code ?? "").trim() || (gallery.title ?? "").trim() || "gallery")
+      const titleBase = (
+        (gallery.code ?? "").trim() ||
+        (gallery.title ?? "").trim() ||
+        "gallery"
+      )
         .replace(/\s+/g, "_")
         .replace(/[\\/:*?"<>|]/g, "_");
       const coverExt = extractImageExt(firstSceneScreenshot);

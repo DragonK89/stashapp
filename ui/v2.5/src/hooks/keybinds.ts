@@ -9,9 +9,9 @@ export function useRatingKeybinds(
 ) {
   const firstChar = useRef<string | undefined>(undefined);
 
-  function getStarRatingShortcuts(
-    system: RatingSystemType | undefined
-  ): { [char: string]: number } {
+  function getStarRatingShortcuts(system: RatingSystemType | undefined): {
+    [char: string]: number;
+  } {
     if (system === RatingSystemType.Stars10) {
       return {
         "`": NaN,

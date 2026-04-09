@@ -72,9 +72,7 @@ export const LabelDetailsPanel: React.FC<ILabelDetailsPanel> = ({
         id="studio"
         value={
           label.studio?.name ? (
-            <Link to={`/studios/${label.studio?.id}`}>
-              {label.studio.name}
-            </Link>
+            <Link to={`/studios/${label.studio?.id}`}>{label.studio.name}</Link>
           ) : (
             ""
           )

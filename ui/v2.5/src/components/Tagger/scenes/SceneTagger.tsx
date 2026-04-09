@@ -115,7 +115,10 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+      <Form.Group
+        controlId="scraper"
+        className="d-flex align-items-center mb-0"
+      >
         <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
@@ -211,7 +214,10 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
   }
 
   function renderFragmentScrapeButton() {
-    if (!currentSource?.supportSceneFragment && !currentSource?.supportSceneQuery) {
+    if (
+      !currentSource?.supportSceneFragment &&
+      !currentSource?.supportSceneQuery
+    ) {
       return;
     }
 

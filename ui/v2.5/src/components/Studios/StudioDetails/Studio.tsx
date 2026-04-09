@@ -1,4 +1,11 @@
-import { Tabs, Tab, Form, Button, OverlayTrigger, Popover } from "react-bootstrap";
+import {
+  Tabs,
+  Tab,
+  Form,
+  Button,
+  OverlayTrigger,
+  Popover,
+} from "react-bootstrap";
 import React, { useEffect, useMemo, useState } from "react";
 import { useHistory, Redirect, RouteComponentProps } from "react-router-dom";
 import { FormattedMessage, useIntl } from "react-intl";
@@ -320,9 +327,16 @@ const ConvertToLabelDropdown: React.FC<{
   }, [filter]);
 
   const popover = (
-    <Popover id="convert-to-label-popover" className="scraper-menu" style={{ minWidth: "16rem", maxWidth: "24rem" }}>
+    <Popover
+      id="convert-to-label-popover"
+      className="scraper-menu"
+      style={{ minWidth: "16rem", maxWidth: "24rem" }}
+    >
       <Popover.Content className="p-0">
-        <div className="dropdown-menu show position-relative border-0 w-100 mt-0" style={{ maxHeight: "300px", overflowY: "auto" }}>
+        <div
+          className="dropdown-menu show position-relative border-0 w-100 mt-0"
+          style={{ maxHeight: "300px", overflowY: "auto" }}
+        >
           <div className="scraper-filter-container">
             <div className="btn-group">
               <ClearableInput
@@ -335,20 +349,37 @@ const ConvertToLabelDropdown: React.FC<{
               </Button>
             </div>
           </div>
-          {studios.filter(s => s.id !== currentStudioId).map((s) => (
-            <div key={s.id} className="dropdown-item" onClick={() => { document.body.click(); onSelectStudio(s); }}>
-              {s.name}
-            </div>
-          ))}
+          {studios
+            .filter((s) => s.id !== currentStudioId)
+            .map((s) => (
+              <div
+                key={s.id}
+                className="dropdown-item"
+                onClick={() => {
+                  document.body.click();
+                  onSelectStudio(s);
+                }}
+              >
+                {s.name}
+              </div>
+            ))}
         </div>
       </Popover.Content>
     </Popover>
   );
 
   return (
-    <OverlayTrigger trigger="click" placement="bottom-start" rootClose overlay={popover}>
+    <OverlayTrigger
+      trigger="click"
+      placement="bottom-start"
+      rootClose
+      overlay={popover}
+    >
       <Button variant="primary" className="mr-2">
-        <FormattedMessage id="actions.convert_to_label" defaultMessage="Convert To Label" />
+        <FormattedMessage
+          id="actions.convert_to_label"
+          defaultMessage="Convert To Label"
+        />
       </Button>
     </OverlayTrigger>
   );
@@ -411,7 +442,12 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
 
       if (result.data?.labelCreate?.id) {
         await deleteStudio();
-        Toast.success(intl.formatMessage({ id: "toast.created_entity" }, { entity: intl.formatMessage({ id: "label" }).toLocaleLowerCase() }));
+        Toast.success(
+          intl.formatMessage(
+            { id: "toast.created_entity" },
+            { entity: intl.formatMessage({ id: "label" }).toLocaleLowerCase() }
+          )
+        );
         history.replace(`/labels/${result.data.labelCreate.id}`);
         return;
       }
@@ -640,9 +676,9 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
                   isNew={false}
                   isEditing={isEditing}
                   onToggleEdit={() => toggleEditing()}
-                  onSave={() => { }}
-                  onImageChange={() => { }}
-                  onClearImage={() => { }}
+                  onSave={() => {}}
+                  onImageChange={() => {}}
+                  onClearImage={() => {}}
                   onAutoTag={onAutoTag}
                   autoTagDisabled={studio.ignore_auto_tag}
                   onDelete={onDelete}
@@ -653,7 +689,10 @@ const StudioPage: React.FC<IProps> = ({ studio, tabKey }) => {
                           <LoadingIndicator inline />
                         </span>
                       ) : (
-                        <ConvertToLabelDropdown currentStudioId={studio.id} onSelectStudio={onConvertToLabel} />
+                        <ConvertToLabelDropdown
+                          currentStudioId={studio.id}
+                          onSelectStudio={onConvertToLabel}
+                        />
                       )
                     ) : undefined
                   }

@@ -513,7 +513,9 @@ type Mutation {
   reloadScrapers: Boolean!
 
   "Import torrent scenes from a server-side file"
-  importTorrentScenesFromFile(input: ImportTorrentScenesInput!): ImportTorrentScenesResult!
+  importTorrentScenesFromFile(
+    input: ImportTorrentScenesInput!
+  ): ImportTorrentScenesResult!
 
   """
   Enable/disable plugins - enabledMap is a map of plugin IDs to enabled booleans.

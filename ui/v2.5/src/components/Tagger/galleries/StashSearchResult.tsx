@@ -4,7 +4,12 @@ import { Badge, Button, Col, Form, Row } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 import uniq from "lodash-es/uniq";
 
-import { faLink, faPlus, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import {
+  faLink,
+  faPlus,
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
 
 import * as GQL from "src/core/generated-graphql";
 import { Icon } from "src/components/Shared/Icon";
@@ -12,7 +17,10 @@ import { TagSelect } from "src/components/Shared/Select";
 import { TruncatedText } from "src/components/Shared/TruncatedText";
 import { OperationButton } from "src/components/Shared/OperationButton";
 import { genderList, stringToGender } from "src/utils/gender";
-import { IScrapedGallery as IScrapedScene, TaggerStateContext } from "../galleryContext";
+import {
+  IScrapedGallery as IScrapedScene,
+  TaggerStateContext,
+} from "../galleryContext";
 import { OptionalField } from "../IncludeButton";
 import { GalleryTaggerModalsState as SceneTaggerModalsState } from "./galleryTaggerModals";
 import PerformerResult from "./PerformerResult";
@@ -21,10 +29,11 @@ import { useInitialState } from "src/hooks/state";
 import { getStashboxBase } from "src/utils/stashbox";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import * as FormUtils from "src/utils/form";
-import { isLikelyImageURL, extractImageURLs, extractNonImageURLs } from "./utils";
-
-
-
+import {
+  isLikelyImageURL,
+  extractImageURLs,
+  extractNonImageURLs,
+} from "./utils";
 
 interface IStashSearchResultProps {
   scene: IScrapedScene;
@@ -52,7 +61,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     addGalleryImagesByUrl: scrapeImages,
   } = React.useContext(TaggerStateContext);
 
-  const performerGenders = config.performerGenders?.length ? config.performerGenders : genderList;
+  const performerGenders = config.performerGenders?.length
+    ? config.performerGenders
+    : genderList;
 
   const performers = useMemo(
     () =>
@@ -71,7 +82,9 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   }, [stashScene]);
 
   const getInitialPerformers = useCallback(() => {
-    return performers.map((p: GQL.ScrapedPerformer) => p.stored_id ?? undefined);
+    return performers.map(
+      (p: GQL.ScrapedPerformer) => p.stored_id ?? undefined
+    );
   }, [performers]);
 
   const getInitialStudio = useCallback(() => {
@@ -87,10 +100,14 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     )
   );
 
-  const [tagIDs, setTagIDs, setInitialTagIDs] = useInitialState<string[]>(getInitialTags());
+  const [tagIDs, setTagIDs, setInitialTagIDs] = useInitialState<string[]>(
+    getInitialTags()
+  );
   const [performerIDs, setPerformerIDs, setInitialPerformerIDs] =
     useInitialState<(string | undefined)[]>(getInitialPerformers());
-  const [studioID, setStudioID, setInitialStudioID] = useInitialState<string | undefined>(getInitialStudio());
+  const [studioID, setStudioID, setInitialStudioID] = useInitialState<
+    string | undefined
+  >(getInitialStudio());
 
   useEffect(() => {
     setInitialTagIDs(getInitialTags());
@@ -124,8 +141,13 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     : undefined;
 
   const stashBoxURL = useMemo(() => {
-    if (stashBoxBaseURL && (scene as { remote_site_id?: string }).remote_site_id) {
-      return `${stashBoxBaseURL}galleries/${(scene as { remote_site_id?: string }).remote_site_id}`;
+    if (
+      stashBoxBaseURL &&
+      (scene as { remote_site_id?: string }).remote_site_id
+    ) {
+      return `${stashBoxBaseURL}galleries/${
+        (scene as { remote_site_id?: string }).remote_site_id
+      }`;
     }
   }, [scene, stashBoxBaseURL]);
 
@@ -136,28 +158,50 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     });
 
   async function handleSave() {
-    const excludedFieldList = Object.keys(excludedFields).filter((f) => excludedFields[f]);
+    const excludedFieldList = Object.keys(excludedFields).filter(
+      (f) => excludedFields[f]
+    );
 
     function resolveField<T>(field: string, stashField: T, remoteField: T) {
-      if (excludedFieldList.includes(field) || remoteField === null || remoteField === undefined) {
+      if (
+        excludedFieldList.includes(field) ||
+        remoteField === null ||
+        remoteField === undefined
+      ) {
         return stashField;
       }
       return remoteField;
     }
 
-    const filteredPerformerIDs = performerIDs.filter((id) => id !== undefined) as string[];
+    const filteredPerformerIDs = performerIDs.filter(
+      (id) => id !== undefined
+    ) as string[];
 
     const galleryUpdateInput: GQL.GalleryUpdateInput = {
       id: stashScene.id,
       title: resolveField("title", stashScene.title, scene.title),
       details: resolveField("details", stashScene.details, scene.details),
       date: resolveField("date", stashScene.date, scene.date),
-      performer_ids: uniq(stashScene.performers.map((p) => p.id).concat(filteredPerformerIDs)),
+      performer_ids: uniq(
+        stashScene.performers.map((p) => p.id).concat(filteredPerformerIDs)
+      ),
       studio_id: studioID,
       tag_ids: config.setTags ? tagIDs : stashScene.tags.map((t) => t.id),
       // gallery-specific fields
-      code: (scene as { code?: string }).code ? resolveField("code", (stashScene as { code?: string }).code, (scene as { code?: string }).code) : (stashScene as { code?: string }).code,
-      photographer: (scene as { photographer?: string }).photographer ? resolveField("photographer", (stashScene as { photographer?: string }).photographer, (scene as { photographer?: string }).photographer) : (stashScene as { photographer?: string }).photographer,
+      code: (scene as { code?: string }).code
+        ? resolveField(
+            "code",
+            (stashScene as { code?: string }).code,
+            (scene as { code?: string }).code
+          )
+        : (stashScene as { code?: string }).code,
+      photographer: (scene as { photographer?: string }).photographer
+        ? resolveField(
+            "photographer",
+            (stashScene as { photographer?: string }).photographer,
+            (scene as { photographer?: string }).photographer
+          )
+        : (stashScene as { photographer?: string }).photographer,
     };
 
     if (!excludedFieldList.includes("url") && scene.urls) {
@@ -262,8 +306,10 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     if (scene.performers?.length) {
       return (
         <div>
-          <FormattedMessage id="performers" />
-          : {scene?.performers?.map((p: GQL.ScrapedPerformer) => p.name).join(", ")}
+          <FormattedMessage id="performers" />:{" "}
+          {scene?.performers
+            ?.map((p: GQL.ScrapedPerformer) => p.name)
+            .join(", ")}
         </div>
       );
     }
@@ -448,9 +494,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               if (c) createNewStudio(scene.studio!, c);
             })
           }
-          endpoint={
-            currentSource?.sourceInput.stash_box_endpoint ?? undefined
-          }
+          endpoint={currentSource?.sourceInput.stash_box_endpoint ?? undefined}
         />
       );
     }
@@ -460,29 +504,33 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     <div className="mt-2">
       <div>
         <Form.Group controlId="performers">
-          {performers.map((performer: GQL.ScrapedPerformer, performerIndex: number) => (
-            <PerformerResult
-              performer={performer}
-              selectedID={performerIDs[performerIndex]}
-              setSelectedID={(id: string | undefined) => {
-                const newIDs = [...performerIDs];
-                newIDs[performerIndex] = id;
-                setPerformerIDs(newIDs);
-              }}
-              onCreate={() =>
-                createPerformerModal(performer, (c) => {
-                  if (c) createNewPerformer(performer, c);
-                })
-              }
-              endpoint={
-                currentSource?.sourceInput.stash_box_endpoint ?? undefined
-              }
-              key={`${performer.name ?? performer.remote_site_id ?? ""}`}
-              ageFromDate={
-                !scene.date || excludedFields.date ? stashScene.date : scene.date
-              }
-            />
-          ))}
+          {performers.map(
+            (performer: GQL.ScrapedPerformer, performerIndex: number) => (
+              <PerformerResult
+                performer={performer}
+                selectedID={performerIDs[performerIndex]}
+                setSelectedID={(id: string | undefined) => {
+                  const newIDs = [...performerIDs];
+                  newIDs[performerIndex] = id;
+                  setPerformerIDs(newIDs);
+                }}
+                onCreate={() =>
+                  createPerformerModal(performer, (c) => {
+                    if (c) createNewPerformer(performer, c);
+                  })
+                }
+                endpoint={
+                  currentSource?.sourceInput.stash_box_endpoint ?? undefined
+                }
+                key={`${performer.name ?? performer.remote_site_id ?? ""}`}
+                ageFromDate={
+                  !scene.date || excludedFields.date
+                    ? stashScene.date
+                    : scene.date
+                }
+              />
+            )
+          )}
         </Form.Group>
       </div>
     </div>

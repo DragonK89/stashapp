@@ -71,7 +71,11 @@ const PerformerLink: React.FC<{
       <span>{name}</span>
       {genderSymbol && (
         <span className={`performer-gender-symbol ${genderClass}`}>
-          {genderSymbol === "♀" ? <Icon icon={faVenus} /> : <Icon icon={faMars} />}
+          {genderSymbol === "♀" ? (
+            <Icon icon={faVenus} />
+          ) : (
+            <Icon icon={faMars} />
+          )}
         </span>
       )}
       {performer.disambiguation && (

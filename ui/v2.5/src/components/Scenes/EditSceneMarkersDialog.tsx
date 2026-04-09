@@ -184,7 +184,9 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
                 <TagSelect
                   onSelect={(t) => setUpdateField({ primary_tag_id: t[0]?.id })}
                   ids={
-                    updateInput.primary_tag_id ? [updateInput.primary_tag_id] : []
+                    updateInput.primary_tag_id
+                      ? [updateInput.primary_tag_id]
+                      : []
                   }
                 />
               </Form.Group>
@@ -196,7 +198,9 @@ export const EditSceneMarkersDialog: React.FC<IListOperationProps> = (
                 <MultiSet
                   type="tags"
                   disabled={isUpdating}
-                  onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
+                  onUpdate={(itemIDs) =>
+                    setTagIds((v) => ({ ...v, ids: itemIDs }))
+                  }
                   onSetMode={(newMode) =>
                     setTagIds((v) => ({ ...v, mode: newMode }))
                   }

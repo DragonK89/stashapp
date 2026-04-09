@@ -189,7 +189,9 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
         }
 
         const galleryName =
-          gallery.title ?? gallery.code ?? intl.formatMessage({ id: "gallery" });
+          gallery.title ??
+          gallery.code ??
+          intl.formatMessage({ id: "gallery" });
         return {
           ...gallery,
           title: `${galleryName} (+${urlCount} URL${
@@ -266,12 +268,12 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
     new ScrapeResult<string>(scene.cover_image, scraped.image)
   );
 
-  const labelStudioID = (
-    studio.useNewValue ? studio.getNewValue()?.stored_id : sceneStudio?.id
-  ) ?? sceneStudio?.id;
-  const labelStudioName = (
-    studio.useNewValue ? studio.getNewValue()?.name : sceneStudio?.name
-  ) ?? sceneStudio?.name;
+  const labelStudioID =
+    (studio.useNewValue ? studio.getNewValue()?.stored_id : sceneStudio?.id) ??
+    sceneStudio?.id;
+  const labelStudioName =
+    (studio.useNewValue ? studio.getNewValue()?.name : sceneStudio?.name) ??
+    sceneStudio?.name;
 
   const createNewStudio = useCreateScrapedStudio({
     scrapeResult: studio,
@@ -464,7 +466,9 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
   }
 
   async function appendURLsToMatchedGalleries() {
-    for (const [galleryID, galleryURLs] of Object.entries(matchedGalleryURLAdds)) {
+    for (const [galleryID, galleryURLs] of Object.entries(
+      matchedGalleryURLAdds
+    )) {
       if (!galleryURLs.length) {
         continue;
       }
@@ -498,11 +502,14 @@ export const SceneScrapeDialog: React.FC<ISceneScrapeDialogProps> = ({
 
     onClose({
       scrapedScene: makeNewScrapedItem(),
-      galleries: galleries.getNewValue()?.map(
-        (gallery) =>
-          sceneGalleries.find((existingGallery) => existingGallery.id === gallery.id) ??
-          gallery
-      ),
+      galleries: galleries
+        .getNewValue()
+        ?.map(
+          (gallery) =>
+            sceneGalleries.find(
+              (existingGallery) => existingGallery.id === gallery.id
+            ) ?? gallery
+        ),
     });
   }
 

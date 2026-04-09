@@ -223,7 +223,9 @@ export const EditStudiosDialog: React.FC<IListOperationProps> = (
               <MultiSet
                 type="tags"
                 disabled={isUpdating}
-                onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
+                onUpdate={(itemIDs) =>
+                  setTagIds((v) => ({ ...v, ids: itemIDs }))
+                }
                 onSetMode={(newMode) =>
                   setTagIds((v) => ({ ...v, mode: newMode }))
                 }

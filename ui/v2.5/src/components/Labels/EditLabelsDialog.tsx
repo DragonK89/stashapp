@@ -199,7 +199,9 @@ export const EditLabelsDialog: React.FC<IListOperationProps> = (
               <MultiSet
                 type="tags"
                 disabled={isUpdating}
-                onUpdate={(itemIDs) => setTagIds((v) => ({ ...v, ids: itemIDs }))}
+                onUpdate={(itemIDs) =>
+                  setTagIds((v) => ({ ...v, ids: itemIDs }))
+                }
                 onSetMode={(newMode) =>
                   setTagIds((v) => ({ ...v, mode: newMode }))
                 }
@@ -221,9 +223,7 @@ export const EditLabelsDialog: React.FC<IListOperationProps> = (
                   ? ""
                   : updateInput.details ?? undefined
               }
-              valueChanged={(newValue) =>
-                setUpdateField({ details: newValue })
-              }
+              valueChanged={(newValue) => setUpdateField({ details: newValue })}
               unsetDisabled={props.selected.length < 2}
               as="textarea"
             />

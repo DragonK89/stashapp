@@ -102,11 +102,7 @@ export const LabelCard: React.FC<IProps> = ({
   }
 
   function maybeRenderPopoverButtonGroup() {
-    if (
-      label.scene_count ||
-      label.o_counter ||
-      label.tags.length > 0
-    ) {
+    if (label.scene_count || label.o_counter || label.tags.length > 0) {
       return (
         <>
           <hr />

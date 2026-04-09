@@ -69,7 +69,7 @@ const StudioCreate: React.FC = () => {
           studio={studio}
           onSubmit={onSave}
           onCancel={() => history.push("/studios")}
-          onDelete={() => { }}
+          onDelete={() => {}}
           setImage={setImage}
           setEncodingImage={setEncodingImage}
         />

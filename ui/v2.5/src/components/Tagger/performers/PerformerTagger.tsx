@@ -779,7 +779,10 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
 
   function renderSourceSelector() {
     return (
-      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+      <Form.Group
+        controlId="scraper"
+        className="d-flex align-items-center mb-0"
+      >
         <Form.Label className="mr-2 mb-0 text-nowrap">
           <FormattedMessage id="component_tagger.config.source" />
         </Form.Label>
@@ -834,7 +837,10 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
                 >
                   <FormattedMessage id="performer_tagger.batch_update_performers" />
                 </Button>
-                <Button className="ml-1" onClick={() => setShowConfig(!showConfig)}>
+                <Button
+                  className="ml-1"
+                  onClick={() => setShowConfig(!showConfig)}
+                >
                   <Icon className="fa-fw" icon={faCog} />
                 </Button>
               </div>

@@ -90,7 +90,11 @@ export const EditImagesDialog: React.FC<IListOperationProps> = (
       aggregatePerformerIds
     );
     if (!hideTags) {
-      imageInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+      imageInput.tag_ids = getAggregateInputIDs(
+        tagMode,
+        tagIds,
+        aggregateTagIds
+      );
     }
     imageInput.gallery_ids = getAggregateInputIDs(
       galleryMode,

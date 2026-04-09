@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useIntl } from "react-intl";
 import cloneDeep from "lodash-es/cloneDeep";
 import { useHistory } from "react-router-dom";
@@ -20,8 +20,6 @@ import { IItemListOperation } from "../List/FilteredListToolbar";
 import { Tagger } from "../Tagger/galleries/GalleryTagger";
 import { TaggerContext } from "../Tagger/galleryContext";
 
-
-
 function getItems(result: GQL.FindGalleriesQueryResult) {
   return result?.data?.findGalleries?.galleries ?? [];
 }
@@ -32,6 +30,9 @@ function getCount(result: GQL.FindGalleriesQueryResult) {
 
 interface IGalleryList {
   filterHook?: (filter: ListFilterModel) => ListFilterModel;
+  galleryFilterHook?: (
+    galleryFilter: GQL.GalleryFilterType
+  ) => GQL.GalleryFilterType;
   view?: View;
   alterQuery?: boolean;
   extraOperations?: IItemListOperation<GQL.FindGalleriesQueryResult>[];
@@ -39,13 +40,28 @@ interface IGalleryList {
 
 export const GalleryList: React.FC<IGalleryList> = PatchComponent(
   "GalleryList",
-  ({ filterHook, view, alterQuery, extraOperations = [] }) => {
+  ({
+    filterHook,
+    galleryFilterHook,
+    view,
+    alterQuery,
+    extraOperations = [],
+  }) => {
     const intl = useIntl();
     const history = useHistory();
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [isExportAll, setIsExportAll] = useState(false);
 
     const filterMode = GQL.FilterMode.Galleries;
+    const queryGalleries = useCallback(
+      (filter: ListFilterModel) =>
+        queryFindGalleries(filter, galleryFilterHook),
+      [galleryFilterHook]
+    );
+
+    function useFindGalleriesForList(filter?: ListFilterModel) {
+      return useFindGalleries(filter, galleryFilterHook);
+    }
 
     const otherOperations = [
       ...extraOperations,
@@ -73,8 +89,6 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
       },
     ];
 
-
-
     function addKeybinds(
       result: GQL.FindGalleriesQueryResult,
       filter: ListFilterModel
@@ -100,7 +114,7 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
         const filterCopy = cloneDeep(filter);
         filterCopy.itemsPerPage = 1;
         filterCopy.currentPage = index + 1;
-        const singleResult = await queryFindGalleries(filterCopy);
+        const singleResult = await queryGalleries(filterCopy);
         if (singleResult.data.findGalleries.galleries.length === 1) {
           const { id } = singleResult.data.findGalleries.galleries[0];
           // navigate to the image player page
@@ -183,7 +197,6 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
         }
       }
 
-
       return (
         <>
           {maybeRenderGalleryExportDialog()}
@@ -213,7 +226,7 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
     return (
       <ItemListContext
         filterMode={filterMode}
-        useResult={useFindGalleries}
+        useResult={useFindGalleriesForList}
         getItems={getItems}
         getCount={getCount}
         alterQuery={alterQuery}

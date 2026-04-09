@@ -218,19 +218,26 @@
     }
 
     .row[data-field] > .col-lg-9 > .row > .col-lg-6:first-of-type,
-    form > .row.px-3.pt-3:first-child > .offset-lg-3.col-lg-9 > .row >
-      .col-lg-6:first-of-type {
+    form
+      > .row.px-3.pt-3:first-child
+      > .offset-lg-3.col-lg-9
+      > .row
+      > .col-lg-6:first-of-type {
       flex: 0 0 47%;
       max-width: 47%;
     }
 
     .row[data-field] > .col-lg-9 > .row > .col-lg-6:last-of-type,
-    form > .row.px-3.pt-3:first-child > .offset-lg-3.col-lg-9 > .row >
-      .col-lg-6:last-of-type {
+    form
+      > .row.px-3.pt-3:first-child
+      > .offset-lg-3.col-lg-9
+      > .row
+      > .col-lg-6:last-of-type {
       flex: 0 0 53%;
       max-width: 53%;
     }
 
+    /* stylelint-disable-next-line selector-class-pattern */
     .gallery-select .react-select__multi-value__label {
       max-width: 20rem;
     }

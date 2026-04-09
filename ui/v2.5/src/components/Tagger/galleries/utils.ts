@@ -1,7 +1,6 @@
 import * as GQL from "src/core/generated-graphql";
 import { ParseMode } from "../constants";
 
-
 export function prepareQueryString(
   gallery: Partial<GQL.SlimGalleryDataFragment>,
   paths: string[],

@@ -116,7 +116,11 @@ export const EditGroupsDialog: React.FC<IListOperationProps> = (
     groupInput.rating100 = getAggregateInputValue(rating100, aggregateRating);
     groupInput.studio_id = getAggregateInputValue(studioId, aggregateStudioId);
     if (!hideTags) {
-      groupInput.tag_ids = getAggregateInputIDs(tagMode, tagIds, aggregateTagIds);
+      groupInput.tag_ids = getAggregateInputIDs(
+        tagMode,
+        tagIds,
+        aggregateTagIds
+      );
     }
 
     if (!hideGroups) {
