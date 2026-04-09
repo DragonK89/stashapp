@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Overlay, Tooltip } from "react-bootstrap";
 import { Placement } from "react-bootstrap/Overlay";
 import cx from "classnames";
@@ -23,6 +23,7 @@ export const TruncatedText: React.FC<ITruncatedTextProps> = PatchComponent(
     const target = useRef(null);
 
     const startShowingTooltip = useDebounce(() => setShowTooltip(true), delay);
+    useEffect(() => () => startShowingTooltip.cancel(), [startShowingTooltip]);
 
     if (!text) return <></>;
 
@@ -75,6 +76,7 @@ export const TruncatedInlineText: React.FC<ITruncatedTextProps> = ({
   const target = useRef(null);
 
   const startShowingTooltip = useDebounce(() => setShowTooltip(true), delay);
+  useEffect(() => () => startShowingTooltip.cancel(), [startShowingTooltip]);
 
   if (!text) return <></>;
 

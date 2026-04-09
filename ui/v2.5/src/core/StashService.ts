@@ -1362,6 +1362,19 @@ export const mutateImageSetPrimaryFile = (id: string, fileID: string) =>
     },
   });
 
+export const mutateImageUpdate = (input: GQL.ImageUpdateInput) =>
+  client.mutate<GQL.ImageUpdateMutation>({
+    mutation: GQL.ImageUpdateDocument,
+    variables: { input },
+    update(cache, result) {
+      if (!result.data?.imageUpdate) return;
+
+      evictQueries(cache, [
+        GQL.FindImagesDocument, // covers title-based list sorting/filtering
+      ]);
+    },
+  });
+
 const groupMutationImpactedTypeFields = {
   Performer: ["group_count"],
   Studio: ["group_count"],

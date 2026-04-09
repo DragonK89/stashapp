@@ -146,9 +146,6 @@ importers:
       react-select:
         specifier: ^5.7.0
         version: 5.10.2(@types/react@17.0.89)(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
-      react-zoom-pan-pinch:
-        specifier: ^3.7.0
-        version: 3.7.0(react-dom@17.0.2(react@17.0.2))(react@17.0.2)
       remark-gfm:
         specifier: ^1.0.0
         version: 1.0.0
@@ -4375,13 +4372,6 @@ packages:
     peerDependencies:
       react: '>=16.6.0'
       react-dom: '>=16.6.0'
-
-  react-zoom-pan-pinch@3.7.0:
-    resolution: {integrity: sha512-UmReVZ0TxlKzxSbYiAj+LeGRW8s8LraAFTXRAxzMYnNRgGPsxCudwZKVkjvGmjtx7SW/hZamt69NUmGf4xrkXA==}
-    engines: {node: '>=8', npm: '>=5'}
-    peerDependencies:
-      react: '*'
-      react-dom: '*'
 
   react@17.0.2:
     resolution: {integrity: sha512-gnhPt75i/dq/z3/6q/0asP78D0u592D5L1pd7M8P+dck6Fu/jJeL6iVVK23fptSUZj8Vjf++7wXA8UNclGQcbA==}
@@ -10253,11 +10243,6 @@ snapshots:
       dom-helpers: 5.2.1
       loose-envify: 1.4.0
       prop-types: 15.8.1
-      react: 17.0.2
-      react-dom: 17.0.2(react@17.0.2)
-
-  react-zoom-pan-pinch@3.7.0(react-dom@17.0.2(react@17.0.2))(react@17.0.2):
-    dependencies:
       react: 17.0.2
       react-dom: 17.0.2(react@17.0.2)
 

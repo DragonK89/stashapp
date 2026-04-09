@@ -12,6 +12,7 @@ import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
   mutateAddGalleryImagesByURL,
+  mutateImageUpdate,
   mutateMetadataScan,
   mutateResetGalleryCover,
   mutateSetGalleryCover,
@@ -217,6 +218,20 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
       ? new URL(screenshotPath, window.location.origin).toString()
       : screenshotPath;
 
+    const extractImageExt = (rawPath: string) => {
+      try {
+        const parsed = new URL(rawPath, window.location.origin);
+        const fileName = parsed.pathname.split("/").pop() ?? "";
+        const dotIndex = fileName.lastIndexOf(".");
+        if (dotIndex > 0 && dotIndex < fileName.length - 1) {
+          return fileName.slice(dotIndex + 1).toLowerCase();
+        }
+      } catch {
+        // Fall through to default.
+      }
+      return "jpg";
+    };
+
     try {
       const addResult = await mutateAddGalleryImagesByURL({
         gallery_id: gallery.id!,
@@ -232,6 +247,17 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
       await mutateSetGalleryCover({
         gallery_id: gallery.id!,
         cover_image_id: linkedIDs[0],
+      });
+
+      const titleBase = ((gallery.code ?? "").trim() || (gallery.title ?? "").trim() || "gallery")
+        .replace(/\s+/g, "_")
+        .replace(/[\\/:*?"<>|]/g, "_");
+      const coverExt = extractImageExt(firstSceneScreenshot);
+      const coverTitle = `${titleBase}_cover.${coverExt}`;
+
+      await mutateImageUpdate({
+        id: linkedIDs[0],
+        title: coverTitle,
       });
 
       Toast.success(

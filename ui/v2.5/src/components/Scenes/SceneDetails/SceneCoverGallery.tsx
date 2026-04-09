@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import {
   CriterionModifier,
@@ -45,6 +45,7 @@ const FIND_GALLERY_COVER = gql`
 
 export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
   const [selectedImage, setSelectedImage] = useState<IGalleryImage | null>(null);
+  const thumbnailsRef = useRef<HTMLDivElement | null>(null);
 
   const { data, loading } = useFindImagesQuery({
     variables: {
@@ -142,11 +143,27 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
     });
   }
 
-  const onThumbnailWheel = (e: React.WheelEvent) => {
-    if (e.deltaY !== 0) {
-      e.currentTarget.scrollLeft += e.deltaY;
-    }
-  };
+  useEffect(() => {
+    const el = thumbnailsRef.current;
+    if (!el) return;
+
+    const onWheel = (event: WheelEvent) => {
+      const delta =
+        Math.abs(event.deltaY) > Math.abs(event.deltaX)
+          ? event.deltaY
+          : event.deltaX;
+
+      if (delta === 0) return;
+
+      event.preventDefault();
+      el.scrollLeft += delta;
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+    };
+  }, []);
 
   if (loading && galleryId && galleryImages.length === 0) return <LoadingIndicator />;
   if (!currentImage) return null;
@@ -177,7 +194,7 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
       </div>
 
       {galleryImages.length > 1 && (
-        <div className="gallery-thumbnails" onWheel={onThumbnailWheel}>
+        <div className="gallery-thumbnails" ref={thumbnailsRef}>
           {galleryImages.map((img) => (
             <OverlayTrigger
               key={img.id}

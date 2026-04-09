@@ -5,6 +5,7 @@
         "customise": "Customize",
         "optimise_database": "Optimize Database",
         "convert_to_label": "Convert To Label",
+        "set_cover_from_first_scene": "Set Cover From Scene",
         "tagger": "Tagger"
     },
     "donate": "Donate",

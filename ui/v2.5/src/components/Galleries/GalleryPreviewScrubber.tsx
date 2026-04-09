@@ -20,6 +20,7 @@ export const GalleryPreviewScrubber: React.FC<{
 }) => {
   const [activeIndex, setActiveIndex] = useState<number>();
   const debounceSetActiveIndex = useThrottle(setActiveIndex, 50);
+  useEffect(() => () => debounceSetActiveIndex.cancel(), [debounceSetActiveIndex]);
 
   function onScrubberClick(index: number) {
     if (!onClick) {

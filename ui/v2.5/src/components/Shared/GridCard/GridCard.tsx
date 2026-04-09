@@ -1,6 +1,7 @@
 import React, {
   MutableRefObject,
   PropsWithChildren,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -76,6 +77,7 @@ export const useContainerDimensions = <T extends HTMLElement = HTMLDivElement>(
       setDimension({ width, height });
     }
   }, 50);
+  useEffect(() => () => debouncedSetDimension.cancel(), [debouncedSetDimension]);
 
   useResizeObserver(target, debouncedSetDimension);
 

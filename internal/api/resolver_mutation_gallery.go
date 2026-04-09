@@ -494,6 +494,16 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 			return fmt.Errorf("gallery with id %d not found", galleryID)
 		}
 
+		existingGalleryImageIDs, err := qb.GetImageIDs(ctx, galleryID)
+		if err != nil {
+			return fmt.Errorf("loading existing gallery image ids: %w", err)
+		}
+
+		galleryImageIDSet := make(map[int]struct{}, len(existingGalleryImageIDs))
+		for _, imageID := range existingGalleryImageIDs {
+			galleryImageIDSet[imageID] = struct{}{}
+		}
+
 		for _, scrapedURL := range input.Urls {
 			normalizedURL := strings.TrimSpace(scrapedURL)
 			if normalizedURL == "" {
@@ -510,6 +520,7 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 				return err
 			}
 
+			var selectedImageID int
 			if len(foundIDs) == 0 {
 				imageID, created, err := r.getOrCreateLocalImageByURLForGallery(ctx, gallery, normalizedURL)
 				if err != nil {
@@ -517,21 +528,27 @@ func (r *mutationResolver) AddGalleryImagesByURL(ctx context.Context, input Gall
 					continue
 				}
 
-				foundIDs = []int{imageID}
+				selectedImageID = imageID
 				if created {
 					createdIDSet[imageID] = struct{}{}
 				}
 			} else {
-				for _, imageID := range foundIDs {
-					if err := r.ensureImageHasLocalFileForGallery(ctx, gallery, imageID, normalizedURL); err != nil {
-						logger.Warnf("Failed to localize existing image %d from %q: %v", imageID, normalizedURL, err)
-					}
+				selectedImageID = preferredImageID(foundIDs, galleryImageIDSet)
+				if selectedImageID == 0 {
+					continue
+				}
+
+				if err := r.ensureImageHasLocalFileForGallery(ctx, gallery, selectedImageID, normalizedURL); err != nil {
+					logger.Warnf("Failed to localize existing image %d from %q: %v", selectedImageID, normalizedURL, err)
 				}
 			}
 
-			for _, imageID := range foundIDs {
-				linkedIDSet[imageID] = struct{}{}
+			if selectedImageID == 0 {
+				continue
 			}
+
+			linkedIDSet[selectedImageID] = struct{}{}
+			galleryImageIDSet[selectedImageID] = struct{}{}
 		}
 
 		if len(linkedIDSet) > 0 {
@@ -593,6 +610,23 @@ func (r *mutationResolver) findImageIDsByURL(ctx context.Context, imageURL strin
 	}
 
 	return ret, nil
+}
+
+func preferredImageID(imageIDs []int, galleryImageIDSet map[int]struct{}) int {
+	if len(imageIDs) == 0 {
+		return 0
+	}
+
+	sortedImageIDs := append([]int(nil), imageIDs...)
+	sort.Ints(sortedImageIDs)
+
+	for _, imageID := range sortedImageIDs {
+		if _, exists := galleryImageIDSet[imageID]; exists {
+			return imageID
+		}
+	}
+
+	return sortedImageIDs[0]
 }
 
 func imageTitleFromURL(rawURL string) string {
@@ -1100,6 +1134,18 @@ func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Cont
 		return imageID, false, nil
 	}
 
+	existingImageID, err := r.findImageIDByFileChecksum(ctx, fileID)
+	if err != nil {
+		return 0, false, err
+	}
+	if existingImageID != 0 {
+		if err := r.addURLToImage(ctx, existingImageID, imageURL); err != nil {
+			return 0, false, err
+		}
+
+		return existingImageID, false, nil
+	}
+
 	newImage := models.NewImage()
 	newImage.URLs = models.NewRelatedStrings([]string{imageURL})
 	newImage.Title = imageTitleFromURL(imageURL)
@@ -1122,6 +1168,35 @@ func (r *mutationResolver) getOrCreateLocalImageByURLForGallery(ctx context.Cont
 
 func (r *mutationResolver) getOrCreateLocalImageByURL(ctx context.Context, imageURL string) (int, bool, error) {
 	return r.getOrCreateLocalImageByURLForGallery(ctx, nil, imageURL)
+}
+
+func (r *mutationResolver) findImageIDByFileChecksum(ctx context.Context, fileID models.FileID) (int, error) {
+	files, err := r.repository.File.Find(ctx, fileID)
+	if err != nil {
+		return 0, fmt.Errorf("finding file %d: %w", fileID, err)
+	}
+	if len(files) == 0 {
+		return 0, nil
+	}
+
+	checksum := strings.TrimSpace(files[0].Base().Fingerprints.GetString(models.FingerprintTypeMD5))
+	if checksum == "" {
+		return 0, nil
+	}
+
+	existingImages, err := r.repository.Image.FindByChecksum(ctx, checksum)
+	if err != nil {
+		return 0, fmt.Errorf("finding image by checksum %q: %w", checksum, err)
+	}
+	if len(existingImages) == 0 {
+		return 0, nil
+	}
+
+	sort.Slice(existingImages, func(i, j int) bool {
+		return existingImages[i].ID < existingImages[j].ID
+	})
+
+	return existingImages[0].ID, nil
 }
 
 func (r *mutationResolver) RemoveGalleryImages(ctx context.Context, input GalleryRemoveInput) (bool, error) {
