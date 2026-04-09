@@ -28,7 +28,7 @@ const sortByOptions = [
     },
   ]);
 
-const displayModeOptions = [DisplayMode.Grid];
+const displayModeOptions = [DisplayMode.Grid, DisplayMode.Tagger];
 const criterionOptions = [
   FavoriteLabelCriterionOption,
   createMandatoryStringCriterionOption("name"),

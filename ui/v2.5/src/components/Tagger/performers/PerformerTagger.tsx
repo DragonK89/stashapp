@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 
 import * as GQL from "src/core/generated-graphql";
+import { Icon } from "src/components/Shared/Icon";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { ModalComponent } from "src/components/Shared/Modal";
 import {
@@ -15,7 +16,6 @@ import {
   evictQueries,
   performerMutationImpactedQueries,
 } from "src/core/StashService";
-import { Manual } from "src/components/Help/Manual";
 import { useConfigurationContext } from "src/hooks/Config";
 
 import StashSearchResult from "./StashSearchResult";
@@ -23,7 +23,7 @@ import PerformerConfig from "./Config";
 import { ITaggerConfig } from "../constants";
 import PerformerModal from "../PerformerModal";
 import { useUpdatePerformer } from "../queries";
-import { faStar, faTags } from "@fortawesome/free-solid-svg-icons";
+import { faCog, faStar, faTags } from "@fortawesome/free-solid-svg-icons";
 import { mergeStashIDs } from "src/utils/stashbox";
 import { separateNamesAndStashIds } from "src/utils/stashIds";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
@@ -242,6 +242,10 @@ interface IPerformerTaggerListProps {
   performers: GQL.PerformerDataFragment[];
   selectedEndpoint: { endpoint: string; index: number };
   isIdle: boolean;
+  showBatchAdd: boolean;
+  showBatchUpdate: boolean;
+  setShowBatchAdd: (show: boolean) => void;
+  setShowBatchUpdate: (show: boolean) => void;
   config: ITaggerConfig;
   onBatchAdd: (performerInput: string) => void;
   onBatchUpdate: (ids: string[] | undefined, refresh: boolean) => void;
@@ -251,6 +255,10 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
   performers,
   selectedEndpoint,
   isIdle,
+  showBatchAdd,
+  showBatchUpdate,
+  setShowBatchAdd,
+  setShowBatchUpdate,
   config,
   onBatchAdd,
   onBatchUpdate,
@@ -267,9 +275,6 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
     Record<string, Partial<GQL.SlimPerformerDataFragment>>
   >({});
   const [queries, setQueries] = useState<Record<string, string>>({});
-
-  const [showBatchAdd, setShowBatchAdd] = useState(false);
-  const [showBatchUpdate, setShowBatchUpdate] = useState(false);
 
   const [error, setError] = useState<
     Record<string, { message?: string; details?: string } | undefined>
@@ -624,15 +629,6 @@ const PerformerTaggerList: React.FC<IPerformerTaggerListProps> = ({
           onBatchAdd={handleBatchAdd}
         />
       )}
-
-      <div className="ml-auto mb-3">
-        <Button onClick={() => setShowBatchAdd(true)}>
-          <FormattedMessage id="performer_tagger.batch_add_performers" />
-        </Button>
-        <Button className="ml-3" onClick={() => setShowBatchUpdate(true)}>
-          <FormattedMessage id="performer_tagger.batch_update_performers" />
-        </Button>
-      </div>
       <div className={CLASSNAME}>{renderPerformers()}</div>
     </Card>
   );
@@ -648,7 +644,8 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
   const { configuration: stashConfig } = useConfigurationContext();
   const { config, setConfig } = useTaggerConfig();
   const [showConfig, setShowConfig] = useState(false);
-  const [showManual, setShowManual] = useState(false);
+  const [showBatchAdd, setShowBatchAdd] = useState(false);
+  const [showBatchUpdate, setShowBatchUpdate] = useState(false);
 
   const [batchJobID, setBatchJobID] = useState<string | undefined | null>();
   const [batchJob, setBatchJob] = useState<JobFragment | undefined>();
@@ -766,33 +763,81 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
     }
   }
 
-  const showHideConfigId = showConfig
-    ? "actions.hide_configuration"
-    : "actions.show_configuration";
+  const stashBoxes = stashConfig?.general.stashBoxes ?? [];
+
+  function formatEndpointLabel(endpoint: string) {
+    return endpoint.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
+  function handleSourceSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+    const selectedEndpointValue = e.currentTarget.value;
+    setConfig({
+      ...config,
+      selectedEndpoint: selectedEndpointValue,
+    });
+  }
+
+  function renderSourceSelector() {
+    return (
+      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+        <Form.Label className="mr-2 mb-0 text-nowrap">
+          <FormattedMessage id="component_tagger.config.source" />
+        </Form.Label>
+        <Form.Control
+          as="select"
+          value={selectedEndpoint?.endpoint}
+          className="input-control tagger-source-select"
+          disabled={!stashBoxes.length}
+          onChange={handleSourceSelect}
+        >
+          {!stashBoxes.length && (
+            <option>
+              {intl.formatMessage({
+                id: "performer_tagger.config.no_instances_found",
+              })}
+            </option>
+          )}
+          {stashBoxes.map((i) => (
+            <option value={i.endpoint} key={i.endpoint}>
+              {formatEndpointLabel(i.endpoint)}
+            </option>
+          ))}
+        </Form.Control>
+      </Form.Group>
+    );
+  }
 
   return (
     <>
-      <Manual
-        show={showManual}
-        onClose={() => setShowManual(false)}
-        defaultActiveTab="Tagger.md"
-      />
       {renderStatus()}
       <div className="tagger-container mx-md-auto">
         {selectedEndpointIndex !== -1 && selectedEndpoint ? (
           <>
-            <div className="row mb-2 no-gutters">
-              <Button onClick={() => setShowConfig(!showConfig)} variant="link">
-                {intl.formatMessage({ id: showHideConfigId })}
-              </Button>
-              <Button
-                className="ml-auto"
-                onClick={() => setShowManual(true)}
-                title={intl.formatMessage({ id: "help" })}
-                variant="link"
-              >
-                <FormattedMessage id="help" />
-              </Button>
+            <div className="row mb-2 no-gutters align-items-center">
+              <div className="col-auto">{renderSourceSelector()}</div>
+              <div className="ml-auto d-flex">
+                <Button
+                  className="ml-1"
+                  disabled={batchJobID !== undefined}
+                  onClick={() => {
+                    setShowBatchAdd(true);
+                  }}
+                >
+                  <FormattedMessage id="performer_tagger.batch_add_performers" />
+                </Button>
+                <Button
+                  className="ml-1"
+                  disabled={batchJobID !== undefined}
+                  onClick={() => {
+                    setShowBatchUpdate(true);
+                  }}
+                >
+                  <FormattedMessage id="performer_tagger.batch_update_performers" />
+                </Button>
+                <Button className="ml-1" onClick={() => setShowConfig(!showConfig)}>
+                  <Icon className="fa-fw" icon={faCog} />
+                </Button>
+              </div>
             </div>
 
             <PerformerConfig
@@ -807,6 +852,10 @@ export const PerformerTagger: React.FC<ITaggerProps> = ({ performers }) => {
                 index: selectedEndpointIndex,
               }}
               isIdle={batchJobID === undefined}
+              showBatchAdd={showBatchAdd}
+              showBatchUpdate={showBatchUpdate}
+              setShowBatchAdd={setShowBatchAdd}
+              setShowBatchUpdate={setShowBatchUpdate}
               config={config}
               onBatchAdd={batchAdd}
               onBatchUpdate={batchUpdate}

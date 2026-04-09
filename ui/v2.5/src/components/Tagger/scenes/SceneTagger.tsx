@@ -122,7 +122,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
         <Form.Control
           as="select"
           value={currentSource?.id}
-          className="input-control w-auto"
+          className="input-control tagger-source-select"
           disabled={loading || !sources.length}
           onChange={handleSourceSelect}
         >
@@ -139,7 +139,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ scenes, queue }) => {
 
   function renderConfigButton() {
     return (
-      <div className="ml-2">
+      <div className="ml-1">
         <Button onClick={() => setShowConfig(!showConfig)}>
           <Icon className="fa-fw" icon={faCog} />
         </Button>

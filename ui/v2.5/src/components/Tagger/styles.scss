@@ -29,6 +29,16 @@
   overflow: visible;
 }
 
+.tagger-source-select {
+  max-width: calc(100vw - 7rem);
+  width: 13.5rem;
+  padding-right: 1.75rem;
+}
+
+.tagger-update-behavior-select {
+  width: 12rem;
+}
+
 .search-item {
   background-color: #495b68;
   border-radius: 3px;
@@ -478,4 +488,3 @@ li.active .optional-field.excluded .scene-link {
     object-fit: contain;
   }
 }
-

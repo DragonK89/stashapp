@@ -23,6 +23,7 @@ import { View } from "../List/views";
 import { EditLabelsDialog } from "./EditLabelsDialog";
 import { IItemListOperation } from "../List/FilteredListToolbar";
 import { PatchComponent } from "src/patch";
+import { LabelTagger } from "../Tagger/labels/LabelTagger";
 
 function getItems(result: GQL.FindLabelsQueryResult) {
   return result?.data?.findLabels?.labels ?? [];
@@ -64,6 +65,15 @@ export const LabelList: React.FC<ILabelList> = PatchComponent(
       {
         text: intl.formatMessage({ id: "actions.export_all" }),
         onClick: onExportAll,
+      },
+      {
+        text: intl.formatMessage({ id: "actions.tagger" }),
+        onClick: async (
+          _result: GQL.FindLabelsQueryResult,
+          filter: ListFilterModel
+        ) => {
+          filter.displayMode = DisplayMode.Tagger;
+        },
       },
     ];
 
@@ -143,6 +153,9 @@ export const LabelList: React.FC<ILabelList> = PatchComponent(
               onSelectChange={onSelectChange}
             />
           );
+        }
+        if (filter.displayMode === DisplayMode.Tagger) {
+          return <LabelTagger labels={result.data.findLabels.labels} />;
         }
       }
 

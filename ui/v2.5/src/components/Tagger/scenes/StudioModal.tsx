@@ -25,6 +25,7 @@ interface IStudioDetailsProps {
   excluded: Record<string, boolean>;
   toggleField: (field: string) => void;
   isNew?: boolean;
+  showParentStudio?: boolean;
 }
 
 const StudioDetails: React.FC<IStudioDetailsProps> = ({
@@ -33,6 +34,7 @@ const StudioDetails: React.FC<IStudioDetailsProps> = ({
   excluded,
   toggleField,
   isNew = false,
+  showParentStudio = true,
 }) => {
   const { configuration } = useConfigurationContext();
   const ui = configuration?.ui as IUIConfig | undefined;
@@ -151,7 +153,8 @@ const StudioDetails: React.FC<IStudioDetailsProps> = ({
           {maybeRenderField("aliases", studio.aliases)}
           {!hideTags &&
             maybeRenderField("tags", studio.tags?.map((t) => t.name).join(", "))}
-          {maybeRenderField("parent_studio", studio.parent?.name, false)}
+          {showParentStudio &&
+            maybeRenderField("parent_studio", studio.parent?.name, false)}
           {maybeRenderStashBoxLink()}
         </div>
       </div>
@@ -171,6 +174,7 @@ interface IStudioModalProps {
   header: string;
   icon: IconDefinition;
   endpoint?: string;
+  showParentStudio?: boolean;
 }
 
 const StudioModal: React.FC<IStudioModalProps> = ({
@@ -182,6 +186,7 @@ const StudioModal: React.FC<IStudioModalProps> = ({
   header,
   icon,
   endpoint,
+  showParentStudio = true,
 }) => {
   const intl = useIntl();
 
@@ -210,12 +215,14 @@ const StudioModal: React.FC<IStudioModalProps> = ({
     });
 
   const [createParentStudio, setCreateParentStudio] = useState<boolean>(
-    !!studio.parent
+    showParentStudio && !!studio.parent
   );
 
   let sendParentStudio = true;
   // The parent studio exists, need to check if it has a Stash ID.
-  const queryResult = useFindStudio(studio.parent?.stored_id ?? "");
+  const queryResult = useFindStudio(
+    showParentStudio ? studio.parent?.stored_id ?? "" : ""
+  );
   if (
     queryResult.data?.findStudio?.stash_ids?.length &&
     queryResult.data?.findStudio?.stash_ids?.length > 0
@@ -240,7 +247,7 @@ const StudioModal: React.FC<IStudioModalProps> = ({
       name: studio.name,
       urls: studio.urls,
       image: studio.image,
-      parent_id: studio.parent?.stored_id,
+      parent_id: showParentStudio ? studio.parent?.stored_id : undefined,
       details: studio.details,
       aliases: studio.aliases
         ?.split(",")
@@ -269,7 +276,7 @@ const StudioModal: React.FC<IStudioModalProps> = ({
 
     let parentData: GQL.StudioCreateInput | undefined = undefined;
 
-    if (createParentStudio && sendParentStudio) {
+    if (showParentStudio && createParentStudio && sendParentStudio) {
       if (!studio.parent?.name) {
         throw new Error("parent studio name must set");
       }
@@ -316,6 +323,10 @@ const StudioModal: React.FC<IStudioModalProps> = ({
     : undefined;
 
   function maybeRenderParentStudio() {
+    if (!showParentStudio) {
+      return;
+    }
+
     // There is no parent studio or it already has a Stash ID
     if (!studio.parent || !sendParentStudio) {
       return;
@@ -350,6 +361,7 @@ const StudioModal: React.FC<IStudioModalProps> = ({
         toggleField={(field) => toggleParentField(field)}
         link={parentLink}
         isNew
+        showParentStudio={showParentStudio}
       />
     );
   }
@@ -372,6 +384,7 @@ const StudioModal: React.FC<IStudioModalProps> = ({
         excluded={excluded}
         toggleField={(field) => toggleField(field)}
         link={link}
+        showParentStudio={showParentStudio}
       />
 
       {maybeRenderParentStudio()}

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import { HashLink } from "react-router-hash-link";
 
 import * as GQL from "src/core/generated-graphql";
+import { Icon } from "src/components/Shared/Icon";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { ModalComponent } from "src/components/Shared/Modal";
 import {
@@ -16,7 +17,6 @@ import {
   useStudioCreate,
   evictQueries,
 } from "src/core/StashService";
-import { Manual } from "src/components/Help/Manual";
 import { useConfigurationContext } from "src/hooks/Config";
 
 import StashSearchResult from "./StashSearchResult";
@@ -25,11 +25,15 @@ import { ITaggerConfig } from "../constants";
 import StudioModal from "../scenes/StudioModal";
 import { useUpdateStudio } from "../queries";
 import { apolloError } from "src/utils";
-import { faStar, faTags } from "@fortawesome/free-solid-svg-icons";
+import { faCog, faStar, faTags } from "@fortawesome/free-solid-svg-icons";
 import { ExternalLink } from "src/components/Shared/ExternalLink";
 import { mergeStudioStashIDs } from "../utils";
 import { separateNamesAndStashIds } from "src/utils/stashIds";
 import { useTaggerConfig } from "../config";
+import {
+  mergeOrOverwriteAliases,
+  mergeOrOverwriteURLs,
+} from "./updateStrategy";
 
 type JobFragment = Pick<
   GQL.Job,
@@ -268,6 +272,10 @@ interface IStudioTaggerListProps {
   studios: GQL.StudioDataFragment[];
   selectedEndpoint: { endpoint: string; index: number };
   isIdle: boolean;
+  showBatchAdd: boolean;
+  showBatchUpdate: boolean;
+  setShowBatchAdd: (show: boolean) => void;
+  setShowBatchUpdate: (show: boolean) => void;
   config: ITaggerConfig;
   onBatchAdd: (studioInput: string, createParent: boolean) => void;
   onBatchUpdate: (
@@ -281,6 +289,10 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
   studios,
   selectedEndpoint,
   isIdle,
+  showBatchAdd,
+  showBatchUpdate,
+  setShowBatchAdd,
+  setShowBatchUpdate,
   config,
   onBatchAdd,
   onBatchUpdate,
@@ -299,11 +311,11 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
   >({});
   const [queries, setQueries] = useState<Record<string, string>>({});
 
-  const [showBatchAdd, setShowBatchAdd] = useState(false);
-  const [showBatchUpdate, setShowBatchUpdate] = useState(false);
   const [batchAddParents, setBatchAddParents] = useState(
     config.createParentStudios || false
   );
+  const studioAliasOperation = config.studioAliasOperation ?? "overwrite";
+  const studioURLsOperation = config.studioURLsOperation ?? "overwrite";
 
   const [error, setError] = useState<
     Record<string, { message?: string; details?: string } | undefined>
@@ -414,6 +426,8 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
     setModalStudio(undefined);
     const studioID = modalStudio?.stored_id;
     if (studioID) {
+      const existingStudio = studios.find((s) => s.id === studioID);
+
       if (parentInput) {
         try {
           // if parent id is set, then update the existing studio
@@ -436,6 +450,25 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
         } catch (e) {
           handleSaveError(studioID, parentInput.name, apolloError(e));
         }
+      }
+
+      const finalName =
+        (input.name ?? existingStudio?.name ?? modalStudio?.name ?? "").trim();
+      if (input.aliases) {
+        input.aliases = mergeOrOverwriteAliases({
+          existingAliases: existingStudio?.aliases,
+          incomingAliases: input.aliases,
+          finalName,
+          operation: studioAliasOperation,
+        });
+      }
+
+      if (input.urls) {
+        input.urls = mergeOrOverwriteURLs({
+          existingURLs: existingStudio?.urls,
+          incomingURLs: input.urls,
+          operation: studioURLsOperation,
+        });
       }
 
       const updateData: GQL.StudioUpdateInput = {
@@ -584,6 +617,8 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
             endpoint={selectedEndpoint.endpoint}
             onStudioTagged={handleTaggedStudio}
             excludedStudioFields={config.excludedStudioFields ?? []}
+            studioAliasOperation={studioAliasOperation}
+            studioURLsOperation={studioURLsOperation}
           />
         );
       }
@@ -650,14 +685,6 @@ const StudioTaggerList: React.FC<IStudioTaggerListProps> = ({
           setBatchAddParents={setBatchAddParents}
         />
       )}
-      <div className="ml-auto mb-3">
-        <Button onClick={() => setShowBatchAdd(true)}>
-          <FormattedMessage id="studio_tagger.batch_add_studios" />
-        </Button>
-        <Button className="ml-3" onClick={() => setShowBatchUpdate(true)}>
-          <FormattedMessage id="studio_tagger.batch_update_studios" />
-        </Button>
-      </div>
       <div className={CLASSNAME}>{renderStudios()}</div>
     </Card>
   );
@@ -673,7 +700,8 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
   const { configuration: stashConfig } = useConfigurationContext();
   const { config, setConfig } = useTaggerConfig();
   const [showConfig, setShowConfig] = useState(false);
-  const [showManual, setShowManual] = useState(false);
+  const [showBatchAdd, setShowBatchAdd] = useState(false);
+  const [showBatchUpdate, setShowBatchUpdate] = useState(false);
 
   const [batchJobID, setBatchJobID] = useState<string | undefined | null>();
   const [batchJob, setBatchJob] = useState<JobFragment | undefined>();
@@ -796,33 +824,81 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
     }
   }
 
-  const showHideConfigId = showConfig
-    ? "actions.hide_configuration"
-    : "actions.show_configuration";
+  const stashBoxes = stashConfig?.general.stashBoxes ?? [];
+
+  function formatEndpointLabel(endpoint: string) {
+    return endpoint.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  }
+
+  function handleSourceSelect(e: React.ChangeEvent<HTMLSelectElement>) {
+    const selectedEndpointValue = e.currentTarget.value;
+    setConfig({
+      ...config,
+      selectedEndpoint: selectedEndpointValue,
+    });
+  }
+
+  function renderSourceSelector() {
+    return (
+      <Form.Group controlId="scraper" className="d-flex align-items-center mb-0">
+        <Form.Label className="mr-2 mb-0 text-nowrap">
+          <FormattedMessage id="component_tagger.config.source" />
+        </Form.Label>
+        <Form.Control
+          as="select"
+          value={selectedEndpoint?.endpoint}
+          className="input-control tagger-source-select"
+          disabled={!stashBoxes.length}
+          onChange={handleSourceSelect}
+        >
+          {!stashBoxes.length && (
+            <option>
+              {intl.formatMessage({
+                id: "studio_tagger.config.no_instances_found",
+              })}
+            </option>
+          )}
+          {stashBoxes.map((i) => (
+            <option value={i.endpoint} key={i.endpoint}>
+              {formatEndpointLabel(i.endpoint)}
+            </option>
+          ))}
+        </Form.Control>
+      </Form.Group>
+    );
+  }
 
   return (
     <>
-      <Manual
-        show={showManual}
-        onClose={() => setShowManual(false)}
-        defaultActiveTab="Tagger.md"
-      />
       {renderStatus()}
       <div className="tagger-container mx-md-auto">
         {selectedEndpointIndex !== -1 && selectedEndpoint ? (
           <>
-            <div className="row mb-2 no-gutters">
-              <Button onClick={() => setShowConfig(!showConfig)} variant="link">
-                {intl.formatMessage({ id: showHideConfigId })}
-              </Button>
-              <Button
-                className="ml-auto"
-                onClick={() => setShowManual(true)}
-                title={intl.formatMessage({ id: "help" })}
-                variant="link"
-              >
-                <FormattedMessage id="help" />
-              </Button>
+            <div className="row mb-2 no-gutters align-items-center">
+              <div className="col-auto">{renderSourceSelector()}</div>
+              <div className="ml-auto d-flex">
+                <Button
+                  className="ml-1"
+                  disabled={batchJobID !== undefined}
+                  onClick={() => {
+                    setShowBatchAdd(true);
+                  }}
+                >
+                  <FormattedMessage id="studio_tagger.batch_add_studios" />
+                </Button>
+                <Button
+                  className="ml-1"
+                  disabled={batchJobID !== undefined}
+                  onClick={() => {
+                    setShowBatchUpdate(true);
+                  }}
+                >
+                  <FormattedMessage id="studio_tagger.batch_update_studios" />
+                </Button>
+                <Button className="ml-1" onClick={() => setShowConfig(!showConfig)}>
+                  <Icon className="fa-fw" icon={faCog} />
+                </Button>
+              </div>
             </div>
 
             <StudioConfig
@@ -837,6 +913,10 @@ export const StudioTagger: React.FC<ITaggerProps> = ({ studios }) => {
                 index: selectedEndpointIndex,
               }}
               isIdle={batchJobID === undefined}
+              showBatchAdd={showBatchAdd}
+              showBatchUpdate={showBatchUpdate}
+              setShowBatchAdd={setShowBatchAdd}
+              setShowBatchUpdate={setShowBatchUpdate}
               config={config}
               onBatchAdd={batchAdd}
               onBatchUpdate={batchUpdate}

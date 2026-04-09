@@ -3,7 +3,7 @@ import { Badge, Button, Card, Collapse, Form } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
 
 import { ITaggerConfig, PerformerFieldOperation } from "../constants";
-import PerformerFieldSelector from "../PerformerFieldSelector";
+import LabelFieldSelector from "./LabelFieldSelector";
 
 interface IConfigProps {
   show: boolean;
@@ -15,17 +15,17 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
   const intl = useIntl();
   const [showExclusionModal, setShowExclusionModal] = useState(false);
 
-  const excludedFields = config.excludedPerformerFields ?? [];
+  const excludedFields = config.excludedStudioFields ?? [];
   const aliasIncluded = !excludedFields.includes("aliases");
   const urlsIncluded = !excludedFields.includes("urls");
 
   const handleFieldSelect = (fields: string[]) => {
-    setConfig({ ...config, excludedPerformerFields: fields });
+    setConfig({ ...config, excludedStudioFields: fields });
     setShowExclusionModal(false);
   };
 
   const toggleField = (field: string, enabled: boolean) => {
-    const excluded = new Set(config.excludedPerformerFields ?? []);
+    const excluded = new Set(config.excludedStudioFields ?? []);
     if (enabled) {
       excluded.delete(field);
     } else {
@@ -34,25 +34,25 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
 
     setConfig({
       ...config,
-      excludedPerformerFields: Array.from(excluded),
+      excludedStudioFields: Array.from(excluded),
     });
   };
 
-  const setPerformerFieldOperation = (
+  const setLabelFieldOperation = (
     field: "aliases" | "urls",
     operation: PerformerFieldOperation
   ) => {
     if (field === "aliases") {
       setConfig({
         ...config,
-        performerAliasOperation: operation,
+        labelAliasOperation: operation,
       });
       return;
     }
 
     setConfig({
       ...config,
-      performerURLsOperation: operation,
+      labelURLsOperation: operation,
     });
   };
 
@@ -66,9 +66,9 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
             </h4>
             <hr className="w-100" />
             <div className="col-lg-8 col-md-10">
-              <Form.Group controlId="excluded-performer-fields">
+              <Form.Group controlId="excluded-studio-fields">
                 <h6>
-                  <FormattedMessage id="performer_tagger.config.excluded_fields" />
+                  <FormattedMessage id="studio_tagger.config.excluded_fields" />
                 </h6>
                 <span>
                   {excludedFields.length > 0 ? (
@@ -78,25 +78,25 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                       </Badge>
                     ))
                   ) : (
-                    <FormattedMessage id="performer_tagger.config.no_fields_are_excluded" />
+                    <FormattedMessage id="studio_tagger.config.no_fields_are_excluded" />
                   )}
                 </span>
                 <Form.Text>
-                  <FormattedMessage id="performer_tagger.config.these_fields_will_not_be_changed_when_updating_performers" />
+                  <FormattedMessage id="studio_tagger.config.these_fields_will_not_be_changed_when_updating_studios" />
                 </Form.Text>
                 <Button
                   onClick={() => setShowExclusionModal(true)}
                   className="mt-2"
                 >
-                  <FormattedMessage id="performer_tagger.config.edit_excluded_fields" />
+                  <FormattedMessage id="studio_tagger.config.edit_excluded_fields" />
                 </Button>
               </Form.Group>
-              <Form.Group controlId="performer-update-behavior">
+              <Form.Group controlId="label-update-behavior" className="mt-4">
                 <h6 className="mb-3">Update behavior</h6>
                 <div className="row no-gutters align-items-center mb-2">
                   <div className="col-auto pr-2">
                     <Form.Check
-                      id="performer-alias-operation-enabled"
+                      id="label-alias-operation-enabled"
                       className="mb-0"
                       label={intl.formatMessage({ id: "aliases" })}
                       checked={aliasIncluded}
@@ -109,10 +109,10 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                     <Form.Control
                       as="select"
                       className="input-control tagger-update-behavior-select"
-                      value={config.performerAliasOperation ?? "overwrite"}
+                      value={config.labelAliasOperation ?? "overwrite"}
                       disabled={!aliasIncluded}
                       onChange={(e) =>
-                        setPerformerFieldOperation(
+                        setLabelFieldOperation(
                           "aliases",
                           e.currentTarget.value as PerformerFieldOperation
                         )
@@ -130,7 +130,7 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                 <div className="row no-gutters align-items-center">
                   <div className="col-auto pr-2">
                     <Form.Check
-                      id="performer-urls-operation-enabled"
+                      id="label-urls-operation-enabled"
                       className="mb-0"
                       label={intl.formatMessage({ id: "urls" })}
                       checked={urlsIncluded}
@@ -141,10 +141,10 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                     <Form.Control
                       as="select"
                       className="input-control tagger-update-behavior-select"
-                      value={config.performerURLsOperation ?? "overwrite"}
+                      value={config.labelURLsOperation ?? "overwrite"}
                       disabled={!urlsIncluded}
                       onChange={(e) =>
-                        setPerformerFieldOperation(
+                        setLabelFieldOperation(
                           "urls",
                           e.currentTarget.value as PerformerFieldOperation
                         )
@@ -164,7 +164,7 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
           </div>
         </Card>
       </Collapse>
-      <PerformerFieldSelector
+      <LabelFieldSelector
         show={showExclusionModal}
         onSelect={handleFieldSelect}
         excludedFields={excludedFields}

@@ -9,9 +9,14 @@ import { useStudioCreate } from "src/core/StashService";
 import { useIntl } from "react-intl";
 import { apolloError } from "src/utils";
 import { mergeStudioStashIDs } from "../utils";
+import { PerformerFieldOperation } from "../constants";
+import {
+  mergeOrOverwriteAliases,
+  mergeOrOverwriteURLs,
+} from "./updateStrategy";
 
 interface IStashSearchResultProps {
-  studio: GQL.SlimStudioDataFragment;
+  studio: GQL.StudioDataFragment;
   stashboxStudios: GQL.ScrapedStudioDataFragment[];
   endpoint: string;
   onStudioTagged: (
@@ -19,6 +24,8 @@ interface IStashSearchResultProps {
       Partial<Omit<GQL.SlimStudioDataFragment, "id">>
   ) => void;
   excludedStudioFields: string[];
+  studioAliasOperation: PerformerFieldOperation;
+  studioURLsOperation: PerformerFieldOperation;
 }
 
 const StashSearchResult: React.FC<IStashSearchResultProps> = ({
@@ -27,6 +34,8 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
   onStudioTagged,
   excludedStudioFields,
   endpoint,
+  studioAliasOperation,
+  studioURLsOperation,
 }) => {
   const intl = useIntl();
 
@@ -89,6 +98,25 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
 
     setSaveState("Saving studio");
+
+    const finalName = (input.name ?? studio.name ?? "").trim();
+    if (input.aliases) {
+      input.aliases = mergeOrOverwriteAliases({
+        existingAliases: studio.aliases,
+        incomingAliases: input.aliases,
+        finalName,
+        operation: studioAliasOperation,
+      });
+    }
+
+    if (input.urls) {
+      input.urls = mergeOrOverwriteURLs({
+        existingURLs: studio.urls,
+        incomingURLs: input.urls,
+        operation: studioURLsOperation,
+      });
+    }
+
     const updateData: GQL.StudioUpdateInput = {
       ...input,
       id: studio.id,

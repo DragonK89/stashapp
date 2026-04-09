@@ -7,6 +7,7 @@ export interface ITaggerSource {
   id: string;
   sourceInput: ScraperSourceInput;
   displayName: string;
+  supportSceneQuery?: boolean;
   supportSceneFragment?: boolean;
   supportGalleryQuery?: boolean;
   supportedURLs?: string[];
@@ -38,6 +39,10 @@ export const initialConfig: ITaggerConfig = {
   excludedPerformerFields: DEFAULT_EXCLUDED_PERFORMER_FIELDS,
   performerAliasOperation: "overwrite",
   performerURLsOperation: "overwrite",
+  studioAliasOperation: "overwrite",
+  studioURLsOperation: "overwrite",
+  labelAliasOperation: "overwrite",
+  labelURLsOperation: "overwrite",
   markSceneAsOrganizedOnSave: false,
   excludedStudioFields: DEFAULT_EXCLUDED_STUDIO_FIELDS,
   excludedSceneFields: DEFAULT_EXCLUDED_SCENE_FIELDS,
@@ -60,6 +65,10 @@ export interface ITaggerConfig {
   excludedPerformerFields?: string[];
   performerAliasOperation?: PerformerFieldOperation;
   performerURLsOperation?: PerformerFieldOperation;
+  studioAliasOperation?: PerformerFieldOperation;
+  studioURLsOperation?: PerformerFieldOperation;
+  labelAliasOperation?: PerformerFieldOperation;
+  labelURLsOperation?: PerformerFieldOperation;
   markSceneAsOrganizedOnSave?: boolean;
   excludedStudioFields?: string[];
   excludedSceneFields?: string[];

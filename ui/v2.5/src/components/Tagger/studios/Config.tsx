@@ -1,9 +1,8 @@
 import React, { Dispatch, useState } from "react";
 import { Badge, Button, Card, Collapse, Form } from "react-bootstrap";
-import { FormattedMessage } from "react-intl";
-import { useConfigurationContext } from "src/hooks/Config";
+import { FormattedMessage, useIntl } from "react-intl";
 
-import { ITaggerConfig } from "../constants";
+import { ITaggerConfig, PerformerFieldOperation } from "../constants";
 import StudioFieldSelector from "./StudioFieldSelector";
 
 interface IConfigProps {
@@ -13,24 +12,48 @@ interface IConfigProps {
 }
 
 const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
-  const { configuration: stashConfig } = useConfigurationContext();
+  const intl = useIntl();
   const [showExclusionModal, setShowExclusionModal] = useState(false);
 
   const excludedFields = config.excludedStudioFields ?? [];
-
-  const handleInstanceSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedEndpoint = e.currentTarget.value;
-    setConfig({
-      ...config,
-      selectedEndpoint,
-    });
-  };
-
-  const stashBoxes = stashConfig?.general.stashBoxes ?? [];
+  const aliasIncluded = !excludedFields.includes("aliases");
+  const urlsIncluded = !excludedFields.includes("urls");
 
   const handleFieldSelect = (fields: string[]) => {
     setConfig({ ...config, excludedStudioFields: fields });
     setShowExclusionModal(false);
+  };
+
+  const toggleField = (field: string, enabled: boolean) => {
+    const excluded = new Set(config.excludedStudioFields ?? []);
+    if (enabled) {
+      excluded.delete(field);
+    } else {
+      excluded.add(field);
+    }
+
+    setConfig({
+      ...config,
+      excludedStudioFields: Array.from(excluded),
+    });
+  };
+
+  const setStudioFieldOperation = (
+    field: "aliases" | "urls",
+    operation: PerformerFieldOperation
+  ) => {
+    if (field === "aliases") {
+      setConfig({
+        ...config,
+        studioAliasOperation: operation,
+      });
+      return;
+    }
+
+    setConfig({
+      ...config,
+      studioURLsOperation: operation,
+    });
   };
 
   return (
@@ -42,7 +65,7 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
               <FormattedMessage id="configuration" />
             </h4>
             <hr className="w-100" />
-            <div className="col-md-6">
+            <div className="col-lg-8 col-md-10">
               <Form.Group
                 controlId="create-parent"
                 className="align-items-center"
@@ -88,31 +111,74 @@ const Config: React.FC<IConfigProps> = ({ show, config, setConfig }) => {
                   <FormattedMessage id="studio_tagger.config.edit_excluded_fields" />
                 </Button>
               </Form.Group>
-              <Form.Group
-                controlId="stash-box-endpoint"
-                className="align-items-center row no-gutters mt-4"
-              >
-                <Form.Label className="mr-4">
-                  <FormattedMessage id="studio_tagger.config.active_stash-box_instance" />
-                </Form.Label>
-                <Form.Control
-                  as="select"
-                  value={config.selectedEndpoint}
-                  className="col-md-4 col-6 input-control"
-                  disabled={!stashBoxes.length}
-                  onChange={handleInstanceSelect}
-                >
-                  {!stashBoxes.length && (
-                    <option>
-                      <FormattedMessage id="studio_tagger.config.no_instances_found" />
-                    </option>
-                  )}
-                  {stashConfig?.general.stashBoxes.map((i) => (
-                    <option value={i.endpoint} key={i.endpoint}>
-                      {i.endpoint}
-                    </option>
-                  ))}
-                </Form.Control>
+              <Form.Group controlId="studio-update-behavior" className="mt-4">
+                <h6 className="mb-3">Update behavior</h6>
+                <div className="row no-gutters align-items-center mb-2">
+                  <div className="col-auto pr-2">
+                    <Form.Check
+                      id="studio-alias-operation-enabled"
+                      className="mb-0"
+                      label={intl.formatMessage({ id: "aliases" })}
+                      checked={aliasIncluded}
+                      onChange={(e) =>
+                        toggleField("aliases", e.currentTarget.checked)
+                      }
+                    />
+                  </div>
+                  <div className="col-auto">
+                    <Form.Control
+                      as="select"
+                      className="input-control tagger-update-behavior-select"
+                      value={config.studioAliasOperation ?? "overwrite"}
+                      disabled={!aliasIncluded}
+                      onChange={(e) =>
+                        setStudioFieldOperation(
+                          "aliases",
+                          e.currentTarget.value as PerformerFieldOperation
+                        )
+                      }
+                    >
+                      <option value="merge">
+                        {intl.formatMessage({ id: "actions.merge" })}
+                      </option>
+                      <option value="overwrite">
+                        {intl.formatMessage({ id: "actions.overwrite" })}
+                      </option>
+                    </Form.Control>
+                  </div>
+                </div>
+                <div className="row no-gutters align-items-center">
+                  <div className="col-auto pr-2">
+                    <Form.Check
+                      id="studio-urls-operation-enabled"
+                      className="mb-0"
+                      label={intl.formatMessage({ id: "urls" })}
+                      checked={urlsIncluded}
+                      onChange={(e) => toggleField("urls", e.currentTarget.checked)}
+                    />
+                  </div>
+                  <div className="col-auto">
+                    <Form.Control
+                      as="select"
+                      className="input-control tagger-update-behavior-select"
+                      value={config.studioURLsOperation ?? "overwrite"}
+                      disabled={!urlsIncluded}
+                      onChange={(e) =>
+                        setStudioFieldOperation(
+                          "urls",
+                          e.currentTarget.value as PerformerFieldOperation
+                        )
+                      }
+                    >
+                      <option value="merge">
+                        {intl.formatMessage({ id: "actions.merge" })}
+                      </option>
+                      <option value="overwrite">
+                        {intl.formatMessage({ id: "actions.overwrite" })}
+                      </option>
+                    </Form.Control>
+                  </div>
+                </div>
               </Form.Group>
             </div>
           </div>
