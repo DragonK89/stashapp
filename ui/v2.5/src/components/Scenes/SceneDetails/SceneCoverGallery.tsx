@@ -1,12 +1,15 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
-import { useFindImagesQuery, CriterionModifier } from "src/core/generated-graphql";
+import {
+  CriterionModifier,
+  SortDirectionEnum,
+  useFindImagesQuery,
+} from "src/core/generated-graphql";
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
-import { OverlayTrigger, Tooltip, Button } from "react-bootstrap";
-import { Icon } from "src/components/Shared/Icon";
-import { faPlus, faMinus, faSync } from "@fortawesome/free-solid-svg-icons";
-import { TransformWrapper, TransformComponent, ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
+import { OverlayTrigger, Tooltip } from "react-bootstrap";
 import cx from "classnames";
+import { useLightbox } from "src/hooks/Lightbox/hooks";
+import { gql, useQuery } from "@apollo/client";
 
 interface IProps {
   scene: GQL.SceneDataFragment;
@@ -18,64 +21,126 @@ interface IGalleryImage {
   src: string;
   thumbnail: string;
   title: string;
-  path: string;
 }
+
+interface IFindGalleryCoverData {
+  findGallery?: {
+    id: string;
+    cover?: {
+      id: string;
+    } | null;
+  } | null;
+}
+
+const FIND_GALLERY_COVER = gql`
+  query SceneCoverGalleryFindCover($id: ID!) {
+    findGallery(id: $id) {
+      id
+      cover {
+        id
+      }
+    }
+  }
+`;
 
 export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
   const [selectedImage, setSelectedImage] = useState<IGalleryImage | null>(null);
-  const transformRef = useRef<ReactZoomPanPinchRef>(null);
 
   const { data, loading } = useFindImagesQuery({
     variables: {
       filter: {
         per_page: -1,
-        sort: "path",
+        sort: "title",
+        direction: SortDirectionEnum.Asc,
       },
       image_filter: {
-        galleries: galleryId ? {
-          modifier: CriterionModifier.Includes,
-          value: [galleryId],
-        } : undefined,
+        galleries: galleryId
+          ? {
+              modifier: CriterionModifier.Includes,
+              value: [galleryId],
+            }
+          : undefined,
       },
     },
     skip: !galleryId,
   });
 
+  const { data: galleryCoverData } = useQuery<IFindGalleryCoverData>(
+    FIND_GALLERY_COVER,
+    {
+      variables: { id: galleryId ?? "" },
+      skip: !galleryId,
+    }
+  );
+
+  const rawImages = useMemo(() => data?.findImages?.images ?? [], [data]);
+  const showLightbox = useLightbox();
+
   const galleryImages = useMemo(() => {
-    const images: IGalleryImage[] = [];
+    if (!galleryId) {
+      return [
+        {
+          id: "cover",
+          src: scene.paths.screenshot ?? "",
+          thumbnail: scene.paths.screenshot ?? "",
+          title: "Cover",
+        },
+      ];
+    }
 
-    // Always include the scene screenshot as the first image
-    images.push({
-      id: "cover",
-      src: scene.paths.screenshot ?? "",
-      thumbnail: scene.paths.screenshot ?? "",
-      title: "Cover",
-      path: scene.paths.screenshot ?? "",
-    });
+    const images: IGalleryImage[] = rawImages.map((img) => ({
+      id: img.id,
+      src: img.paths.image ?? img.paths.thumbnail ?? "",
+      thumbnail: img.paths.thumbnail ?? img.paths.image ?? "",
+      title: img.title ?? "",
+    }));
 
-    if (data?.findImages?.images) {
-      data.findImages.images.forEach((img) => {
-        images.push({
-          id: img.id,
-          src: img.paths.image ?? img.paths.thumbnail ?? "",
-          thumbnail: img.paths.thumbnail ?? "",
-          title: img.title ?? "",
-          path: img.visual_files[0]?.path ?? "",
-        });
-      });
+    images.sort((a, b) =>
+      a.title.localeCompare(b.title, undefined, {
+        numeric: true,
+        sensitivity: "base",
+      })
+    );
+
+    const coverId = galleryCoverData?.findGallery?.cover?.id;
+    if (coverId) {
+      const coverIndex = images.findIndex((img) => img.id === coverId);
+      if (coverIndex > 0) {
+        const [coverImage] = images.splice(coverIndex, 1);
+        images.unshift(coverImage);
+      }
     }
 
     return images;
-  }, [data, scene]);
+  }, [galleryCoverData, galleryId, rawImages, scene.paths.screenshot]);
+
+  useEffect(() => {
+    if (!selectedImage) return;
+    if (galleryImages.some((img) => img.id === selectedImage.id)) return;
+    setSelectedImage(null);
+  }, [galleryImages, selectedImage]);
 
   const currentImage = selectedImage || galleryImages[0];
+  const lightboxImages = useMemo(() => {
+    if (!galleryId) return [];
 
-  const handleThumbnailClick = (img: IGalleryImage) => {
-    setSelectedImage(img);
-    if (transformRef.current) {
-      transformRef.current.resetTransform();
-    }
-  };
+    const rawById = new Map(rawImages.map((img) => [img.id, img]));
+    return galleryImages
+      .map((img) => rawById.get(img.id))
+      .filter((img): img is NonNullable<typeof img> => !!img);
+  }, [galleryId, galleryImages, rawImages]);
+
+  function onMainImageClick() {
+    if (!galleryId || !currentImage || lightboxImages.length === 0) return;
+    const imageIndex = lightboxImages.findIndex(
+      (img) => img.id === currentImage.id
+    );
+    showLightbox({
+      images: lightboxImages,
+      showNavigation: false,
+      initialIndex: imageIndex >= 0 ? imageIndex : 0,
+    });
+  }
 
   const onThumbnailWheel = (e: React.WheelEvent) => {
     if (e.deltaY !== 0) {
@@ -83,67 +148,33 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
     }
   };
 
-  if (loading && galleryImages.length <= 1) return <LoadingIndicator />;
-
-  const fileNameFromPath = (path: string) => {
-    return path.split(/[\\/]/).pop() || "";
-  };
+  if (loading && galleryId && galleryImages.length === 0) return <LoadingIndicator />;
+  if (!currentImage) return null;
 
   return (
     <div className="scene-cover-gallery">
-      <TransformWrapper
-        ref={transformRef}
-        initialScale={1}
-        minScale={1}
-        maxScale={10}
-        centerOnInit={true}
-        doubleClick={{ disabled: false }}
-        panning={{ disabled: false }}
-        limitToBounds={true}
+      <div
+        className={cx("gallery-main-image", { clickable: !!galleryId })}
+        style={{ backgroundImage: `url(${currentImage.src})` }}
+        onClick={onMainImageClick}
+        role={galleryId ? "button" : undefined}
+        tabIndex={galleryId ? 0 : undefined}
+        onKeyDown={(e) => {
+          if (!galleryId) return;
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onMainImageClick();
+          }
+        }}
       >
-        {({ zoomIn, zoomOut, resetTransform }) => (
-          <React.Fragment>
-            <TransformComponent 
-              wrapperClass="gallery-main-image" 
-              contentClass="gallery-main-content"
-              wrapperStyle={{ backgroundImage: `url(${currentImage.src})` }}
-            >
-              <img
-                src={currentImage.src}
-                alt={currentImage.title}
-                className="scene-cover-image"
-              />
-            </TransformComponent>
-
-            <div className="zoom-controls">
-              <Button
-                variant="secondary"
-                className="minimal"
-                onClick={() => zoomIn(0.25)}
-                title="Zoom In"
-              >
-                <Icon icon={faPlus} />
-              </Button>
-              <Button
-                variant="secondary"
-                className="minimal"
-                onClick={() => zoomOut(0.25)}
-                title="Zoom Out"
-              >
-                <Icon icon={faMinus} />
-              </Button>
-              <Button
-                variant="secondary"
-                className="minimal"
-                onClick={() => resetTransform()}
-                title="Reset Zoom"
-              >
-                <Icon icon={faSync} />
-              </Button>
-            </div>
-          </React.Fragment>
-        )}
-      </TransformWrapper>
+        <div className="gallery-main-content">
+          <img
+            src={currentImage.src}
+            alt={currentImage.title || scene.title || "Scene cover"}
+            className="scene-cover-image"
+          />
+        </div>
+      </div>
 
       {galleryImages.length > 1 && (
         <div className="gallery-thumbnails" onWheel={onThumbnailWheel}>
@@ -151,13 +182,27 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
             <OverlayTrigger
               key={img.id}
               placement="top"
-              overlay={<Tooltip id={`tooltip-${img.id}`}>{img.id === "cover" ? "Cover" : fileNameFromPath(img.path)}</Tooltip>}
+              overlay={
+                <Tooltip id={`tooltip-${img.id}`}>
+                  {img.id === "cover" ? "Cover" : img.title || "Untitled"}
+                </Tooltip>
+              }
             >
               <div
-                className={cx("thumbnail-item", { active: currentImage.id === img.id })}
-                onClick={() => handleThumbnailClick(img)}
+                className={cx("thumbnail-item", {
+                  active: currentImage.id === img.id,
+                })}
+                onClick={() => setSelectedImage(img)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelectedImage(img);
+                  }
+                }}
               >
-                <img src={img.thumbnail} alt={img.title} />
+                <img src={img.thumbnail} alt={img.title || "thumbnail"} />
               </div>
             </OverlayTrigger>
           ))}

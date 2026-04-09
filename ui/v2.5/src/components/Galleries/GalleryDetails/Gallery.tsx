@@ -11,6 +11,7 @@ import { FormattedMessage, useIntl } from "react-intl";
 import { Helmet } from "react-helmet";
 import * as GQL from "src/core/generated-graphql";
 import {
+  mutateAddGalleryImagesByURL,
   mutateMetadataScan,
   mutateResetGalleryCover,
   mutateSetGalleryCover,
@@ -205,6 +206,47 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
     }
   }
 
+  async function onSetCoverFromFirstScene() {
+    const screenshotPath = gallery.scenes[0]?.paths?.screenshot;
+    if (!screenshotPath) {
+      Toast.error("No cover image found for the first connected scene");
+      return;
+    }
+
+    const firstSceneScreenshot = screenshotPath.startsWith("/")
+      ? new URL(screenshotPath, window.location.origin).toString()
+      : screenshotPath;
+
+    try {
+      const addResult = await mutateAddGalleryImagesByURL({
+        gallery_id: gallery.id!,
+        urls: [firstSceneScreenshot],
+      });
+
+      const linkedIDs = addResult.data?.addGalleryImagesByURL?.linked_ids ?? [];
+      if (linkedIDs.length === 0) {
+        Toast.error("Unable to set cover from first scene");
+        return;
+      }
+
+      await mutateSetGalleryCover({
+        gallery_id: gallery.id!,
+        cover_image_id: linkedIDs[0],
+      });
+
+      Toast.success(
+        intl.formatMessage(
+          { id: "toast.updated_entity" },
+          {
+            entity: intl.formatMessage({ id: "gallery" }).toLocaleLowerCase(),
+          }
+        )
+      );
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
+
   async function onClickChapter(imageindex: number) {
     showLightbox(imageindex - 1);
   }
@@ -255,6 +297,17 @@ export const GalleryPage: React.FC<IProps> = ({ gallery, add }) => {
           >
             <FormattedMessage id="actions.set_cover" />
           </Dropdown.Item>
+          {gallery.scenes.length > 0 && (
+            <Dropdown.Item
+              className="bg-secondary text-white"
+              onClick={() => onSetCoverFromFirstScene()}
+            >
+              <FormattedMessage
+                id="actions.set_cover_from_first_scene"
+                defaultMessage="Set Cover From Scene"
+              />
+            </Dropdown.Item>
+          )}
           <Dropdown.Item
             className="bg-secondary text-white"
             onClick={() => onResetCover()}

@@ -1083,11 +1083,21 @@ const SceneLoader: React.FC<RouteComponentProps<ISceneParams>> = ({
         </Nav>
 
         <div className="player-content flex-grow-1 d-flex flex-column min-vh-0">
-          <div className={cx("flex-grow-1 d-flex flex-column min-vh-0", { hidden: activeTab !== "cover" })}>
+          <div
+            className={cx("flex-grow-1 flex-column min-vh-0", {
+              "d-flex": activeTab === "cover",
+              "d-none": activeTab !== "cover",
+            })}
+          >
             <SceneCoverGallery scene={scene} galleryId={scene.galleries[0]?.id} />
           </div>
 
-          <div className={cx("flex-grow-1 d-flex flex-column min-vh-0", { hidden: activeTab !== "player" })}>
+          <div
+            className={cx("flex-grow-1 flex-column min-vh-0", {
+              "d-flex": activeTab === "player",
+              "d-none": activeTab !== "player",
+            })}
+          >
             {scene.files?.[0]?.path?.toLowerCase().endsWith(".torrent") ? (
               <div className="p-4 text-center">
                 <FormattedMessage
