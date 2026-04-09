@@ -18,10 +18,10 @@ import (
 )
 
 type ImportTorrentScenesInput struct {
-	Path           string                 `json:"path"`
-	NormalizeTitle bool                   `json:"normalizeTitle"`
-	UseScrapers    bool                   `json:"useScrapers"`
-	ScraperID      *string                `json:"scraperID"`
+	Path           string                   `json:"path"`
+	NormalizeTitle bool                     `json:"normalizeTitle"`
+	UseScrapers    bool                     `json:"useScrapers"`
+	ScraperID      *string                  `json:"scraperID"`
 	FieldOptions   []*identify.FieldOptions `json:"fieldOptions"`
 }
 
@@ -361,4 +361,3 @@ func marshalScrapedScenes(content []scraper.ScrapedContent) ([]*models.ScrapedSc
 	}
 	return ret, nil
 }
-

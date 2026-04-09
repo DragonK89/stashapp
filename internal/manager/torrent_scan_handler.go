@@ -147,4 +147,3 @@ func (h *torrentSceneScanHandler) Handle(ctx context.Context, f models.File, old
 	h.PluginCache.RegisterPostHooks(ctx, newScene.ID, hook.SceneCreatePost, nil, nil)
 	return nil
 }
-

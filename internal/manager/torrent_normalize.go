@@ -38,4 +38,3 @@ func formatTorrentTitle(prefix, number string) string {
 	}
 	return p + "-" + n
 }
-

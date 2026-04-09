@@ -274,25 +274,25 @@ type scanFilter struct {
 	scanTorrentsOnly       bool
 	scanTorrentsScanImages bool
 	stashPaths             config.StashConfigs
-	generatedPath     string
-	videoExcludeRegex []*regexp.Regexp
-	imageExcludeRegex []*regexp.Regexp
-	minModTime        time.Time
+	generatedPath          string
+	videoExcludeRegex      []*regexp.Regexp
+	imageExcludeRegex      []*regexp.Regexp
+	minModTime             time.Time
 }
 
 func newScanFilter(c *config.Config, repo models.Repository, minModTime time.Time, scanTorrentsOnly bool, scanTorrentsScanImages bool) *scanFilter {
 	return &scanFilter{
-		extensionConfig:   newExtensionConfig(c),
-		txnManager:        repo.TxnManager,
-		FileFinder:        repo.File,
+		extensionConfig:        newExtensionConfig(c),
+		txnManager:             repo.TxnManager,
+		FileFinder:             repo.File,
 		CaptionUpdater:         repo.File,
 		scanTorrentsOnly:       scanTorrentsOnly,
 		scanTorrentsScanImages: scanTorrentsScanImages,
 		stashPaths:             c.GetStashPaths(),
-		generatedPath:     c.GetGeneratedPath(),
-		videoExcludeRegex: generateRegexps(c.GetExcludes()),
-		imageExcludeRegex: generateRegexps(c.GetImageExcludes()),
-		minModTime:        minModTime,
+		generatedPath:          c.GetGeneratedPath(),
+		videoExcludeRegex:      generateRegexps(c.GetExcludes()),
+		imageExcludeRegex:      generateRegexps(c.GetImageExcludes()),
+		minModTime:             minModTime,
 	}
 }
 
@@ -400,13 +400,13 @@ func getScanHandlers(options ScanMetadataInput, taskQueue *job.TaskQueue, progre
 		// Torrent-only scan: handle only torrents as scenes; skip all other handlers.
 		// Skipped torrent reporting is handled by ScanJob.Execute.
 		handler := &torrentSceneScanHandler{
-			SceneRepo:       r.Scene,
-			FileRepo:        r.File,
-			FolderRepo:      r.Folder,
-			PluginCache:     pluginCache,
-			NormalizeTitle:  options.ScanTorrentsNormalizeTitle,
-			RenameFile:      options.ScanTorrentsRenameFile,
-			recordSkipped:   recordSkippedTorrent,
+			SceneRepo:      r.Scene,
+			FileRepo:       r.File,
+			FolderRepo:     r.Folder,
+			PluginCache:    pluginCache,
+			NormalizeTitle: options.ScanTorrentsNormalizeTitle,
+			RenameFile:     options.ScanTorrentsRenameFile,
+			recordSkipped:  recordSkippedTorrent,
 		}
 		handlers := []file.Handler{
 			&file.FilteredHandler{
