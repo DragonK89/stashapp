@@ -579,7 +579,7 @@ export const TaggerContext: React.FC = ({ children }) => {
       );
 
       if (result.data.scrapeSingleScene.length) {
-        const resolvedScene = result.data.scrapeSingleScene[0];
+        const resolvedScene: IScrapedScene = result.data.scrapeSingleScene[0];
 
         // Keep already scraped relationship data if the follow-up resolve
         // response is partial.

@@ -268,7 +268,7 @@ export const GalleryEditPanel: React.FC<IProps> = ({
 
     setIsLoading(true);
     try {
-      const result = await queryScrapeGallery(s.scraper_id!, gallery.id);
+      const result = await queryScrapeGallery(s, gallery.id);
       if (!result.data || !result.data.scrapeSingleGallery?.length) {
         Toast.success("No galleries found");
         return;
