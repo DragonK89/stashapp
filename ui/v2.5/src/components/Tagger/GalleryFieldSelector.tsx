@@ -60,7 +60,8 @@ const GalleryFieldSelector: React.FC<IProps> = ({
     >
       <h4>Select excluded gallery fields</h4>
       <div className="mb-2">
-        These fields will be excluded from updates by default. Click the button to toggle.
+        These fields will be excluded from updates by default. Click the button
+        to toggle.
       </div>
       <Row>{GALLERY_FIELDS.map((f) => renderField(f))}</Row>
     </ModalComponent>

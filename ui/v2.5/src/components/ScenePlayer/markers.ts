@@ -36,7 +36,9 @@ class MarkersPlugin extends videojs.getPlugin("plugin") {
       tooltip.className = "vjs-marker-tooltip";
       tooltip.style.visibility = "hidden";
 
-      const parent = el.querySelector(".vjs-progress-holder .vjs-mouse-display");
+      const parent = el.querySelector(
+        ".vjs-progress-holder .vjs-mouse-display"
+      );
       if (parent) parent.appendChild(tooltip);
       this.markerTooltip = tooltip;
 

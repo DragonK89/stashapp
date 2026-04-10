@@ -1,12 +1,6 @@
 import React, { useContext, useState } from "react";
-import {
-  Badge,
-  Button,
-  Card,
-  Collapse,
-  Form,
-} from "react-bootstrap";
-import { FormattedMessage, useIntl } from "react-intl";
+import { Badge, Button, Card, Collapse, Form } from "react-bootstrap";
+import { FormattedMessage } from "react-intl";
 
 import { TaggerStateContext } from "../galleryContext";
 import GalleryFieldSelector from "../GalleryFieldSelector";
@@ -17,7 +11,7 @@ interface IConfigProps {
 
 const Config: React.FC<IConfigProps> = ({ show }) => {
   const { config, setConfig } = useContext(TaggerStateContext);
-  const intl = useIntl();
+
   const [showExclusionModal, setShowExclusionModal] = useState(false);
 
   const excludedFields = config.excludedGalleryFields ?? [];
@@ -37,7 +31,10 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
             </h4>
             <hr className="w-100" />
             <Form className="col-md-6">
-              <Form.Group controlId="set-cover-from-scene" className="align-items-center">
+              <Form.Group
+                controlId="set-cover-from-scene"
+                className="align-items-center"
+              >
                 <h6>
                   <FormattedMessage id="cover_type" />
                 </h6>
@@ -52,7 +49,8 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
                   }
                 />
                 <Form.Text>
-                  If true, when saving a gallery, the logic of "Set Cover From Scene" will be applied.
+                  If true, when saving a gallery, the logic of &quot;Set Cover
+                  From Scene&quot; will be applied.
                 </Form.Text>
               </Form.Group>
             </Form>
@@ -65,7 +63,9 @@ const Config: React.FC<IConfigProps> = ({ show }) => {
                   {excludedFields.length > 0 ? (
                     excludedFields.map((f) => (
                       <Badge variant="secondary" className="tag-item" key={f}>
-                        <FormattedMessage id={f === "code" ? "gallery_code" : f} />
+                        <FormattedMessage
+                          id={f === "code" ? "gallery_code" : f}
+                        />
                       </Badge>
                     ))
                   ) : (

@@ -201,7 +201,10 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
               className="tagger-preview-backdrop"
               style={{ backgroundImage: `url(${gallery.paths.cover})` }}
             />
-            <Link to={url} style={{ display: "block", height: "100%", position: "relative" }}>
+            <Link
+              to={url}
+              style={{ display: "block", height: "100%", position: "relative" }}
+            >
               <GalleryPreview gallery={gallery} noScrubber />
             </Link>
           </div>

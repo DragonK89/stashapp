@@ -84,16 +84,16 @@ const dummyValFn = () => {
 
 export const TaggerStateContext = React.createContext<ITaggerContextState>({
   config: initialConfig,
-  setConfig: () => { },
+  setConfig: () => {},
   loading: false,
   sources: [],
   searchResults: {},
-  setCurrentSource: () => { },
+  setCurrentSource: () => {},
   doGalleryQuery: dummyFn,
   doMultiGalleryQueryScrape: dummyFn,
   searchAllQueue: [],
-  setSearchAllQueue: () => { },
-  stopMultiScrape: () => { },
+  setSearchAllQueue: () => {},
+  stopMultiScrape: () => {},
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
   linkPerformer: dummyFn,
@@ -104,7 +104,7 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   resolveGallery: dummyFn,
   saveGallery: dummyFn,
   addGalleryImagesByUrl: dummyFn,
-  setCoverFromScene: dummyFn
+  setCoverFromScene: dummyFn,
 });
 
 export type IScrapedGallery = GQL.ScrapedGallery & {
@@ -177,7 +177,8 @@ export const TaggerContext: React.FC = ({ children }) => {
             });
 
             // Update image title to match cover regex
-            const codeOrTitle = gallery.code || gallery.title || `gallery_${gallery.id}`;
+            const codeOrTitle =
+              gallery.code || gallery.title || `gallery_${gallery.id}`;
             const ext = screenshotURL.split(".").pop()?.split("?")[0] || "jpg";
             await updateImageMutation({
               variables: {
