@@ -217,7 +217,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
 
   return (
     <GalleryTaggerModals>
-      <div className="tagger-container mx-md-auto">
+      <div className="tagger-container gallery-tagger-container mx-md-auto">
         <div className="tagger-container-header">
           <div className="d-flex justify-content-between align-items-center flex-wrap">
             <div className="w-auto">{renderSourceSelector()}</div>
