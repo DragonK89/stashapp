@@ -29,21 +29,20 @@ class MarkersPlugin extends videojs.getPlugin("plugin") {
   constructor(player: VideoJsPlayer) {
     super(player);
     player.ready(() => {
+      const el = player.el();
+      if (!el) return;
+
       const tooltip = videojs.dom.createEl("div") as HTMLElement;
       tooltip.className = "vjs-marker-tooltip";
       tooltip.style.visibility = "hidden";
 
-      const parent = player
-        .el()
-        .querySelector(".vjs-progress-holder .vjs-mouse-display");
+      const parent = el.querySelector(".vjs-progress-holder .vjs-mouse-display");
       if (parent) parent.appendChild(tooltip);
       this.markerTooltip = tooltip;
 
-      this.defaultTooltip = player
-        .el()
-        .querySelector<HTMLElement>(
-          ".vjs-progress-holder .vjs-mouse-display .vjs-time-tooltip"
-        );
+      this.defaultTooltip = el.querySelector<HTMLElement>(
+        ".vjs-progress-holder .vjs-mouse-display .vjs-time-tooltip"
+      );
     });
   }
 
@@ -67,7 +66,9 @@ class MarkersPlugin extends videojs.getPlugin("plugin") {
       dot?: HTMLDivElement;
       range?: HTMLDivElement;
     } = {};
-    const seekBar = this.player.el().querySelector(".vjs-progress-holder");
+    const el = this.player.el();
+    if (!el) return;
+    const seekBar = el.querySelector(".vjs-progress-holder");
 
     markerSet.dot = videojs.dom.createEl("div") as HTMLDivElement;
     markerSet.dot.className = "vjs-marker";
@@ -116,10 +117,13 @@ class MarkersPlugin extends videojs.getPlugin("plugin") {
   }
 
   private renderRangeMarkers(markers: IMarker[], layer: number) {
+    const el = this.player.el();
     const duration = this.player.duration();
-    const parent = this.player.el().querySelector(".vjs-progress-control");
-    const seekBar = this.player.el().querySelector(".vjs-progress-holder");
-    if (!seekBar || !parent || !duration) return;
+    if (!el || !duration) return;
+
+    const parent = el.querySelector(".vjs-progress-control");
+    const seekBar = el.querySelector(".vjs-progress-holder");
+    if (!seekBar || !parent) return;
 
     markers.forEach((marker) => {
       this.renderRangeMarker(marker, layer, duration, seekBar, parent);

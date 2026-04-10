@@ -190,8 +190,18 @@ export const TaggerGallery: React.FC<PropsWithChildren<ITaggerGallery>> = ({
           className="col col-lg-6 overflow-hidden align-items-center d-flex flex-column flex-sm-row"
           style={{ marginBottom: "15px" }}
         >
-          <div className="scene-card" style={{ width: "400px" }}>
-            <Link to={url}>
+          <div
+            className="scene-card tagger-preview-card"
+            style={{
+              width: "400px",
+              height: "268px",
+            }}
+          >
+            <div
+              className="tagger-preview-backdrop"
+              style={{ backgroundImage: `url(${gallery.paths.cover})` }}
+            />
+            <Link to={url} style={{ display: "block", height: "100%", position: "relative" }}>
               <GalleryPreview gallery={gallery} noScrubber />
             </Link>
           </div>

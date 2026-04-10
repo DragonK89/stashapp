@@ -1831,15 +1831,14 @@ export const mutateAddGalleryImagesByURL = (
     },
   });
 
-function evictCover(cache: ApolloCache<GQL.Gallery>, gallery_id: string) {
+export function evictCover(cache: ApolloCache<any>, gallery_id: string) {
   const fields: Partial<Pick<Modifiers<GQL.Gallery>, "paths" | "cover">> = {};
   fields.paths = (paths) => {
     if (!("cover" in paths)) {
       return paths;
     }
-    const coverUrl = new URL(paths.cover);
-    coverUrl.search = "?t=" + Math.floor(Date.now() / 1000);
-    return { ...paths, cover: coverUrl.toString() };
+    const coverUrl = paths.cover.split("?")[0];
+    return { ...paths, cover: `${coverUrl}?t=${Math.floor(Date.now() / 1000)}` };
   };
   fields.cover = (_value, { DELETE }) => DELETE;
   cache.modify({
@@ -1854,7 +1853,19 @@ export const mutateSetGalleryCover = (input: GQL.GallerySetCoverInput) =>
     variables: input,
     update(cache, result) {
       if (!result.data?.setGalleryCover) return;
-      evictCover(cache, input.gallery_id);
+      evictCover(cache as any, input.gallery_id);
+      evictTypeFields(cache, galleryMutationImpactedTypeFields);
+      evictQueries(cache, galleryMutationImpactedQueries);
+    },
+  });
+
+export const useSetGalleryCover = () =>
+  GQL.useSetGalleryCoverMutation({
+    update(cache, result, { variables }) {
+      if (!result.data?.setGalleryCover || !variables) return;
+      evictCover(cache as any, variables.gallery_id);
+      evictTypeFields(cache, galleryMutationImpactedTypeFields);
+      evictQueries(cache, galleryMutationImpactedQueries);
     },
   });
 

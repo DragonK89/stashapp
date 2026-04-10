@@ -10,6 +10,7 @@
     },
     "donate": "Donate",
     "galleries": "Galleries",
+    "gallery_code": "Gallery Code",
     "groups": "Groups",
     "label": "Label",
     "images": "Images",
@@ -79,7 +80,8 @@
             "query_mode_studiocode_desc": "Only uses studio code",
             "query_mode_title": "Title",
             "query_mode_title_desc": "Only uses title",
-            "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes"
+            "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes",
+            "these_fields_will_not_be_changed_when_updating_galleries": "These fields will not be changed when updating galleries"
         },
         "verb_search_all": "Search All"
     },
@@ -88,5 +90,6 @@
     },
     "dialogs": {
         "scrape_results_gallery_url_merge": "On Apply, scraped gallery URLs will be added to existing galleries:"
-    }
+    },
+    "cover_type": "Cover Type:"
 }

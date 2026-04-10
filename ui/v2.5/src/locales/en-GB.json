@@ -159,6 +159,7 @@
     "view_random": "View Random"
   },
   "actions_name": "Actions",
+  "cover_type": "Cover Type:",
   "labels": "Labels",
   "label": "Label",
   "age": "Age",
@@ -223,7 +224,8 @@
       "set_tag_desc": "Attach tags to scene, either by overwriting or merging with existing tags on scene.",
       "set_tag_label": "Set tags",
       "source": "Source",
-      "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes"
+      "these_fields_will_not_be_changed_when_updating_scenes": "These fields will not be changed when updating scenes",
+      "these_fields_will_not_be_changed_when_updating_galleries": "These fields will not be changed when updating galleries"
     },
     "noun_query": "Query",
     "results": {
@@ -1429,6 +1431,7 @@
   "scene": "Scene",
   "sceneTagger": "Scene Tagger",
   "scene_code": "Studio Code",
+  "gallery_code": "Gallery Code",
   "scene_count": "Scene Count",
   "scenes_duration": "Scene Duration",
   "scene_created_at": "Scene Created At",

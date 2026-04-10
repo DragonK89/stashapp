@@ -59,6 +59,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     currentSource,
     saveGallery: saveScene,
     addGalleryImagesByUrl: scrapeImages,
+    setCoverFromScene,
   } = React.useContext(TaggerStateContext);
 
   const performerGenders = config.performerGenders?.length
@@ -210,6 +211,10 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
     }
 
     await saveScene(galleryUpdateInput);
+
+    if (config.setGalleryCoverFromScene) {
+      await setCoverFromScene(stashScene);
+    }
 
     if (!excludedFieldList.includes("url") && scene.urls) {
       const imageURLs = extractImageURLs(scene.urls);

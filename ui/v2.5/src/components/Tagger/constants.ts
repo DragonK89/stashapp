@@ -33,6 +33,7 @@ export const initialConfig: ITaggerConfig = {
   blacklist: DEFAULT_BLACKLIST,
   mode: "auto",
   setCoverImage: true,
+  setGalleryCoverFromScene: false,
   setTags: true,
   tagOperation: "merge",
   fingerprintQueue: {},
@@ -65,6 +66,7 @@ export interface ITaggerConfig {
   performerGenders?: GenderEnum[];
   mode: ParseMode;
   setCoverImage: boolean;
+  setGalleryCoverFromScene: boolean;
   setTags: boolean;
   tagOperation: TagOperation;
   selectedEndpoint?: string;
@@ -95,6 +97,18 @@ export const SCENE_FIELDS = [
   "director",
   "cover_image",
   "stash_ids",
+];
+
+export const GALLERY_FIELDS = [
+  "title",
+  "date",
+  "url",
+  "details",
+  "studio",
+  "performers",
+  "tags",
+  "code",
+  "photographer",
 ];
 
 export const PERFORMER_FIELDS = [

@@ -6,6 +6,39 @@
     padding-bottom: 0;
   }
 
+  .tagger-preview-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 4px;
+
+    .tagger-preview-backdrop {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-size: cover;
+      background-position: center;
+      filter: blur(10px) brightness(0.6);
+      transform: scale(1.1);
+    }
+
+    // Only apply full-bleed sizing when inside a card with explicit dimensions
+    .gallery-card-cover,
+    .scene-card-preview {
+      height: 100%;
+      width: 100%;
+
+      .gallery-card-image,
+      .scene-card-preview-image,
+      .scene-card-preview-video {
+        height: 100%;
+        width: 100%;
+        object-fit: contain;
+      }
+    }
+  }
+
   .scene-card {
     position: relative;
   }
@@ -31,7 +64,7 @@
 .tagger-source-select {
   max-width: calc(100vw - 7rem);
   padding-right: 1.75rem;
-  width: 13.5rem;
+  width: 9rem;
 }
 
 .tagger-update-behavior-select {

@@ -11,6 +11,8 @@ import {
   usePerformerUpdate,
   useGalleryUpdate,
   useAddGalleryImagesByUrlMutation,
+  useSetGalleryCover,
+  useImageUpdate,
   useStudioCreate,
   useStudioUpdate,
   useTagCreate,
@@ -70,6 +72,7 @@ export interface ITaggerContextState {
   ) => Promise<void>;
   saveGallery: (galleryCreateInput: GQL.GalleryUpdateInput) => Promise<void>;
   addGalleryImagesByUrl: (galleryID: string, urls: string[]) => Promise<void>;
+  setCoverFromScene: (gallery: GQL.SlimGalleryDataFragment) => Promise<void>;
 }
 
 const dummyFn = () => {
@@ -81,16 +84,16 @@ const dummyValFn = () => {
 
 export const TaggerStateContext = React.createContext<ITaggerContextState>({
   config: initialConfig,
-  setConfig: () => {},
+  setConfig: () => { },
   loading: false,
   sources: [],
   searchResults: {},
-  setCurrentSource: () => {},
+  setCurrentSource: () => { },
   doGalleryQuery: dummyFn,
   doMultiGalleryQueryScrape: dummyFn,
   searchAllQueue: [],
-  setSearchAllQueue: () => {},
-  stopMultiScrape: () => {},
+  setSearchAllQueue: () => { },
+  stopMultiScrape: () => { },
   createNewTag: dummyValFn,
   createNewPerformer: dummyValFn,
   linkPerformer: dummyFn,
@@ -101,6 +104,7 @@ export const TaggerStateContext = React.createContext<ITaggerContextState>({
   resolveGallery: dummyFn,
   saveGallery: dummyFn,
   addGalleryImagesByUrl: dummyFn,
+  setCoverFromScene: dummyFn
 });
 
 export type IScrapedGallery = GQL.ScrapedGallery & {
@@ -142,6 +146,65 @@ export const TaggerContext: React.FC = ({ children }) => {
   const [updateStudioMutation] = useStudioUpdate();
   const [updateGalleryMutation] = useGalleryUpdate();
   const [addGalleryImagesByUrlMutation] = useAddGalleryImagesByUrlMutation();
+  const [setGalleryCoverMutation] = useSetGalleryCover();
+  const [updateImageMutation] = useImageUpdate();
+
+  async function setCoverFromScene(gallery: GQL.SlimGalleryDataFragment) {
+    try {
+      if (gallery.scenes.length > 0) {
+        const firstScene = gallery.scenes[0];
+        if (firstScene.paths.screenshot) {
+          const screenshotURL = firstScene.paths.screenshot.startsWith("http")
+            ? firstScene.paths.screenshot
+            : window.location.origin + firstScene.paths.screenshot;
+
+          const addResult = await addGalleryImagesByUrlMutation({
+            variables: {
+              gallery_id: gallery.id,
+              urls: [screenshotURL],
+            },
+          });
+
+          const res = addResult.data?.addGalleryImagesByURL;
+          const imageID = res?.created_ids?.[0] || res?.linked_ids?.[0];
+
+          if (imageID) {
+            await setGalleryCoverMutation({
+              variables: {
+                gallery_id: gallery.id,
+                cover_image_id: imageID,
+              },
+            });
+
+            // Update image title to match cover regex
+            const codeOrTitle = gallery.code || gallery.title || `gallery_${gallery.id}`;
+            const ext = screenshotURL.split(".").pop()?.split("?")[0] || "jpg";
+            await updateImageMutation({
+              variables: {
+                input: {
+                  id: imageID,
+                  title: `${codeOrTitle}_cover.${ext}`,
+                },
+              },
+            });
+
+            // Bump gallery.UpdatedAt so the cover URL ?t= param changes and
+            // the browser fetches the new cover image instead of its cached version
+            await updateGalleryMutation({
+              variables: {
+                input: { id: gallery.id },
+              },
+            });
+
+            Toast.success("Gallery cover set from scene");
+          }
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      Toast.error("Failed to set cover from scene: " + errorToString(e));
+    }
+  }
   const [updateTagMutation] = useTagUpdate();
 
   useEffect(() => {
@@ -740,6 +803,7 @@ export const TaggerContext: React.FC = ({ children }) => {
         resolveGallery,
         saveGallery,
         addGalleryImagesByUrl,
+        setCoverFromScene,
       }}
     >
       {children}

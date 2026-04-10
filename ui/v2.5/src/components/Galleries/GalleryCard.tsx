@@ -1,5 +1,5 @@
 import { Button, ButtonGroup, OverlayTrigger, Tooltip } from "react-bootstrap";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { GridCard } from "../Shared/GridCard/GridCard";
 import { HoverPopover } from "../Shared/HoverPopover";
@@ -34,6 +34,11 @@ export const GalleryPreview: React.FC<IGalleryPreviewProps> = ({
   const [imgSrc, setImgSrc] = useState<string | undefined>(
     gallery.paths.cover ?? undefined
   );
+
+  // Sync imgSrc when gallery.paths.cover changes (e.g. after SetGalleryCover mutation)
+  useEffect(() => {
+    setImgSrc(gallery.paths.cover ?? undefined);
+  }, [gallery.paths.cover]);
 
   return (
     <div className={cx("gallery-card-cover")}>

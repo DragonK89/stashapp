@@ -7,7 +7,14 @@ import * as GQL from "src/core/generated-graphql";
 import { ItemList, ItemListContext, showWhenSelected } from "../List/ItemList";
 import { ListFilterModel } from "src/models/list-filter/filter";
 import { DisplayMode } from "src/models/list-filter/types";
-import { queryFindGalleries, useFindGalleries } from "src/core/StashService";
+import {
+  mutateAddGalleryImagesByURL,
+  mutateImageUpdate,
+  mutateSetGalleryCover,
+  queryFindGalleries,
+  useFindGalleries,
+} from "src/core/StashService";
+import { useToast } from "src/hooks/Toast";
 import GalleryWallCard from "./GalleryWallCard";
 import { EditGalleriesDialog } from "./EditGalleriesDialog";
 import { DeleteGalleriesDialog } from "./DeleteGalleriesDialog";
@@ -49,6 +56,7 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
   }) => {
     const intl = useIntl();
     const history = useHistory();
+    const Toast = useToast();
     const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
     const [isExportAll, setIsExportAll] = useState(false);
 
@@ -68,6 +76,11 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
       {
         text: intl.formatMessage({ id: "actions.view_random" }),
         onClick: viewRandom,
+      },
+      {
+        text: intl.formatMessage({ id: "actions.set_cover_from_first_scene" }),
+        onClick: onSetCoverFromScene,
+        isDisplayed: showWhenSelected,
       },
       {
         text: intl.formatMessage({ id: "actions.export" }),
@@ -121,6 +134,84 @@ export const GalleryList: React.FC<IGalleryList> = PatchComponent(
           history.push(`/galleries/${id}`);
         }
       }
+    }
+
+    async function onSetCoverFromScene(
+      result: GQL.FindGalleriesQueryResult,
+      _filter: ListFilterModel,
+      selectedIds: Set<string>
+    ) {
+      const galleries = result.data?.findGalleries?.galleries ?? [];
+      const selectedGalleries = galleries.filter((g) => selectedIds.has(g.id));
+
+      for (const gallery of selectedGalleries) {
+        const screenshotPath = gallery.scenes[0]?.paths?.screenshot;
+        if (!screenshotPath) {
+          continue;
+        }
+
+        const firstSceneScreenshot = screenshotPath.startsWith("/")
+          ? new URL(screenshotPath, window.location.origin).toString()
+          : screenshotPath;
+
+        try {
+          const addResult = await mutateAddGalleryImagesByURL({
+            gallery_id: gallery.id!,
+            urls: [firstSceneScreenshot],
+          });
+
+          const linkedIDs =
+            addResult.data?.addGalleryImagesByURL?.linked_ids ?? [];
+          if (linkedIDs.length === 0) {
+            continue;
+          }
+
+          await mutateSetGalleryCover({
+            gallery_id: gallery.id!,
+            cover_image_id: linkedIDs[0],
+          });
+
+          const extractImageExt = (rawPath: string) => {
+            try {
+              const parsed = new URL(rawPath, window.location.origin);
+              const fileName = parsed.pathname.split("/").pop() ?? "";
+              const dotIndex = fileName.lastIndexOf(".");
+              if (dotIndex > 0 && dotIndex < fileName.length - 1) {
+                return fileName.slice(dotIndex + 1).toLowerCase();
+              }
+            } catch {
+              // Fall through to default.
+            }
+            return "jpg";
+          };
+
+          const titleBase = (
+            (gallery.code ?? "").trim() ||
+            (gallery.title ?? "").trim() ||
+            "gallery"
+          )
+            .replace(/\s+/g, "_")
+            .replace(/[\\/:*?"<>|]/g, "_");
+          const coverExt = extractImageExt(firstSceneScreenshot);
+          const coverTitle = `${titleBase}_cover.${coverExt}`;
+
+          await mutateImageUpdate({
+            id: linkedIDs[0],
+            title: coverTitle,
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      Toast.success(
+        intl.formatMessage(
+          { id: "toast.updated_entity" },
+          {
+            entity: intl.formatMessage({ id: "galleries" }).toLocaleLowerCase(),
+          }
+        )
+      );
     }
 
     async function onExport() {

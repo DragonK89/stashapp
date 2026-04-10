@@ -2,6 +2,8 @@ import React, { useContext, useMemo, useState } from "react";
 import * as GQL from "src/core/generated-graphql";
 import { Button, Form } from "react-bootstrap";
 import { FormattedMessage, useIntl } from "react-intl";
+import { faCog } from "@fortawesome/free-solid-svg-icons";
+import { Icon } from "src/components/Shared/Icon";
 
 import { LoadingIndicator } from "src/components/Shared/LoadingIndicator";
 import { OperationButton } from "src/components/Shared/OperationButton";
@@ -10,6 +12,7 @@ import { TaggerGallery } from "./TaggerGallery";
 import { GalleryTaggerModals } from "./galleryTaggerModals";
 import { GallerySearchResults } from "./StashSearchResult";
 import { useLightbox } from "src/hooks/Lightbox/hooks";
+import Config from "./Config";
 
 const GalleryItem: React.FC<{
   gallery: GQL.SlimGalleryDataFragment;
@@ -82,6 +85,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
   } = useContext(TaggerStateContext);
   const loadingMulti = loadingMultiContext || searchAllQueue.length > 0;
   const [hideUnmatched, setHideUnmatched] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
 
   const intl = useIntl();
 
@@ -101,7 +105,7 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
         <Form.Control
           as="select"
           value={currentSource?.id}
-          className="input-control w-auto"
+          className="input-control tagger-source-select"
           disabled={loading || !sources.length}
           onChange={handleSourceSelect}
         >
@@ -113,6 +117,16 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
           ))}
         </Form.Control>
       </Form.Group>
+    );
+  }
+
+  function renderConfigButton() {
+    return (
+      <div className="ml-1">
+        <Button onClick={() => setShowConfig(!showConfig)}>
+          <Icon className="fa-fw" icon={faCog} />
+        </Button>
+      </div>
     );
   }
 
@@ -210,8 +224,10 @@ export const Tagger: React.FC<ITaggerProps> = ({ galleries }) => {
             <div className="d-flex">
               {maybeRenderShowHideUnmatchedButton()}
               {renderSearchAllButton()}
+              {renderConfigButton()}
             </div>
           </div>
+          <Config show={showConfig} />
         </div>
         <div>
           {filteredGalleries.map((s, i) => (
