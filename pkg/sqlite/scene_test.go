@@ -119,7 +119,7 @@ func Test_sceneQueryBuilder_Create(t *testing.T) {
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
 				GalleryIDs:   models.NewRelatedIDs([]int{galleryIDs[galleryIdxWithScene]}),
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithDupName], tagIDs[tagIdx1WithScene]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithScene], tagIDs[tagIdx1WithDupName]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 				Groups: models.NewRelatedGroups([]models.GroupsScenes{
 					{
@@ -166,7 +166,7 @@ func Test_sceneQueryBuilder_Create(t *testing.T) {
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
 				GalleryIDs:   models.NewRelatedIDs([]int{galleryIDs[galleryIdxWithScene]}),
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithDupName], tagIDs[tagIdx1WithScene]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithScene], tagIDs[tagIdx1WithDupName]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 				Groups: models.NewRelatedGroups([]models.GroupsScenes{
 					{
@@ -352,7 +352,7 @@ func Test_sceneQueryBuilder_Update(t *testing.T) {
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
 				GalleryIDs:   models.NewRelatedIDs([]int{galleryIDs[galleryIdxWithScene]}),
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithDupName], tagIDs[tagIdx1WithScene]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithScene], tagIDs[tagIdx1WithDupName]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 				Groups: models.NewRelatedGroups([]models.GroupsScenes{
 					{
@@ -628,7 +628,7 @@ func Test_sceneQueryBuilder_UpdatePartial(t *testing.T) {
 				CreatedAt:    createdAt,
 				UpdatedAt:    updatedAt,
 				GalleryIDs:   models.NewRelatedIDs([]int{galleryIDs[galleryIdxWithScene]}),
-				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithDupName], tagIDs[tagIdx1WithScene]}),
+				TagIDs:       models.NewRelatedIDs([]int{tagIDs[tagIdx1WithScene], tagIDs[tagIdx1WithDupName]}),
 				PerformerIDs: models.NewRelatedIDs([]int{performerIDs[performerIdx1WithScene], performerIDs[performerIdx1WithDupName]}),
 				Groups: models.NewRelatedGroups([]models.GroupsScenes{
 					{

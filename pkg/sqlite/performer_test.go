@@ -117,7 +117,7 @@ func Test_PerformerStore_Create(t *testing.T) {
 					HairColor:      hairColor,
 					Weight:         &weight,
 					IgnoreAutoTag:  ignoreAutoTag,
-					TagIDs:         models.NewRelatedIDs([]int{tagIDs[tagIdx1WithPerformer], tagIDs[tagIdx1WithDupName]}),
+					TagIDs:         models.NewRelatedIDs([]int{tagIDs[tagIdx1WithDupName], tagIDs[tagIdx1WithPerformer]}),
 					Aliases:        models.NewRelatedStrings(aliases),
 					StashIDs: models.NewRelatedStashIDs([]models.StashID{
 						{
