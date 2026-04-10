@@ -1110,7 +1110,7 @@ const StashSearchResult: React.FC<IStashSearchResultProps> = ({
               endpoint={
                 currentSource?.sourceInput.stash_box_endpoint ?? undefined
               }
-              key={`${performer.name ?? performer.remote_site_id ?? ""}`}
+              key={`${performer.remote_site_id ?? ""}-${performer.name ?? ""}-${performerIndex}`}
               ageFromDate={
                 !scene.date || excludedFields.date
                   ? stashScene.date
