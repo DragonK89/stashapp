@@ -147,25 +147,41 @@ export const SceneCoverGallery: React.FC<IProps> = ({ scene, galleryId }) => {
 
   useEffect(() => {
     const el = thumbnailsRef.current;
-    if (!el) return;
+    if (!el || galleryImages.length <= 1) return;
 
     const onWheel = (event: WheelEvent) => {
-      const delta =
+      let delta =
         Math.abs(event.deltaY) > Math.abs(event.deltaX)
           ? event.deltaY
           : event.deltaX;
 
       if (delta === 0) return;
 
+      if (event.deltaMode === WheelEvent.DOM_DELTA_LINE) {
+        delta *= 16;
+      } else if (event.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
+        delta *= el.clientWidth;
+      }
+
+      const maxScrollLeft = el.scrollWidth - el.clientWidth;
+      if (maxScrollLeft <= 0) return;
+
+      const nextScrollLeft = Math.max(
+        0,
+        Math.min(maxScrollLeft, el.scrollLeft + delta)
+      );
+
+      if (nextScrollLeft === el.scrollLeft) return;
+
       event.preventDefault();
-      el.scrollLeft += delta;
+      el.scrollLeft = nextScrollLeft;
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       el.removeEventListener("wheel", onWheel);
     };
-  }, []);
+  }, [galleryImages.length]);
 
   if (loading && galleryId && galleryImages.length === 0)
     return <LoadingIndicator />;

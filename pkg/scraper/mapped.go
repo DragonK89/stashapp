@@ -94,17 +94,28 @@ func (s mappedConfig) process(ctx context.Context, q mappedQuery, common commonM
 
 			if len(found) > 0 {
 				var result []string
-				for _, f := range found {
-					text := attrConfig.postProcess(ctx, f, q)
+				if attrConfig.hasConcat() {
+					text := attrConfig.concatenateResults(found)
+					text = attrConfig.postProcess(ctx, text, q)
 					// apply split after post-processing if configured
 					if attrConfig.hasSplit() {
-						result = append(result, attrConfig.splitString(text)...)
+						result = attrConfig.splitString(text)
 					} else {
-						result = append(result, text)
+						result = []string{text}
+					}
+				} else {
+					for _, f := range found {
+						text := attrConfig.postProcess(ctx, f, q)
+						// apply split after post-processing if configured
+						if attrConfig.hasSplit() {
+							result = append(result, attrConfig.splitString(text)...)
+						} else {
+							result = append(result, text)
+						}
 					}
 				}
 
-				result = attrConfig.cleanResults(result)
+				result = attrConfig.cleanResults(k, result)
 
 				// HACK - if the key is URLs, then we need to set the value as a multi-value
 				isMulti := isMulti != nil && isMulti(k)
@@ -888,7 +899,11 @@ func (c mappedScraperAttrConfig) concatenateResults(nodes []string) string {
 	return strings.Join(nodes, separator)
 }
 
-func (c mappedScraperAttrConfig) cleanResults(nodes []string) []string {
+func (c mappedScraperAttrConfig) cleanResults(key string, nodes []string) []string {
+	if key == "Gender" {
+		return sliceutil.Delete(nodes, "")
+	}
+
 	cleaned := sliceutil.Unique(nodes)      // remove duplicate values
 	cleaned = sliceutil.Delete(cleaned, "") // remove empty values
 	return cleaned
