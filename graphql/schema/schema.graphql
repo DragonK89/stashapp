@@ -496,6 +496,9 @@ type Mutation {
   "Identifies scenes using scrapers. Returns the job ID"
   metadataIdentify(input: IdentifyMetadataInput!): ID!
 
+  "Normalize scene titles. Returns the counts for renamed, skipped, and unprocessed scenes."
+  metadataNormalizeSceneTitles(input: SceneTitleNormalizeInput!): NormalizeSceneTitlesResult!
+
   "Migrate generated files for the current hash naming"
   migrateHashNaming: ID!
   "Migrates legacy scene screenshot files into the blob storage"

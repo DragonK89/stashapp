@@ -376,3 +376,13 @@ input CustomFieldsInput {
   "Remove any keys in this list"
   remove: [String!]
 }
+
+input SceneTitleNormalizeInput {
+  pattern: String!
+}
+
+type NormalizeSceneTitlesResult {
+  renamed: Int!
+  skipped: Int!
+  unprocessed: Int!
+}

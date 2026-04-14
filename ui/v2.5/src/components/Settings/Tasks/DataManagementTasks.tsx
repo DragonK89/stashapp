@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { FormattedMessage, useIntl } from "react-intl";
-import { Button, Col, Form, Row } from "react-bootstrap";
+import { Button, Col, Form, InputGroup, Row } from "react-bootstrap";
 import {
   mutateMigrateHashNaming,
   mutateMetadataExport,
@@ -12,6 +12,7 @@ import {
   mutateMigrateBlobs,
   mutateOptimiseDatabase,
   mutateCleanGenerated,
+  mutateMetadataNormalizeSceneTitles,
 } from "src/core/StashService";
 import { useToast } from "src/hooks/Toast";
 import downloadFile from "src/utils/download";
@@ -164,6 +165,7 @@ export const DataManagementTasks: React.FC<IDataManagementTasks> = ({
 }) => {
   const intl = useIntl();
   const Toast = useToast();
+  const [normalizeTitlesPattern, setNormalizeTitlesPattern] = useState("");
   const [dialogOpen, setDialogOpenState] = useState({
     importAlert: false,
     import: false,
@@ -400,6 +402,24 @@ export const DataManagementTasks: React.FC<IDataManagementTasks> = ({
     }
   }
 
+  async function onNormalizeTitles() {
+    try {
+      const { data } = await mutateMetadataNormalizeSceneTitles({
+        pattern: normalizeTitlesPattern,
+      });
+
+      if (data?.metadataNormalizeSceneTitles) {
+        const { renamed, skipped, unprocessed } =
+          data.metadataNormalizeSceneTitles;
+        Toast.success(
+          `Normalize Scene Titles complete: ${renamed} renamed, ${skipped} skipped, ${unprocessed} unprocessed.`
+        );
+      }
+    } catch (e) {
+      Toast.error(e);
+    }
+  }
+
   return (
     <Form.Group>
       {renderImportAlert()}
@@ -628,6 +648,38 @@ export const DataManagementTasks: React.FC<IDataManagementTasks> = ({
           >
             <FormattedMessage id="actions.download_anonymised" />
           </Button>
+        </Setting>
+      </SettingSection>
+
+      <SettingSection headingID="config.tasks.data_management">
+        <Setting
+          heading="Normalize Scene Titles"
+          subHeading={
+            <small>
+              Renames scene titles to{" "}
+              <code>[Studio Code][pattern][Existing Title]</code>. Scenes
+              without a studio code will be skipped.
+            </small>
+          }
+        >
+          <div className="d-flex align-items-center">
+            <Form.Control
+              className="text-input"
+              type="text"
+              placeholder=": "
+              value={normalizeTitlesPattern}
+              onChange={(e) => setNormalizeTitlesPattern(e.target.value)}
+              style={{ maxWidth: "150px" }}
+            />
+            <Button
+              className="ml-2 text-nowrap"
+              id="normalizeSceneTitles"
+              variant="primary"
+              onClick={() => onNormalizeTitles()}
+            >
+              Normalize Scene Titles
+            </Button>
+          </div>
         </Setting>
       </SettingSection>
 

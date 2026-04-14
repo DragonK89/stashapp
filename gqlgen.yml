@@ -108,6 +108,10 @@ models:
     model: github.com/stashapp/stash/internal/manager.ImportTorrentScenesInput
   ImportTorrentScenesResult:
     model: github.com/stashapp/stash/internal/manager.ImportTorrentScenesResult
+  SceneTitleNormalizeInput:
+    model: github.com/stashapp/stash/internal/manager.SceneTitleNormalizeInput
+  NormalizeSceneTitlesResult:
+    model: github.com/stashapp/stash/internal/manager.NormalizeSceneTitlesResult
   # renamed types
   BulkUpdateIdMode:
     model: github.com/stashapp/stash/pkg/models.RelationshipUpdateMode

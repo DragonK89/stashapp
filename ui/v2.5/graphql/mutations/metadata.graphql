@@ -53,3 +53,11 @@ mutation AnonymiseDatabase($input: AnonymiseDatabaseInput!) {
 mutation OptimiseDatabase {
   optimiseDatabase
 }
+
+mutation MetadataNormalizeSceneTitles($input: SceneTitleNormalizeInput!) {
+  metadataNormalizeSceneTitles(input: $input) {
+    renamed
+    skipped
+    unprocessed
+  }
+}

@@ -18,6 +18,16 @@ import (
 	"github.com/stashapp/stash/pkg/models"
 )
 
+type SceneTitleNormalizeInput struct {
+	Pattern string `json:"pattern"`
+}
+
+type NormalizeSceneTitlesResult struct {
+	Renamed     int `json:"renamed"`
+	Skipped     int `json:"skipped"`
+	Unprocessed int `json:"unprocessed"`
+}
+
 func useAsVideo(pathname string) bool {
 	stash := config.StashConfigs.GetStashFromDirPath(instance.Config.GetStashPaths(), pathname)
 
@@ -703,4 +713,20 @@ func (s *Manager) StashBoxBatchStudioTag(ctx context.Context, box *models.StashB
 	})
 
 	return s.JobManager.Add(ctx, "Batch stash-box studio tag...", j)
+}
+
+func (s *Manager) NormalizeSceneTitles(ctx context.Context, input SceneTitleNormalizeInput) (*NormalizeSceneTitlesResult, error) {
+	var result *NormalizeSceneTitlesResult
+	err := s.Repository.WithTxn(ctx, func(ctx context.Context) error {
+		t := &sceneTitleNormalizeTask{
+			repository: s.Repository,
+			input:      input,
+		}
+
+		var err error
+		result, err = t.Start(ctx)
+		return err
+	})
+
+	return result, err
 }

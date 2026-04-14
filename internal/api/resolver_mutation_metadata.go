@@ -182,6 +182,10 @@ func (r *mutationResolver) OptimiseDatabase(ctx context.Context) (string, error)
 	return strconv.Itoa(jobID), nil
 }
 
+func (r *mutationResolver) MetadataNormalizeSceneTitles(ctx context.Context, input manager.SceneTitleNormalizeInput) (*manager.NormalizeSceneTitlesResult, error) {
+	return manager.GetInstance().NormalizeSceneTitles(ctx, input)
+}
+
 func (r *mutationResolver) ImportTorrentScenesFromFile(ctx context.Context, input manager.ImportTorrentScenesInput) (*manager.ImportTorrentScenesResult, error) {
 	ret, err := manager.GetInstance().ImportTorrentScenesFromFile(ctx, input)
 	if err != nil {

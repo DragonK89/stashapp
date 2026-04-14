@@ -3161,6 +3161,14 @@ export const mutateOptimiseDatabase = () =>
     mutation: GQL.OptimiseDatabaseDocument,
   });
 
+export const mutateMetadataNormalizeSceneTitles = (
+  input: GQL.SceneTitleNormalizeInput
+) =>
+  client.mutate<GQL.MetadataNormalizeSceneTitlesMutation>({
+    mutation: GQL.MetadataNormalizeSceneTitlesDocument,
+    variables: { input },
+  });
+
 export const mutateMigrateHashNaming = () =>
   client.mutate<GQL.MigrateHashNamingMutation>({
     mutation: GQL.MigrateHashNamingDocument,
