@@ -45,8 +45,16 @@ func (t *sceneTitleNormalizeTask) Start(ctx context.Context) (*NormalizeSceneTit
 		cleanedTitle = internalCleanRegex.ReplaceAllString(cleanedTitle, " ")
 		cleanedTitle = strings.TrimSpace(cleanedTitle)
 
-		// 3. Construct the new title
-		newTitle := s.Code + t.input.Pattern + cleanedTitle
+		// 3. Construct the new title using template or legacy pattern
+		pattern := t.input.Pattern
+		var newTitle string
+		if strings.Contains(pattern, "{title}") {
+			newTitle = strings.ReplaceAll(pattern, "{code}", s.Code)
+			newTitle = strings.ReplaceAll(newTitle, "{title}", cleanedTitle)
+		} else {
+			// Legacy behavior for backwards compatibility
+			newTitle = s.Code + pattern + cleanedTitle
+		}
 
 		if newTitle == s.Title {
 			result.Unprocessed++

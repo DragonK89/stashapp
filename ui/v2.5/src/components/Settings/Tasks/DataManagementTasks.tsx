@@ -656,20 +656,19 @@ export const DataManagementTasks: React.FC<IDataManagementTasks> = ({
           heading="Normalize Scene Titles"
           subHeading={
             <small>
-              Renames scene titles to{" "}
-              <code>[Studio Code][pattern][Existing Title]</code>. Scenes
-              without a studio code will be skipped.
+              Supports <code>{"{code}"}</code> and <code>{"{title}"}</code>{" "}
+              (e.g. <code>{"{code} — \"{title}\""}</code>).
             </small>
           }
         >
-          <div className="d-flex align-items-center">
+          <div className="d-flex align-items-center flex-shrink-0">
             <Form.Control
               className="text-input"
               type="text"
               placeholder=": "
               value={normalizeTitlesPattern}
               onChange={(e) => setNormalizeTitlesPattern(e.target.value)}
-              style={{ maxWidth: "150px" }}
+              style={{ width: "150px" }}
             />
             <Button
               className="ml-2 text-nowrap"
